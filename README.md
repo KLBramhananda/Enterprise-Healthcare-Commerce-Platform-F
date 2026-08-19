@@ -1,75 +1,100 @@
-# React + TypeScript + Vite
+# 💙 Enterprise Healthcare Commerce Platform - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Modern healthcare commerce frontend built with **React**, **Vite**, and **TypeScript**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Overview
 
-## React Compiler
+The frontend delivers a fast, responsive, and modern healthcare shopping experience inspired by Tata 1mg while communicating with ERPNext through secure backend APIs.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ⚛️ Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React
+- Vite
+- TypeScript
+- React Router
+- TanStack Query
+- Axios
+- Tailwind CSS
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## ✨ Features
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- 🏠 Modern Landing Page
+- 🔍 Intelligent Product Search
+- 💊 Medicine Catalog
+- 📄 Product Details
+- 🛒 Shopping Cart
+- 💳 Checkout Experience
+- 📦 Order Tracking
+- ❤️ Wishlist
+- 📤 Prescription Upload
+- 👤 Customer Dashboard
+- 🔔 Notifications
 
+---
+
+## 📂 Project Structure
+
+```text
+src/
+├── app/
+├── assets/
+├── components/
+├── hooks/
+├── layouts/
+├── pages/
+├── providers/
+├── routes/
+├── services/
+├── types/
+└── utils/
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🏗 Architecture
 
 ```
+React UI
+      │
+      ▼
+API Services
+      │
+      ▼
+Frappe Backend APIs
+      │
+      ▼
+ERPNext
+```
+
+---
+
+## 🎨 Design Philosophy
+
+- Enterprise UI
+- Mobile First
+- Responsive Design
+- Component-Based Architecture
+- Clean & Reusable Code
+- High Performance
+
+---
+
+## 📌 Status
+
+🚧 Active Development
+
+---
+
+## 👨‍💻 Author
+
+**Bramhananda K L**
+
+Full Stack Developer | ERPNext Developer | Solution Architect
+
+---
