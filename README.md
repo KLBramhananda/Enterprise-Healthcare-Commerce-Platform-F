@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💙 Enterprise Healthcare Commerce Platform - Frontend
+# 💚 Enterprise Healthcare Commerce Platform - Frontend
 
 Modern Healthcare Commerce Platform built with **React**, **Vite**, and **TypeScript**.
 
