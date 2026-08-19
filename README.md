@@ -4,7 +4,7 @@
 
 Modern Healthcare Commerce Platform built with **React**, **Vite**, and **TypeScript**.
 
-<img src="assets/homepage-preview.png" alt="KeeMeds Homepage Preview" width="100%"/>
+<img src="src/assets/homepage-preview.png" alt="KeeMeds Homepage Preview" width="100%"/>
 
 </div>
 
