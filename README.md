@@ -114,9 +114,6 @@ src/
 This project is being developed phase-by-phase following enterprise architecture and best practices using React, Frappe Framework, and ERPNext.
 
 ---
-🔗 **Backend Repository:** https://github.com/KLBramhananda/Enterprise-Healthcare-Commerce-Platform-B
-
----
 
 ## 👨‍💻 Author
 
