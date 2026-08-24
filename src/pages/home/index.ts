@@ -1,7 +1,13 @@
 export { default as HeroBanner } from "./HeroBanner";
 export { default as PromoSection } from "./PromoSection";
 export { default as CategoryGrid } from "./CategoryGrid";
+export { default as OffersSection } from "./OffersSection";
+export { default as FeaturedMedicines } from "./FeaturedMedicines";
+export { default as PrescriptionUploadCta } from "./PrescriptionUploadCta";
+export { default as PopularLabTests } from "./LabTests";
+export { default as HealthConcerns } from "./HealthConcerns";
+export { default as TopBrands } from "./TopBrands";
+export { default as DoctorConsultationBanner } from "./DoctorConsultationBanner";
 export { default as ServicesSection } from "./ServicesSection";
-export { default as FeaturedProducts } from "./FeaturedProducts";
-export { default as HealthTips } from "./HealthTips";
+export { default as TestimonialsSection } from "./TestimonialsSection";
 export { default as AppDownloadBanner } from "./AppDownloadBanner";

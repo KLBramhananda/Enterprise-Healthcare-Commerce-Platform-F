@@ -12,7 +12,7 @@ import { ToastContainer } from "@/components/ui";
 export default function CommerceLayout() {
   return (
     <LayoutProvider>
-      <div className="flex min-h-screen flex-col bg-slate-50">
+      <div className="flex min-h-screen flex-col bg-surface-50">
         <CommerceHeader />
 
         <main className="flex-1">

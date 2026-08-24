@@ -1,58 +1,43 @@
 /**
  * PromoSection
  *
- * Promotional cards highlighting key value propositions.
+ * Promotional value proposition cards.
+ * Uses Container, Grid, IconTile from the design system.
  */
 
 import { Truck, Shield, HeadphonesIcon, BadgePercent } from "lucide-react";
+import { Container, Grid, IconTile } from "@/components/ui";
 
 const promos = [
-  {
-    icon: Truck,
-    title: "Free Delivery",
-    description: "On orders above $50",
-  },
-  {
-    icon: Shield,
-    title: "100% Authentic",
-    description: "Verified products only",
-  },
-  {
-    icon: HeadphonesIcon,
-    title: "Expert Support",
-    description: "Licensed pharmacist advice",
-  },
-  {
-    icon: BadgePercent,
-    title: "Best Prices",
-    description: "Up to 50% off on medicines",
-  },
+  { icon: Truck, title: "Free Delivery", description: "On orders above $50", color: "brand" as const },
+  { icon: Shield, title: "100% Authentic", description: "Verified products only", color: "green" as const },
+  { icon: HeadphonesIcon, title: "Expert Support", description: "Licensed pharmacist advice", color: "blue" as const },
+  { icon: BadgePercent, title: "Best Prices", description: "Up to 50% off on medicines", color: "amber" as const },
 ];
 
 export default function PromoSection() {
   return (
-    <section className="bg-white py-10 sm:py-12">
-      <div className="mx-auto max-w-7xl px-4 lg:px-6">
-        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-          {promos.map((promo) => {
-            const Icon = promo.icon;
-            return (
-              <div
-                key={promo.title}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 transition-all hover:border-emerald-200 hover:shadow-sm sm:p-5"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 sm:h-12 sm:w-12">
-                  <Icon size={20} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 sm:text-base">{promo.title}</h3>
-                  <p className="text-xs text-slate-500 sm:text-sm">{promo.description}</p>
-                </div>
+    <section className="bg-surface-0 py-10 sm:py-12">
+      <Container>
+        <Grid
+          cols={2}
+          gap="md"
+          responsive={{ sm: { gap: "lg" }, lg: { cols: 4 } }}
+        >
+          {promos.map((promo) => (
+            <div
+              key={promo.title}
+              className="flex items-center gap-3 rounded-xl border border-surface-200 bg-surface-50 p-4 transition-all duration-normal ease-smooth hover:border-brand-200 hover:shadow-sm sm:p-5"
+            >
+              <IconTile icon={<promo.icon size={20} />} size="sm" color={promo.color} />
+              <div>
+                <h3 className="text-sm font-semibold text-surface-900 sm:text-base">{promo.title}</h3>
+                <p className="text-xs text-surface-500 sm:text-sm">{promo.description}</p>
               </div>
-            );
-          })}
-        </div>
-      </div>
+            </div>
+          ))}
+        </Grid>
+      </Container>
     </section>
   );
 }

@@ -3,6 +3,7 @@
  *
  * Commerce homepage composing all storefront sections.
  * Entry point for the KeeMeds B2C customer application.
+ * All section content is sourced from the homepage service layer.
  */
 
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
@@ -10,9 +11,15 @@ import {
   HeroBanner,
   PromoSection,
   CategoryGrid,
+  OffersSection,
+  FeaturedMedicines,
+  PrescriptionUploadCta,
+  PopularLabTests,
+  HealthConcerns,
+  TopBrands,
+  DoctorConsultationBanner,
   ServicesSection,
-  FeaturedProducts,
-  HealthTips,
+  TestimonialsSection,
   AppDownloadBanner,
 } from "./home";
 
@@ -24,9 +31,15 @@ export default function Home() {
       <HeroBanner />
       <PromoSection />
       <CategoryGrid />
-      <FeaturedProducts />
+      <OffersSection />
+      <FeaturedMedicines />
+      <PrescriptionUploadCta />
+      <PopularLabTests />
+      <HealthConcerns />
+      <TopBrands />
+      <DoctorConsultationBanner />
       <ServicesSection />
-      <HealthTips />
+      <TestimonialsSection />
       <AppDownloadBanner />
     </div>
   );
