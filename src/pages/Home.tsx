@@ -21,6 +21,7 @@ import {
   ServicesSection,
   TestimonialsSection,
   AppDownloadBanner,
+  DiscoveryRecommendations,
 } from "./home";
 
 export default function Home() {
@@ -33,6 +34,7 @@ export default function Home() {
       <CategoryGrid />
       <OffersSection />
       <FeaturedMedicines />
+      <DiscoveryRecommendations />
       <PrescriptionUploadCta />
       <PopularLabTests />
       <HealthConcerns />

@@ -28,10 +28,14 @@ export {
   BannerDescription,
   BannerActions,
   ProductCard,
+  ProductListItem,
   ServiceCard,
   ArticleCard,
   IconTile,
   StarRating,
+  ViewToggle,
+  CheckboxOption,
+  FilterPanel,
 } from "./ui";
 export type { Column, CardProps, BannerProps, GridProps } from "./ui";
 export { CommerceHeader, CommerceFooter, Breadcrumb } from "./layout";

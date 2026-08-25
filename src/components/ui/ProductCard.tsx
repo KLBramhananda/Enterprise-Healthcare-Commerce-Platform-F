@@ -1,33 +1,40 @@
 /**
  * ProductCard
  *
- * Reusable product card for the commerce catalog.
- * Displays medicine details with discount/Rx badges, rating, price, and cart action.
+ * Reusable product card for the commerce catalog (grid layout).
+ * Displays medicine details with discount/new/bestseller/Rx badges,
+ * rating, MRP/discount pricing, stock status, and cart action.
+ * When `id` is provided, the card links to /product/:id via an overlay.
  */
 
+import { Link } from "react-router-dom";
 import { BadgePercent, FileBadge, ShoppingCart } from "lucide-react";
-import type { Medicine } from "@/types/homepage";
+import type { StockStatus } from "@/types/catalog";
 import { formatCurrency } from "@/utils/formatters";
 import { cn } from "@/utils/cn";
 import StarRating from "./StarRating";
 
-interface ProductCardProps extends Pick<
-  Medicine,
-  | "name"
-  | "brandName"
-  | "form"
-  | "packSize"
-  | "price"
-  | "originalPrice"
-  | "discountPercent"
-  | "rating"
-  | "reviewCount"
-  | "requiresPrescription"
-> {
+interface ProductCardProps {
+  id?: string;
+  name: string;
+  brandName: string;
+  form: string;
+  packSize: string;
+  price: number;
+  originalPrice?: number;
+  discountPercent?: number;
+  rating: number;
+  reviewCount: number;
+  requiresPrescription: boolean;
+  stockStatus?: StockStatus;
+  isNew?: boolean;
+  isBestseller?: boolean;
+  onAddToCart?: (productId: string) => void;
   className?: string;
 }
 
 export default function ProductCard({
+  id,
   name,
   brandName,
   form,
@@ -38,35 +45,81 @@ export default function ProductCard({
   rating,
   reviewCount,
   requiresPrescription,
+  stockStatus = "in_stock",
+  isNew = false,
+  isBestseller = false,
+  onAddToCart,
   className,
 }: ProductCardProps) {
+  const isOutOfStock = stockStatus === "out_of_stock";
+
   return (
     <article
       className={cn(
-        "group flex h-full flex-col rounded-xl border border-surface-200 bg-surface-0 p-3 transition-all duration-normal ease-smooth",
+        "group relative flex h-full flex-col rounded-xl border border-surface-200 bg-surface-0 p-3 transition-all duration-normal ease-smooth",
         "hover:border-brand-200 hover:shadow-md sm:p-4",
         className,
       )}
     >
+      {/* Overlay link — covers the card, sits behind interactive elements */}
+      {id && (
+        <Link
+          to={`/product/${id}`}
+          className="absolute inset-0 rounded-xl"
+          aria-label={`View ${name} details`}
+          tabIndex={-1}
+        >
+          <span className="sr-only">View {name}</span>
+        </Link>
+      )}
       {/* Product Visual */}
-      <div className="relative mb-3 flex aspect-square items-center justify-center rounded-lg border border-surface-100 bg-surface-50">
-        <PillGlyph />
-        {discountPercent != null && discountPercent > 0 && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-0.5 rounded-md bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
-            <BadgePercent size={10} aria-hidden="true" />
-            {discountPercent}% OFF
-          </span>
+      <div
+        className={cn(
+          "relative mb-3 flex aspect-square items-center justify-center rounded-lg border border-surface-100 bg-surface-50",
+          isOutOfStock && "opacity-60",
         )}
-        {requiresPrescription && (
+      >
+        <PillGlyph />
+        <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
+          {discountPercent != null && discountPercent > 0 && (
+            <span className="inline-flex items-center gap-0.5 rounded-md bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+              <BadgePercent size={10} aria-hidden="true" />
+              {discountPercent}% OFF
+            </span>
+          )}
+          {isBestseller && (
+            <span className="rounded-md bg-warning-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warning-800 ring-1 ring-warning-100">
+              Bestseller
+            </span>
+          )}
+          {isNew && (
+            <span className="rounded-md bg-info-50 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-info-800 ring-1 ring-info-100">
+              New
+            </span>
+          )}
+        </div>
+        {requiresPrescription && !isOutOfStock && (
           <span className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-md bg-info-50 px-1.5 py-0.5 text-[10px] font-semibold text-info-800 ring-1 ring-info-100">
             <FileBadge size={10} aria-hidden="true" />
             Rx Required
           </span>
         )}
+        {isOutOfStock && (
+          <span className="absolute inset-x-2 bottom-2 rounded-md bg-surface-900/85 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-white">
+            Out of Stock
+          </span>
+        )}
         <button
           type="button"
-          className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white opacity-0 shadow-sm transition-opacity duration-fast focus:opacity-100 group-hover:opacity-100 hover:bg-brand-700 focus-visible:opacity-100"
-          aria-label={`Add ${name} to cart`}
+          disabled={isOutOfStock}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (id) onAddToCart?.(id);
+          }}
+          className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white opacity-0 shadow-sm transition-opacity duration-fast focus:opacity-100 group-hover:opacity-100 hover:bg-brand-700 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:bg-surface-300 disabled:text-surface-500"
+          aria-label={
+            isOutOfStock ? `${name} is out of stock` : `Add ${name} to cart`
+          }
         >
           <ShoppingCart size={14} />
         </button>
@@ -85,12 +138,18 @@ export default function ProductCard({
           <span className="text-xs text-surface-400">({formatNumberCompact(reviewCount)})</span>
         </div>
 
-        <div className="mt-auto flex items-baseline gap-2 pt-2">
-          <span className="text-base font-bold text-brand-700">{formatCurrency(price)}</span>
-          {originalPrice != null && originalPrice > price && (
-            <span className="text-xs text-surface-400 line-through">
-              {formatCurrency(originalPrice)}
-            </span>
+        <div className="mt-auto pt-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-bold text-brand-700">{formatCurrency(price)}</span>
+            {originalPrice != null && originalPrice > price && (
+              <span className="text-xs text-surface-400">
+                MRP{" "}
+                <span className="line-through">{formatCurrency(originalPrice)}</span>
+              </span>
+            )}
+          </div>
+          {!isOutOfStock && stockStatus === "low_stock" && (
+            <p className="mt-1 text-[11px] font-medium text-danger-600">Only a few left</p>
           )}
         </div>
       </div>

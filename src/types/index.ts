@@ -1,6 +1,27 @@
 export type { ApiResponse, PaginatedData, PaginatedResponse, ExistsResponse, ListParams } from "./api";
 export type { Document, SelectOption, SortDirection, SortConfig } from "./common";
 export type {
+  CatalogCategory,
+  Product,
+  StockStatus,
+  CatalogSortOption,
+  PriceRangeId,
+  PrescriptionFilter,
+  CatalogFilters,
+  CatalogQuery,
+  PaginatedResult,
+  BrandFacet,
+  ProductBadgeType,
+  ProductBadge,
+  BrandDetail,
+  Collection,
+  CollectionSlug,
+  DiscoveryQuery,
+  DiscoverySortOption,
+  BrandSummary,
+} from "./catalog";
+export { getProductBadges } from "./catalog";
+export type {
   HeroSlide,
   HeroSlideCta,
   HeroSlideTheme,
@@ -24,3 +45,19 @@ export type {
   AuthTokens,
   AuthResponse,
 } from "./auth";
+export type {
+  Address,
+  AddressFormData,
+  DeliverySpeed,
+  DeliveryOption,
+  PrescriptionFile,
+  AppliedPromo,
+  PaymentMethodType,
+  PaymentMethod,
+  CheckoutSession,
+  OrderStatus,
+  OrderItem,
+  Order,
+  OrderSummary,
+  CheckoutValidation,
+} from "./checkout";

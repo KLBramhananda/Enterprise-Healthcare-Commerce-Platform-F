@@ -5,7 +5,7 @@
  */
 
 import { useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, CheckCircle } from "lucide-react";
@@ -17,6 +17,7 @@ import { resetPasswordSchema, type ResetPasswordFormData } from "@/hooks/auth/sc
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const navigate = useNavigate();
   const { reset, isPending, error, clearError, isSuccess } = useResetPassword();
 
   const {
@@ -31,11 +32,11 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     if (isSuccess) {
       const timer = setTimeout(() => {
-        window.location.href = "/auth/login?reset=true";
+        navigate("/auth/login?reset=true", { replace: true });
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess]);
+  }, [isSuccess, navigate]);
 
   const onSubmit = (data: ResetPasswordFormData) => {
     clearError();

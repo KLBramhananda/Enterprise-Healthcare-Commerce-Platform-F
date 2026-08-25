@@ -11,3 +11,4 @@ export { default as DoctorConsultationBanner } from "./DoctorConsultationBanner"
 export { default as ServicesSection } from "./ServicesSection";
 export { default as TestimonialsSection } from "./TestimonialsSection";
 export { default as AppDownloadBanner } from "./AppDownloadBanner";
+export { DiscoveryRecommendations } from "./DiscoveryRecommendations";

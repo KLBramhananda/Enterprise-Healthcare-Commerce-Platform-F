@@ -109,7 +109,7 @@ export default function HeroBanner() {
             <button
               type="button"
               onClick={() => goTo(clampedIndex - 1)}
-              className="absolute left-1 top-1/2 z-dropdown hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-colors duration-fast hover:bg-white/30 focus-visible:bg-white/30 sm:flex"
+              className="absolute left-1 top-1/2 z-overlay hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-colors duration-fast hover:bg-white/30 focus-visible:bg-white/30 sm:flex"
               aria-label="Previous slide"
             >
               <ChevronLeft size={20} />
@@ -117,7 +117,7 @@ export default function HeroBanner() {
             <button
               type="button"
               onClick={() => goTo(clampedIndex + 1)}
-              className="absolute right-1 top-1/2 z-dropdown hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-colors duration-fast hover:bg-white/30 focus-visible:bg-white/30 sm:flex"
+              className="absolute right-1 top-1/2 z-overlay hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-colors duration-fast hover:bg-white/30 focus-visible:bg-white/30 sm:flex"
               aria-label="Next slide"
             >
               <ChevronRight size={20} />

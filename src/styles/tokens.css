@@ -113,12 +113,60 @@
   --width-narrow: 48rem;
   --width-wide: 80rem;
 
-  /* ── Z-Index Scale ── */
+  /*
+   * Z-Index Scale
+   *
+   * Every stacking layer has a reserved numeric range.
+   * Components MUST use the token that matches their layer — never hardcode values.
+   *
+   *   base       (0)   – Page content. All page content lives inside <main> with isolation:isolate.
+   *   dropdown  (50)   – Dropdown menus, suggestion lists, popover content, category nav (desktop).
+   *   sticky   (100)   – Sticky/fixed navigation headers (global shell primary layer).
+   *   main-nav (110)   – Primary sticky navigation bar (always above category nav).
+   *   overlay  (200)   – Non-modal overlays (carousel controls, tooltip-like elements).
+   *   modal    (300)   – Modal dialogs and their backdrops.
+   *   toast    (400)   – Toast notifications (highest user-facing layer).
+   *
+   * Containment principle:
+   *   <main> uses isolation:isolate, preventing any child stacking context from
+   *   escaping above the global header. Future components automatically inherit
+   *   correct layering without page-specific fixes.
+   */
+  --z-base: 0;
   --z-dropdown: 50;
   --z-sticky: 100;
+  --z-main-nav: 110;
   --z-overlay: 200;
   --z-modal: 300;
   --z-toast: 400;
+
+  /* ── Layout Spacing Scale ── */
+  /*
+   * Central source of truth for all layout dimensions.
+   * Updated dynamically by useScrollLayout when the header mounts/resizes.
+   *
+   *   --layout-header-main-h    Height of the primary navigation bar (always sticky).
+   *   --layout-header-cat-h     Height of the category navigation bar (desktop only, sticky below main nav).
+   *   --layout-header-announce-h Height of the announcement bar (scrolls away).
+   *   --layout-scroll-padding   scroll-padding-top on <html> for anchor-link offset.
+   *   --layout-sticky-offset    top offset for sticky sidebar panels (filter panels, etc.).
+   *
+   * Page offset architecture:
+   *   <main> starts AFTER <header> in the DOM flow. The header's own height
+   *   (mainH + catH on desktop, mainH on mobile) pushes <main> below the
+   *   navigation. No additional padding-top on <main> is needed — the header's
+   *   flow position IS the single source of truth for the page offset.
+   *   The sticky navs are bounded by their parent <header> and scroll off with
+   *   it, so content can never overlap with stuck navs.
+   */
+  --spacing-14: 3.5rem;
+  --spacing-15: 3.75rem;
+  --spacing-42: 10.5rem;
+  --layout-header-main-h: 4rem;
+  --layout-header-cat-h: 0px;
+  --layout-header-announce-h: 0px;
+  --layout-scroll-padding: 4rem;
+  --layout-sticky-offset: 5rem;
 
   /* ── Transitions ── */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -126,10 +174,31 @@
   --duration-fast: 150ms;
   --duration-normal: 200ms;
   --duration-slow: 300ms;
+
+  /* ── Keyframes ── */
+  --animate-slideInRight: slideInRight var(--duration-normal) var(--ease-smooth);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /*
  * Base layer styles applied to the document root.
+ *
+ * Layout contract:
+ *   - html gets scroll-padding-top so anchor links scroll below the sticky header.
+ *   - No padding-top on main: <header> is a DOM sibling before <main> in the
+ *     flex layout, so its own height already pushes <main> below the navigation.
+ *     The sticky navs are bounded by <header> and scroll off with it, eliminating
+ *     any need for a separate padding offset.
  */
 @layer base {
   html {
@@ -137,6 +206,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    scroll-padding-top: var(--layout-scroll-padding);
   }
 
   body {
@@ -158,5 +228,24 @@
   :focus-visible {
     outline: 2px solid var(--color-brand-500);
     outline-offset: 2px;
+  }
+
+  /* Category nav hidden on mobile and when mobile menu is open */
+  [data-menu-open] > header > nav {
+    display: none !important;
+  }
+
+  /* Mobile menu: hidden by default, shown when menu is open */
+  header > nav[data-mobile-menu] {
+    display: none;
+  }
+
+  [data-menu-open] > header > nav[data-mobile-menu] {
+    display: block;
+  }
+
+  /* Lock body scroll when mobile menu is open */
+  [data-menu-open] {
+    overflow: hidden;
   }
 }
