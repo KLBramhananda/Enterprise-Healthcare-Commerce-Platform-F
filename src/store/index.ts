@@ -3,3 +3,5 @@ export type { CartItem } from "./cartStore";
 export { useWishlistStore } from "./wishlistStore";
 export type { WishlistItem } from "./wishlistStore";
 export { useCheckoutStore } from "./checkoutStore";
+export { useAccountStore } from "./accountStore";
+export { useNotificationStore } from "./notificationStore";

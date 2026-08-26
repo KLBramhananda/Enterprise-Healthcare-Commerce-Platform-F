@@ -42,9 +42,19 @@ import WishlistPage from "@/pages/WishlistPage";
 import OrdersPage from "@/pages/OrdersPage";
 import AddressesPage from "@/pages/AddressesPage";
 import PrescriptionsPage from "@/pages/PrescriptionsPage";
-import ProfilePage from "@/pages/ProfilePage";
 import NotificationsPage from "@/pages/NotificationsPage";
-import LoyaltyPage from "@/pages/LoyaltyPage";
+import {
+  OffersPage,
+  CouponsPage,
+  LoyaltyPage,
+  ReferralPage,
+  MembershipPage,
+} from "@/pages/engagement";
+import {
+  AccountDashboardPage,
+  OrderDetailPage,
+  AccountSettingsPage,
+} from "@/pages/account";
 
 export default function AppRouter() {
   return (
@@ -67,12 +77,18 @@ export default function AppRouter() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
           <Route path="/orders/:orderId/confirmation" element={<OrderConfirmationPage />} />
           <Route path="/addresses" element={<AddressesPage />} />
           <Route path="/prescriptions" element={<PrescriptionsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={<AccountDashboardPage />} />
+          <Route path="/settings" element={<AccountSettingsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/offers" element={<OffersPage />} />
+          <Route path="/coupons" element={<CouponsPage />} />
           <Route path="/rewards" element={<LoyaltyPage />} />
+          <Route path="/referral" element={<ReferralPage />} />
+          <Route path="/membership" element={<MembershipPage />} />
         </Route>
       </Route>
 

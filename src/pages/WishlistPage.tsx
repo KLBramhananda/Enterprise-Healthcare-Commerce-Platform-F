@@ -1,23 +1,58 @@
-/**
- * WishlistPage
- *
- * Full wishlist page with product cards, move to cart, remove,
- * and empty state. Guest-friendly — no auth required.
- */
-
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ShoppingCart, Trash2 } from "lucide-react";
+import { Heart, ShoppingCart, Trash2, ArrowUpDown, Share2 } from "lucide-react";
 import { Button, Container, EmptyState } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
-import { useWishlist } from "@/hooks/shopping";
+import { useWishlist, useCart } from "@/hooks/shopping";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
-import { notifyMovedToCart, notifyRemovedFromWishlist } from "@/utils/notifications";
+import { useToast } from "@/providers/ToastProvider";
+import {
+  notifyMovedToCart,
+  notifyRemovedFromWishlist,
+  notifyAddedAllToCart,
+} from "@/utils/notifications";
 import { formatCurrency } from "@/utils/formatters";
+
+type SortKey = "recent" | "price_asc" | "price_desc" | "name";
+
+interface SortOption {
+  value: SortKey;
+  label: string;
+}
+
+const SORT_OPTIONS: SortOption[] = [
+  { value: "recent", label: "Recently Added" },
+  { value: "price_asc", label: "Price Low to High" },
+  { value: "price_desc", label: "Price High to Low" },
+  { value: "name", label: "Name A-Z" },
+];
 
 export default function WishlistPage() {
   usePageTitle("My Wishlist");
 
-  const { items, count, removeItem, moveToCart } = useWishlist();
+  const { items, count, removeItem, moveToCart, clearWishlist } = useWishlist();
+  const { addItem: addToCart } = useCart();
+  const { addToast } = useToast();
+
+  const [sortBy, setSortBy] = useState<SortKey>("recent");
+
+  const sortedItems = useMemo(() => {
+    const copy = [...items];
+    switch (sortBy) {
+      case "price_asc":
+        return copy.sort((a, b) => a.product.price - b.product.price);
+      case "price_desc":
+        return copy.sort((a, b) => b.product.price - a.product.price);
+      case "name":
+        return copy.sort((a, b) => a.product.name.localeCompare(b.product.name));
+      case "recent":
+      default:
+        return copy.sort(
+          (a, b) =>
+            new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime(),
+        );
+    }
+  }, [items, sortBy]);
 
   const handleMoveToCart = (product: import("@/types/catalog").Product) => {
     moveToCart(product.id);
@@ -27,6 +62,18 @@ export default function WishlistPage() {
   const handleRemove = (product: import("@/types/catalog").Product) => {
     removeItem(product.id);
     notifyRemovedFromWishlist(product);
+  };
+
+  const handleMoveAllToCart = () => {
+    items.forEach((item) => {
+      addToCart(item.product);
+    });
+    clearWishlist();
+    notifyAddedAllToCart(count);
+  };
+
+  const handleShareWishlist = () => {
+    addToast("Share wishlist coming soon!", "info");
   };
 
   if (items.length === 0) {
@@ -70,23 +117,56 @@ export default function WishlistPage() {
         />
 
         <header className="mt-4 border-b border-surface-200 pb-5">
-          <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
-            My Wishlist
-            <span className="ml-2 text-base font-normal text-surface-500">
-              ({count} item{count !== 1 ? "s" : ""})
-            </span>
-          </h1>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
+              My Wishlist
+              <span className="ml-2 text-base font-normal text-surface-500">
+                ({count} item{count !== 1 ? "s" : ""})
+              </span>
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <ArrowUpDown
+                  size={14}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-400"
+                  aria-hidden="true"
+                />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortKey)}
+                  className="appearance-none rounded-lg border border-surface-200 bg-surface-0 py-2 pl-8 pr-8 text-sm text-surface-700 transition-colors hover:border-surface-300 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  aria-label="Sort wishlist"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Button variant="secondary" size="sm" onClick={handleShareWishlist}>
+                <Share2 size={14} className="mr-1.5" aria-hidden="true" />
+                Share
+              </Button>
+
+              <Button size="sm" onClick={handleMoveAllToCart}>
+                <ShoppingCart size={14} className="mr-1.5" aria-hidden="true" />
+                Move All to Cart
+              </Button>
+            </div>
+          </div>
         </header>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((item) => {
+          {sortedItems.map((item) => {
             const p = item.product;
             return (
               <article
                 key={p.id}
-                className="group flex flex-col rounded-xl border border-surface-200 bg-surface-0 p-4 transition-all hover:border-brand-200 hover:shadow-md"
+                className="group flex flex-col rounded-xl border border-surface-200 bg-surface-0 p-4 hover:border-brand-200 hover:shadow-md transition-all"
               >
-                {/* Product image placeholder */}
                 <Link
                   to={`/product/${p.id}`}
                   className="mb-3 flex aspect-square items-center justify-center rounded-lg border border-surface-100 bg-surface-50"
@@ -94,7 +174,6 @@ export default function WishlistPage() {
                   <PillGlyph />
                 </Link>
 
-                {/* Details */}
                 <div className="flex flex-1 flex-col gap-1">
                   <p className="text-xs font-medium uppercase tracking-wide text-surface-400">
                     {p.brandName}
@@ -116,21 +195,27 @@ export default function WishlistPage() {
                       </span>
                       {p.mrp > p.price && (
                         <span className="text-xs text-surface-400">
-                          MRP <span className="line-through">{formatCurrency(p.mrp)}</span>
+                          MRP{" "}
+                          <span className="line-through">
+                            {formatCurrency(p.mrp)}
+                          </span>
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="mt-3 flex gap-2">
                   <Button
                     onClick={() => handleMoveToCart(p)}
                     fullWidth
                     size="sm"
                   >
-                    <ShoppingCart size={14} className="mr-1.5" aria-hidden="true" />
+                    <ShoppingCart
+                      size={14}
+                      className="mr-1.5"
+                      aria-hidden="true"
+                    />
                     Move to Cart
                   </Button>
                   <button
@@ -162,7 +247,14 @@ function PillGlyph() {
       strokeLinecap="round"
       aria-hidden="true"
     >
-      <rect x="6" y="16" width="36" height="16" rx="8" transform="rotate(-45 24 24)" />
+      <rect
+        x="6"
+        y="16"
+        width="36"
+        height="16"
+        rx="8"
+        transform="rotate(-45 24 24)"
+      />
       <line x1="17" y1="17" x2="31" y2="31" />
     </svg>
   );

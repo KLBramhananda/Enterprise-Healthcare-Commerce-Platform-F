@@ -8,7 +8,7 @@
  * catalog service abstraction.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   BadgePercent,
@@ -73,9 +73,11 @@ export default function ProductDetailsPage() {
   usePageTitle(details?.name ?? "Product", details?.brandName);
 
   // Track current product as recently viewed
-  if (id && detailsQuery.isSuccess) {
-    trackView(id);
-  }
+  useEffect(() => {
+    if (id && detailsQuery.isSuccess) {
+      trackView(id);
+    }
+  }, [id, detailsQuery.isSuccess, trackView]);
 
   if (detailsQuery.isLoading) {
     return <DetailsSkeleton />;

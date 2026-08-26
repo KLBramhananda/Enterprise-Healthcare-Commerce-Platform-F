@@ -2,14 +2,10 @@
  * useScrollLayout
  *
  * Measures header section heights and keeps CSS custom properties in sync.
- * Also manages the mobile menu open/closed state via a data attribute on
- * document.documentElement, which the base CSS layer reads to show/hide
- * the category nav and mobile menu.
  *
  * Architecture contract:
  *   - Sets --layout-header-main-h, --layout-header-cat-h, --layout-header-announce-h
  *   - Sets --layout-scroll-padding, --layout-sticky-offset
- *   - Toggles data-menu-open on <html> to control mobile menu visibility via CSS
  *   - Page offset is provided by <header>'s DOM flow position (no padding on <main>)
  *
  * All CSS custom property updates are batched via requestAnimationFrame to
@@ -17,7 +13,7 @@
  * resize — not on every scroll event.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { RefObject } from "react";
 
 interface LayoutRefs {
@@ -51,7 +47,6 @@ function measureLayout(refs: LayoutRefs) {
 }
 
 export function useScrollLayout(refs: LayoutRefs) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const refsRef = useRef<LayoutRefs>(refs);
 
   useEffect(() => {
@@ -84,30 +79,4 @@ export function useScrollLayout(refs: LayoutRefs) {
       cancelAnimationFrame(rafId.current);
     };
   }, []);
-
-  useEffect(() => {
-    const id = setTimeout(() => measureLayout(refsRef.current), 50);
-    return () => clearTimeout(id);
-  }, [mobileMenuOpen]);
-
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.documentElement.setAttribute("data-menu-open", "");
-    } else {
-      document.documentElement.removeAttribute("data-menu-open");
-    }
-    return () => {
-      document.documentElement.removeAttribute("data-menu-open");
-    };
-  }, [mobileMenuOpen]);
-
-  const toggleMobileMenu = useCallback(() => {
-    setMobileMenuOpen((prev) => !prev);
-  }, []);
-
-  const closeMobileMenu = useCallback(() => {
-    setMobileMenuOpen(false);
-  }, []);
-
-  return { mobileMenuOpen, toggleMobileMenu, closeMobileMenu };
 }

@@ -230,22 +230,5 @@
     outline-offset: 2px;
   }
 
-  /* Category nav hidden on mobile and when mobile menu is open */
-  [data-menu-open] > header > nav {
-    display: none !important;
-  }
 
-  /* Mobile menu: hidden by default, shown when menu is open */
-  header > nav[data-mobile-menu] {
-    display: none;
-  }
-
-  [data-menu-open] > header > nav[data-mobile-menu] {
-    display: block;
-  }
-
-  /* Lock body scroll when mobile menu is open */
-  [data-menu-open] {
-    overflow: hidden;
-  }
 }

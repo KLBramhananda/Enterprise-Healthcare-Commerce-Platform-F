@@ -46,3 +46,5 @@ export { HorizontalProductScroll } from "./HorizontalProductScroll";
 export { Drawer } from "./Drawer";
 export { default as Radio } from "./Radio";
 export { default as Textarea } from "./Textarea";
+export { default as Tabs } from "./Tabs";
+export { CircularProgress, LinearProgress } from "./Progress";
