@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BadgePercent,
   BadgeCheck,
@@ -59,6 +59,7 @@ import type { ProductDetails } from "@/types/catalog";
 
 export default function ProductDetailsPage() {
   const { addItem } = useCart();
+  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
   const { id } = useParams<{ id: string }>();
   const detailsQuery = useProductDetails(id);
   const relatedQuery = useRelatedProducts(id);
@@ -173,7 +174,7 @@ export default function ProductDetailsPage() {
           <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
             {relatedQuery.data.map((product) => (
               <div key={product.id} className="w-52 shrink-0">
-                <ProductCard {...product} originalPrice={product.mrp} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+                <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
               </div>
             ))}
           </div>
@@ -190,7 +191,7 @@ export default function ProductDetailsPage() {
           <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
             {similarQuery.data.map((product) => (
               <div key={product.id} className="w-52 shrink-0">
-                <ProductCard {...product} originalPrice={product.mrp} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+                <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
               </div>
             ))}
           </div>
@@ -207,7 +208,7 @@ export default function ProductDetailsPage() {
           <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
             {recentProductsQuery.data.map((product) => (
               <div key={product.id} className="w-52 shrink-0">
-                <ProductCard {...product} originalPrice={product.mrp} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+                <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
               </div>
             ))}
           </div>
@@ -222,6 +223,7 @@ export default function ProductDetailsPage() {
 function ProductInfoSection({ details }: { details: ProductDetails }) {
   const { addItem } = useCart();
   const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
 
   const isOutOfStock = details.stockStatus === "out_of_stock";
@@ -235,6 +237,7 @@ function ProductInfoSection({ details }: { details: ProductDetails }) {
   const handleBuyNow = () => {
     addItem(details, quantity);
     notifyAddedToCart(details, quantity);
+    navigate("/checkout");
   };
 
   const handleWishlist = () => {

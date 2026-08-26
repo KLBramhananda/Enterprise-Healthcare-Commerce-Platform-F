@@ -22,8 +22,8 @@ import { Breadcrumb } from "@/components/layout";
 import { useCollectionBySlug, useCollectionProducts } from "@/hooks/catalog";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { COLLECTION_META, CATALOG_SORT_OPTIONS, CATALOG_PAGE_SIZE } from "@/config/constants";
-import { useCart } from "@/hooks/shopping";
-import { notifyAddedToCart } from "@/utils/notifications";
+import { useCart, useWishlist } from "@/hooks/shopping";
+import { notifyAddedToCart, notifyAddedToWishlist, notifyRemovedFromWishlist } from "@/utils/notifications";
 import type { CollectionSlug, DiscoverySortOption } from "@/types/catalog";
 
 const ACCENT_BORDER: Record<string, string> = {
@@ -37,6 +37,7 @@ const ACCENT_BORDER: Record<string, string> = {
 
 export default function CollectionDetailPage() {
   const { addItem } = useCart();
+  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
   const { slug } = useParams<{ slug: string }>();
   const collectionQuery = useCollectionBySlug(slug);
   const collection = collectionQuery.data;
@@ -172,7 +173,7 @@ export default function CollectionDetailPage() {
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
               {products.items.map((product) => (
                 <li key={product.id}>
-                   <ProductCard {...product} originalPrice={product.mrp} onAddToCart={(id) => { const p = products.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+                    <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = products.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = products.items.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
                 </li>
               ))}
             </ul>

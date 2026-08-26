@@ -233,6 +233,7 @@ const products: Product[] = productSeeds.map((seed, index) => ({
   requiresPrescription: seed.requiresPrescription ?? false,
   stockStatus: seed.stockStatus ?? "in_stock",
   discountPercent: discountPercentOf(seed),
+  imageUrl: undefined,
   isNew: seed.isNew,
   isBestseller: seed.isBestseller,
   isTrending: seed.isTrending,
@@ -269,6 +270,11 @@ function generateImages(product: Product): ProductImage[] {
     { id: `${product.id}-img-1`, url: productImageUrl(product, 1), alt: `${product.brandName} packaging`, isPrimary: false },
     { id: `${product.id}-img-2`, url: productImageUrl(product, 2), alt: `${product.name} label details`, isPrimary: false },
   ];
+}
+
+/* Assign primary imageUrl to each product for card-level display */
+for (const product of products) {
+  product.imageUrl = productImageUrl(product, 0);
 }
 
 function generateReviewSummary(product: Product): ReviewSummary {

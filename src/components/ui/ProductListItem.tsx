@@ -7,11 +7,12 @@
  */
 
 import { Link } from "react-router-dom";
-import { BadgePercent, FileBadge, ShoppingCart } from "lucide-react";
+import { BadgePercent, FileBadge, Heart, ShoppingCart } from "lucide-react";
 import type { StockStatus } from "@/types/catalog";
 import { formatCurrency } from "@/utils/formatters";
 import { cn } from "@/utils/cn";
 import StarRating from "./StarRating";
+import ProductImage from "./ProductImage";
 
 interface ProductListItemProps {
   id?: string;
@@ -27,9 +28,12 @@ interface ProductListItemProps {
   reviewCount: number;
   requiresPrescription: boolean;
   stockStatus?: StockStatus;
+  imageUrl?: string;
   isNew?: boolean;
   isBestseller?: boolean;
+  isInWishlist?: boolean;
   onAddToCart?: (productId: string) => void;
+  onToggleWishlist?: (productId: string) => void;
 }
 
 export default function ProductListItem({
@@ -46,9 +50,12 @@ export default function ProductListItem({
   reviewCount,
   requiresPrescription,
   stockStatus = "in_stock",
+  imageUrl,
   isNew = false,
   isBestseller = false,
+  isInWishlist = false,
   onAddToCart,
+  onToggleWishlist,
 }: ProductListItemProps) {
   const isOutOfStock = stockStatus === "out_of_stock";
 
@@ -74,12 +81,17 @@ export default function ProductListItem({
       {/* Visual */}
       <div
         className={cn(
-          "relative flex h-28 w-full shrink-0 items-center justify-center self-start rounded-lg border border-surface-100 bg-surface-50 sm:h-32 sm:w-32",
+          "relative w-full shrink-0 self-start sm:h-32 sm:w-32",
           isOutOfStock && "opacity-60",
         )}
-        aria-hidden="true"
       >
-        <PillGlyph />
+        <ProductImage
+          src={imageUrl}
+          alt={`${name} product image`}
+          aspect="square"
+          size="sm"
+          className="h-28 w-full sm:h-32 sm:w-32"
+        />
         <div className="absolute left-1.5 top-1.5 flex flex-col items-start gap-1">
           {discountPercent != null && discountPercent > 0 && (
             <span className="inline-flex items-center gap-0.5 rounded-md bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -102,6 +114,24 @@ export default function ProductListItem({
           <span className="absolute inset-x-1.5 bottom-1.5 rounded-md bg-surface-900/85 py-0.5 text-center text-[10px] font-bold uppercase tracking-wider text-white">
             Out of Stock
           </span>
+        )}
+        {id && onToggleWishlist && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleWishlist(id);
+            }}
+            className={cn(
+              "absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-lg opacity-0 shadow-sm transition-opacity duration-fast focus:opacity-100 group-hover:opacity-100 focus-visible:opacity-100",
+              isInWishlist
+                ? "bg-danger-50 text-danger-500 hover:bg-danger-100"
+                : "bg-surface-0 text-surface-400 hover:bg-surface-50 hover:text-danger-500",
+            )}
+            aria-label={isInWishlist ? `Remove ${name} from wishlist` : `Add ${name} to wishlist`}
+          >
+            <Heart size={12} className={isInWishlist ? "fill-current" : ""} />
+          </button>
         )}
       </div>
 
@@ -164,23 +194,6 @@ export default function ProductListItem({
 }
 
 /* ── Internal helpers ── */
-
-function PillGlyph() {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      className="h-10 w-10 text-surface-300 transition-colors duration-normal hover:text-brand-300"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <rect x="6" y="16" width="36" height="16" rx="8" transform="rotate(-45 24 24)" />
-      <line x1="17" y1="17" x2="31" y2="31" />
-    </svg>
-  );
-}
 
 function formatNumberCompact(value: number): string {
   return new Intl.NumberFormat(undefined, { notation: "compact" }).format(value);

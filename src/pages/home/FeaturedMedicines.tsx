@@ -10,13 +10,14 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Container, SectionHeader, ProductCard, Grid, SkeletonCard } from "@/components/ui";
 import { useHomepageContent } from "@/hooks/homepage";
-import { useCart } from "@/hooks/shopping";
-import { notifyAddedToCart } from "@/utils/notifications";
+import { useCart, useWishlist } from "@/hooks/shopping";
+import { notifyAddedToCart, notifyAddedToWishlist, notifyRemovedFromWishlist } from "@/utils/notifications";
 import type { Product } from "@/types/catalog";
 
 export default function FeaturedMedicines() {
   const { data, isLoading } = useHomepageContent();
   const { addItem } = useCart();
+  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
 
   return (
     <section className="bg-surface-50 py-10 sm:py-12">
@@ -44,7 +45,7 @@ export default function FeaturedMedicines() {
           {isLoading
             ? Array.from({ length: 8 }, (_, i) => <SkeletonCard key={`skel-${i}`} />)
             : data?.featuredMedicines.map((medicine) => (
-                <ProductCard key={medicine.id} {...medicine} onAddToCart={(id) => { const m = data?.featuredMedicines.find((x) => x.id === id); if (m) { addItem(m as Product); notifyAddedToCart(m as Product); } }} />
+                <ProductCard key={medicine.id} {...medicine} isInWishlist={isInWishlist(medicine.id)} onAddToCart={(id) => { const m = data?.featuredMedicines.find((x) => x.id === id); if (m) { addItem(m as Product); notifyAddedToCart(m as Product); } }} onToggleWishlist={(id) => { const m = data?.featuredMedicines.find((x) => x.id === id); if (m) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(m as Product); } else { addWishlist(m as Product); notifyAddedToWishlist(m as Product); } } }} />
               ))}
         </Grid>
       </Container>

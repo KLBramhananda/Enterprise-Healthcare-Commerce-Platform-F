@@ -43,6 +43,7 @@ export interface Product {
   reviewCount: number;
   requiresPrescription: boolean;
   stockStatus: StockStatus;
+  imageUrl?: string;
   isNew?: boolean;
   isBestseller?: boolean;
   isTrending?: boolean;

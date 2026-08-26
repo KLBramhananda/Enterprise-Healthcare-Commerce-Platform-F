@@ -7,8 +7,8 @@
 
 import { useBestSellers, useTrending, useNewArrivals } from "@/hooks/catalog";
 import { HorizontalProductScroll, DiscoverySection } from "@/components/ui";
-import { useCart } from "@/hooks/shopping";
-import { notifyAddedToCart } from "@/utils/notifications";
+import { useCart, useWishlist } from "@/hooks/shopping";
+import { notifyAddedToCart, notifyAddedToWishlist, notifyRemovedFromWishlist } from "@/utils/notifications";
 
 export function DiscoveryRecommendations() {
   return (
@@ -23,6 +23,14 @@ export function DiscoveryRecommendations() {
 function BestSellersSection() {
   const query = useBestSellers(12);
   const { addItem } = useCart();
+  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
+
+  const handleToggleWishlist = (id: string) => {
+    const p = query.data?.find((x) => x.id === id);
+    if (!p) return;
+    if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); }
+    else { addWishlist(p); notifyAddedToWishlist(p); }
+  };
 
   return (
     <DiscoverySection
@@ -33,7 +41,7 @@ function BestSellersSection() {
       isEmpty={!query.isLoading && (query.data?.length ?? 0) === 0}
       skeletonCount={4}
     >
-      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
   );
 }
@@ -41,6 +49,14 @@ function BestSellersSection() {
 function TrendingSection() {
   const query = useTrending(12);
   const { addItem } = useCart();
+  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
+
+  const handleToggleWishlist = (id: string) => {
+    const p = query.data?.find((x) => x.id === id);
+    if (!p) return;
+    if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); }
+    else { addWishlist(p); notifyAddedToWishlist(p); }
+  };
 
   return (
     <DiscoverySection
@@ -51,7 +67,7 @@ function TrendingSection() {
       isEmpty={!query.isLoading && (query.data?.length ?? 0) === 0}
       skeletonCount={4}
     >
-      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
   );
 }
@@ -59,6 +75,14 @@ function TrendingSection() {
 function NewArrivalsSection() {
   const query = useNewArrivals(12);
   const { addItem } = useCart();
+  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
+
+  const handleToggleWishlist = (id: string) => {
+    const p = query.data?.find((x) => x.id === id);
+    if (!p) return;
+    if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); }
+    else { addWishlist(p); notifyAddedToWishlist(p); }
+  };
 
   return (
     <DiscoverySection
@@ -69,7 +93,7 @@ function NewArrivalsSection() {
       isEmpty={!query.isLoading && (query.data?.length ?? 0) === 0}
       skeletonCount={4}
     >
-      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
   );
 }

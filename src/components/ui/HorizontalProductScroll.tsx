@@ -12,10 +12,12 @@ import ProductCard from "./ProductCard";
 interface HorizontalProductScrollProps {
   products: Product[];
   onAddToCart?: (productId: string) => void;
+  isInWishlist?: (productId: string) => boolean;
+  onToggleWishlist?: (productId: string) => void;
   className?: string;
 }
 
-export function HorizontalProductScroll({ products, onAddToCart, className = "" }: HorizontalProductScrollProps) {
+export function HorizontalProductScroll({ products, onAddToCart, isInWishlist, onToggleWishlist, className = "" }: HorizontalProductScrollProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -42,9 +44,12 @@ export function HorizontalProductScroll({ products, onAddToCart, className = "" 
               reviewCount={product.reviewCount}
               requiresPrescription={product.requiresPrescription}
               stockStatus={product.stockStatus}
+              imageUrl={product.imageUrl}
               isNew={product.isNew}
               isBestseller={product.isBestseller}
+              isInWishlist={isInWishlist?.(product.id)}
               onAddToCart={onAddToCart}
+              onToggleWishlist={onToggleWishlist}
             />
           </div>
         ))}

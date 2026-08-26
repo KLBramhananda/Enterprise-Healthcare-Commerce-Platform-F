@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingCart, Trash2, ArrowUpDown, Share2 } from "lucide-react";
-import { Button, Container, EmptyState } from "@/components/ui";
+import { Button, Container, EmptyState, ProductImage } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { useWishlist, useCart } from "@/hooks/shopping";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
@@ -171,7 +171,7 @@ export default function WishlistPage() {
                   to={`/product/${p.id}`}
                   className="mb-3 flex aspect-square items-center justify-center rounded-lg border border-surface-100 bg-surface-50"
                 >
-                  <PillGlyph />
+                  <ProductImage src={p.imageUrl} alt={`${p.name} product image`} aspect="square" size="sm" className="h-full w-full border-0" />
                 </Link>
 
                 <div className="flex flex-1 flex-col gap-1">
@@ -236,26 +236,3 @@ export default function WishlistPage() {
   );
 }
 
-function PillGlyph() {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      className="h-10 w-10 text-surface-300"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <rect
-        x="6"
-        y="16"
-        width="36"
-        height="16"
-        rx="8"
-        transform="rotate(-45 24 24)"
-      />
-      <line x1="17" y1="17" x2="31" y2="31" />
-    </svg>
-  );
-}

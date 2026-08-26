@@ -31,12 +31,13 @@ import {
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { emptyCatalogFilters, hasActiveFilters } from "@/types/catalog";
 import { CATALOG_PAGE_SIZE, CATALOG_SORT_OPTIONS } from "@/config/constants";
-import { useCart } from "@/hooks/shopping";
-import { notifyAddedToCart } from "@/utils/notifications";
+import { useCart, useWishlist } from "@/hooks/shopping";
+import { notifyAddedToCart, notifyAddedToWishlist, notifyRemovedFromWishlist } from "@/utils/notifications";
 import { cn } from "@/utils/cn";
 
 export default function SearchResultsPage() {
   const { addItem } = useCart();
+  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
   const {
     q,
     sortBy,
@@ -251,7 +252,7 @@ export default function SearchResultsPage() {
                     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
                       {results.items.map((product) => (
                         <li key={product.id}>
-                           <ProductCard {...product} originalPrice={product.mrp} onAddToCart={(id) => { const p = results.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+                           <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = results.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = results.items.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
                         </li>
                       ))}
                     </ul>
@@ -259,7 +260,7 @@ export default function SearchResultsPage() {
                     <ul className="flex flex-col gap-3">
                       {results.items.map((product) => (
                         <li key={product.id}>
-                           <ProductListItem {...product} originalPrice={product.mrp} onAddToCart={(id) => { const p = results.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} />
+                           <ProductListItem {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = results.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = results.items.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
                         </li>
                       ))}
                     </ul>

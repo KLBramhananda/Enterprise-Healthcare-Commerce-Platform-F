@@ -8,7 +8,7 @@
 import { Link } from "react-router-dom";
 import { ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
-import { Button, EmptyState, QuantitySelector } from "@/components/ui";
+import { Button, EmptyState, QuantitySelector, ProductImage } from "@/components/ui";
 import { useCart } from "@/hooks/shopping";
 import { formatCurrency } from "@/utils/formatters";
 
@@ -46,8 +46,8 @@ export default function MiniCartDrawer({ isOpen, onClose }: MiniCartDrawerProps)
             {items.map((item) => (
               <li key={item.product.id} className="flex gap-3 px-5 py-4">
                 {/* Product placeholder */}
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-surface-100 bg-surface-50">
-                  <PillGlyph />
+                <div className="h-16 w-16 shrink-0">
+                  <ProductImage src={item.product.imageUrl} alt={`${item.product.name} product image`} aspect="square" size="sm" className="h-16 w-16 border-0" />
                 </div>
 
                 {/* Details */}
@@ -141,19 +141,3 @@ export default function MiniCartDrawer({ isOpen, onClose }: MiniCartDrawerProps)
   );
 }
 
-function PillGlyph() {
-  return (
-    <svg
-      viewBox="0 0 48 48"
-      className="h-8 w-8 text-surface-300"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <rect x="6" y="16" width="36" height="16" rx="8" transform="rotate(-45 24 24)" />
-      <line x1="17" y1="17" x2="31" y2="31" />
-    </svg>
-  );
-}

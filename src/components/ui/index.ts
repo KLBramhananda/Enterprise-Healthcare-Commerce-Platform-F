@@ -43,6 +43,7 @@ export { BrandCard } from "./BrandCard";
 export { CollectionCard } from "./CollectionCard";
 export { DiscoverySection } from "./DiscoverySection";
 export { HorizontalProductScroll } from "./HorizontalProductScroll";
+export { default as ProductImage } from "./ProductImage";
 export { Drawer } from "./Drawer";
 export { default as Radio } from "./Radio";
 export { default as Textarea } from "./Textarea";
