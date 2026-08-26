@@ -38,6 +38,13 @@ const footerLinks = {
     { label: "Addresses", path: "/addresses" },
     { label: "Wishlist", path: "/wishlist" },
   ],
+  support: [
+    { label: "Help Center", path: "/help" },
+    { label: "FAQ", path: "/help/faq" },
+    { label: "Contact Us", path: "/help/contact" },
+    { label: "Returns & Refunds", path: "/help/returns" },
+    { label: "My Tickets", path: "/help/tickets" },
+  ],
 };
 
 const socialLinks = [
@@ -196,6 +203,7 @@ export default function CommerceFooter() {
           <FooterLinkColumn title="Categories" links={footerLinks.categories} />
           <FooterLinkColumn title="Services" links={footerLinks.services} />
           <FooterLinkColumn title="Account" links={footerLinks.account} />
+          <FooterLinkColumn title="Support" links={footerLinks.support} />
         </div>
       </Container>
 

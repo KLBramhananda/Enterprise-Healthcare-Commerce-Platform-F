@@ -21,3 +21,5 @@ export type { IAccountService } from "./accountService";
 export { MockAccountService } from "./accountMock";
 export type { IEngagementService } from "./engagementService";
 export { MockEngagementService } from "./engagementMock";
+export type { ISupportService } from "./supportService";
+export { MockSupportService } from "./supportMock";

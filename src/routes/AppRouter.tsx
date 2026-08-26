@@ -55,6 +55,17 @@ import {
   OrderDetailPage,
   AccountSettingsPage,
 } from "@/pages/account";
+import {
+  HelpCenterPage,
+  FAQPage,
+  ContactPage,
+  ReturnsRefundsPage,
+  LiveChatPage,
+  TicketListPage,
+  TicketDetailPage,
+  CreateTicketPage,
+  SupportDashboardPage,
+} from "@/pages/support";
 
 export default function AppRouter() {
   return (
@@ -89,6 +100,10 @@ export default function AppRouter() {
           <Route path="/rewards" element={<LoyaltyPage />} />
           <Route path="/referral" element={<ReferralPage />} />
           <Route path="/membership" element={<MembershipPage />} />
+          <Route path="/help/tickets" element={<TicketListPage />} />
+          <Route path="/help/tickets/new" element={<CreateTicketPage />} />
+          <Route path="/help/tickets/:ticketId" element={<TicketDetailPage />} />
+          <Route path="/support" element={<SupportDashboardPage />} />
         </Route>
       </Route>
 
@@ -105,6 +120,11 @@ export default function AppRouter() {
         <Route path="/collections/:slug" element={<CollectionDetailPage />} />
         <Route path="/health-concerns" element={<HealthConcernsPage />} />
         <Route path="/health-concerns/:slug" element={<HealthConcernPage />} />
+        <Route path="/help" element={<HelpCenterPage />} />
+        <Route path="/help/faq" element={<FAQPage />} />
+        <Route path="/help/contact" element={<ContactPage />} />
+        <Route path="/help/returns" element={<ReturnsRefundsPage />} />
+        <Route path="/help/chat" element={<LiveChatPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
       </Routes>

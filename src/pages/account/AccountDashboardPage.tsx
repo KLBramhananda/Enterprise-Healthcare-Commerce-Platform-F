@@ -14,6 +14,7 @@ import {
   Gift,
   Tag,
   Sparkles,
+  HelpCircle,
 } from "lucide-react";
 import { Container, Badge, Card, CardBody, CircularProgress, LinearProgress } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
@@ -156,6 +157,12 @@ export default function AccountDashboardPage() {
               icon={<Heart size={20} />}
               title="Wishlist"
               description={`${wishlistCount} item${wishlistCount !== 1 ? "s" : ""}`}
+            />
+            <QuickActionCard
+              to="/help"
+              icon={<HelpCircle size={20} />}
+              title="Help & Support"
+              description="Get help with orders"
             />
           </div>
         </div>

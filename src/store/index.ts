@@ -5,3 +5,4 @@ export type { WishlistItem } from "./wishlistStore";
 export { useCheckoutStore } from "./checkoutStore";
 export { useAccountStore } from "./accountStore";
 export { useNotificationStore } from "./notificationStore";
+export { useSupportStore } from "./supportStore";

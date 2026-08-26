@@ -18,6 +18,7 @@ import {
   FileBadge,
   Heart,
   Info,
+  MessageCircle,
   RotateCcw,
   ShieldCheck,
   ShoppingCart,
@@ -380,6 +381,13 @@ function ProductInfoSection({ details }: { details: ProductDetails }) {
             <span>Returnable within 7 days of delivery</span>
           </div>
         )}
+      </div>
+
+      {/* Have a question? */}
+      <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 text-center">
+        <Link to="/help/faq" className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline">
+          <MessageCircle size={14} /> Have a question? Check our FAQ
+        </Link>
       </div>
     </div>
   );

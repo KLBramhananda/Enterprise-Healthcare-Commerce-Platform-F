@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Gift,
   Heart,
+  HelpCircle,
   LogOut,
   MapPin,
   Package,
@@ -111,6 +112,11 @@ export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
               <MenuItem icon={<Bell size={15} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
               <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => navigateAndClose("/profile")} />
               <div className="my-1 border-t border-surface-100" />
+              <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
+                Support
+              </p>
+              <MenuItem icon={<HelpCircle size={15} />} label="Help Center" onClick={() => navigateAndClose("/help")} />
+              <div className="my-1 border-t border-surface-100" />
               <button
                 type="button"
                 onClick={handleLogout}
@@ -198,6 +204,14 @@ export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
               <div className="mt-4 space-y-1 border-t border-surface-100 pt-4">
                 <DrawerItem icon={<Bell size={16} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
                 <DrawerItem icon={<Settings size={16} />} label="Settings" onClick={() => navigateAndClose("/profile")} />
+              </div>
+
+              <div className="mt-4 space-y-1 border-t border-surface-100 pt-4">
+                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
+                  Support
+                </p>
+                <DrawerItem icon={<HelpCircle size={16} />} label="Help Center" onClick={() => navigateAndClose("/help")} />
+                <DrawerItem icon={<Package size={16} />} label="My Tickets" onClick={() => navigateAndClose("/help/tickets")} />
               </div>
 
               <div className="mt-4 border-t border-surface-100 pt-4">
