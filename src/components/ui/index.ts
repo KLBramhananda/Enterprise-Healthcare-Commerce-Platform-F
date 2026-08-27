@@ -28,6 +28,7 @@ export { default as CheckboxOption } from "./CheckboxOption";
 export { default as FilterPanel } from "./FilterPanel";
 export { default as PasswordInput } from "./PasswordInput";
 export { default as ImageGallery } from "./ImageGallery";
+export { default as ProductGallery } from "./ProductGallery";
 export { default as QuantitySelector } from "./QuantitySelector";
 export { default as RatingBreakdown } from "./RatingBreakdown";
 export { default as HighlightText } from "./HighlightText";

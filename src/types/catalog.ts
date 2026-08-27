@@ -70,10 +70,40 @@ export interface ReviewSummary {
   distribution: Record<1 | 2 | 3 | 4 | 5, number>;
 }
 
+/** A single customer review for the product detail page. */
+export interface ProductReview {
+  id: string;
+  author: string;
+  rating: number;
+  /** ISO date string of when the review was submitted. */
+  date: string;
+  title: string;
+  content: string;
+  verifiedPurchase: boolean;
+  /** Review image URLs (mock placeholders — ERPNext will supply real ones). */
+  images: string[];
+  helpfulCount: number;
+}
+
+/** A customer question with an answer for the product FAQ/Q&A section. */
+export interface ProductQuestion {
+  id: string;
+  question: string;
+  answer: string;
+  askedBy: string;
+  answeredBy: string;
+  /** ISO date string of when the question was answered. */
+  date: string;
+}
+
 export interface ProductDetails extends Product {
   description: string;
   keyBenefits: string[];
+  uses: string[];
   dosage: string;
+  sideEffects: string[];
+  warnings: string[];
+  safetyInformation: string;
   precautions: string[];
   storage: string;
   ingredients: string;
@@ -84,6 +114,18 @@ export interface ProductDetails extends Product {
   estimatedDeliveryDays: number;
   returnable: boolean;
   expiryDate?: string;
+  /** Stock-keeping unit identifier. */
+  sku: string;
+  /** Product strength (e.g. "500mg") parsed for display. */
+  strength: string;
+  /** Human-readable availability label derived from stock status. */
+  availability: string;
+  /** Free delivery eligibility indicator. */
+  freeDelivery: boolean;
+  /** Customer reviews for this product. */
+  reviews: ProductReview[];
+  /** Customer questions and answers for this product. */
+  questions: ProductQuestion[];
 }
 
 /* ── Sorting ── */

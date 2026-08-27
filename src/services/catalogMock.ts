@@ -41,6 +41,8 @@ import type {
   ProductDetails,
   ProductFaq,
   ProductImage,
+  ProductQuestion,
+  ProductReview,
   ReviewSummary,
   SearchQuery,
   SearchResult,
@@ -400,17 +402,207 @@ function getPrecautions(product: Product): string[] {
   return p;
 }
 
+function getUses(product: Product): string[] {
+  const name = product.name.toLowerCase();
+  const map: Record<string, string[]> = {
+    paracetamol: ["Relief from headache and body ache", "Reduction of fever"],
+    amoxicillin: ["Treatment of bacterial respiratory and skin infections", "Management of certain dental infections"],
+    metformin: ["Control of blood sugar in type 2 diabetes", "Improved insulin sensitivity"],
+    pantoprazole: ["Relief from acidity and heartburn", "Treatment of gastroesophageal reflux (GERD)"],
+    cetirizine: ["Relief from allergic rhinitis", "Reduction of hives and itching"],
+    azithromycin: ["Treatment of respiratory tract infections", "Management of skin and soft-tissue infections"],
+    ibuprofen: ["Relief of mild to moderate pain", "Reduction of inflammation and fever"],
+    montelukast: ["Control of asthma symptoms", "Prevention of exercise-induced bronchospasm"],
+    amlodipine: ["Management of high blood pressure", "Relief of chronic stable angina"],
+    atorvastatin: ["Lowering of LDL cholesterol", "Reduction of cardiovascular risk"],
+    losartan: ["Management of hypertension", "Protection of kidney function in diabetes"],
+    ondansetron: ["Prevention of nausea and vomiting", "Symptom control during chemotherapy and post-surgery"],
+    salbutamol: ["Rapid relief from bronchospasm", "Management of acute asthma symptoms"],
+    "cough syrup": ["Relief from productive cough", "Loosening of thick mucus and phlegm"],
+  };
+  const key = Object.keys(map).find((k) => name.includes(k));
+  if (key) return map[key];
+  if (product.categorySlug === "lab-tests") return ["Assessment of overall health", "Screening and monitoring of specific biomarkers"];
+  if (product.categorySlug === "health-devices") return ["At-home health monitoring", "Supporting ongoing care management"];
+  if (product.categorySlug === "wellness") return ["Daily nutritional support", "Supporting overall health and wellbeing"];
+  return ["General wellness support as directed"];
+}
+
+function getSideEffects(product: Product): string[] {
+  const name = product.name.toLowerCase();
+  const nameKey = Object.keys({
+    paracetamol: true,
+    amoxicillin: true,
+    metformin: true,
+    pantoprazole: true,
+    cetirizine: true,
+    azithromycin: true,
+    ibuprofen: true,
+    montelukast: true,
+    amlodipine: true,
+    atorvastatin: true,
+    losartan: true,
+    ondansetron: true,
+    salbutamol: true,
+  }).find((k) => name.includes(k));
+  if (nameKey === "paracetamol") return ["Rarely causes side effects when taken as directed", "Rare allergic skin reactions"];
+  if (nameKey === "amoxicillin" || nameKey === "azithromycin") return ["Nausea or mild diarrhoea", "Rash or allergic reaction in some individuals"];
+  if (nameKey === "metformin") return ["Mild gastrointestinal discomfort", "Metallic taste"];
+  if (nameKey === "pantoprazole") return ["Headache or dizziness", "Abdominal discomfort"];
+  if (nameKey === "cetirizine") return ["Mild drowsiness in some users", "Dry mouth"];
+  if (nameKey === "ibuprofen") return ["Heartburn or stomach upset", "Dizziness in rare cases"];
+  if (nameKey === "montelukast") return ["Headache", "Mild stomach upset"];
+  if (nameKey === "amlodipine" || nameKey === "losartan") return ["Mild ankle swelling", "Light-headedness at the start of treatment"];
+  if (nameKey === "atorvastatin") return ["Mild muscle pain", "Digestive disturbance"];
+  if (nameKey === "ondansetron") return ["Headache", "Constipation"];
+  if (nameKey === "salbutamol") return ["Palpitations or tremor in some patients", "Mild throat irritation"];
+  if (product.categorySlug === "medicines") return ["Side effects are uncommon when used as directed", "Consult a doctor if any reaction persists"];
+  if (product.categorySlug === "wellness" || product.categorySlug === "ayurveda" || product.categorySlug === "homeopathy")
+    return ["Generally well tolerated", "Rare mild digestive upset in sensitive individuals"];
+  return [];
+}
+
+function getWarnings(product: Product): string[] {
+  const w = [product.requiresPrescription
+    ? "Do not use without a valid doctor's prescription."
+    : "Do not exceed the recommended dose.", "Keep out of reach of children."];
+  if (product.categorySlug === "medicines") {
+    w.push("Consult a doctor if symptoms persist or worsen.");
+    w.push("Not recommended during pregnancy or breastfeeding unless advised by a physician.");
+  }
+  w.push("Do not use if allergic to any of the listed ingredients.");
+  return w;
+}
+
+function getSafetyInformation(product: Product): string {
+  if (product.categorySlug === "lab-tests") {
+    return "This is a diagnostic service. Results should be interpreted by a qualified healthcare professional.";
+  }
+  return `Store below 30°C in a dry place, away from direct sunlight and moisture. ${product.requiresPrescription ? "Use strictly under medical supervision. " : ""}If you have an existing medical condition, are pregnant, or are taking other medicines, consult your healthcare provider before use.`;
+}
+
 function getStorage(product: Product): string {
   if (product.categorySlug === "lab-tests") return "N/A — sample is processed at the laboratory.";
   return "Store below 30°C in a dry place, protected from light and moisture.";
 }
 
+function getSku(product: Product): string {
+  const cat = product.categorySlug.replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase();
+  const brand = product.brandName.replace(/[^a-z0-9]/gi, "").slice(0, 4).toUpperCase();
+  const idx = product.id.replace(/\D/g, "");
+  return `KM-${cat}-${brand}${idx}`;
+}
+
+function getStrength(product: Product): string {
+  const match = product.name.match(/(\d+(?:\.\d+)?\s*(?:mg|mcg|g|iu|ml|%))/i);
+  if (match) return match[0].trim();
+  if (product.form.toLowerCase().includes("inhaler")) return "100 mcg";
+  if (product.categorySlug === "lab-tests") return "N/A";
+  return "—";
+}
+
+function getAvailability(product: Product): string {
+  switch (product.stockStatus) {
+    case "out_of_stock":
+      return "Currently unavailable";
+    case "low_stock":
+      return "Only a few left — order soon";
+    default:
+      return "In stock and ready to ship";
+  }
+}
+
+const REVIEWER_NAMES = [
+  "Aarav Mehta",
+  "Priya Sharma",
+  "Rahul Nair",
+  "Sneha Iyer",
+  "Vikram Singh",
+  "Fatima Khan",
+  "Deepak Verma",
+  "Ananya Gupta",
+];
+
+const REVIEW_TITLES = [
+  "Effective and fast",
+  "Great value for money",
+  "Works as expected",
+  "Genuine product",
+  "Highly recommended",
+];
+
+const REVIEW_BODIES = [
+  "This product worked well for me. Genuine item delivered quickly and carefully packaged.",
+  "Good quality at a fair price. Delivery was fast and the packaging was intact.",
+  "Works as described. I have been using this for a while now and I am satisfied with the results.",
+  "A trusted brand and a genuine product. Would definitely recommend to others.",
+  "Exactly what I needed. Easy to order and delivered on time.",
+];
+
+function generateReviews(product: Product, images: ProductImage[]): ProductReview[] {
+  const count = 3 + ((Math.round(Math.sin(product.reviewCount) * 10000) % 3) + 3) % 3;
+  const imageUrls = images.slice(0, 2).map((img) => img.url);
+  const base = new Date();
+  const reviews: ProductReview[] = [];
+  for (let i = 0; i < count; i++) {
+    const r = Math.min(5, Math.max(3, Math.round(product.rating + ((i % 3) - 1) * 0.5)));
+    reviews.push({
+      id: `${product.id}-rev-${i}`,
+      author: REVIEWER_NAMES[i % REVIEWER_NAMES.length],
+      rating: r,
+      date: new Date(base.getTime() - i * 1000 * 60 * 60 * 24 * (4 + i * 3)).toISOString(),
+      title: REVIEW_TITLES[i % REVIEW_TITLES.length],
+      content: REVIEW_BODIES[i % REVIEW_BODIES.length],
+      verifiedPurchase: i % 3 !== 0,
+      images: i % 2 === 0 ? imageUrls : [],
+      helpfulCount: (i * 7 + 3) % 40,
+    });
+  }
+  return reviews;
+}
+
+function generateQuestions(
+  product: Product,
+  deliveryDays: number,
+  freeDelivery: boolean,
+): ProductQuestion[] {
+  const date = new Date();
+  const qas: { question: string; answer: string }[] = [
+    {
+      question: `Is ${product.name} safe to use daily?`,
+      answer: `Yes, when used as directed on the label${product.requiresPrescription ? " and under medical supervision" : ""}. For any concerns, please consult your healthcare provider.`,
+    },
+    {
+      question: "How long does delivery usually take?",
+      answer: `Standard delivery takes about ${deliveryDays} business day${deliveryDays > 1 ? "s" : ""}${freeDelivery ? " and is free for qualifying orders" : ""}. You can track your order anytime from your account.`,
+    },
+    {
+      question: "Is this a genuine product?",
+      answer: "Yes. All products are sourced directly from authorized distributors and manufacturers to ensure authenticity.",
+    },
+  ];
+  return qas.map((qa, i) => ({
+    id: `${product.id}-q-${i}`,
+    question: qa.question,
+    answer: qa.answer,
+    askedBy: "Verified Customer",
+    answeredBy: "KeeMeds Pharmacist",
+    date: new Date(date.getTime() - i * 1000 * 60 * 60 * 24 * 2).toISOString(),
+  }));
+}
+
 function generateProductDetails(product: Product): ProductDetails {
+  const estimatedDeliveryDays = product.categorySlug === "lab-tests" ? 1 : 2;
+  const freeDelivery = !product.requiresPrescription && product.price >= 25;
   return {
     ...product,
     description: `${product.brandName} (${product.name}) is a ${product.form.toLowerCase()} manufactured by ${product.manufacturer}. Supplied as ${product.packSize}, it is ${product.requiresPrescription ? "a prescription medication" : "an over-the-counter product"} ${product.categorySlug === "lab-tests" ? "diagnostic panel" : "suitable for use as directed"}.`,
     keyBenefits: getBenefits(product),
+    uses: getUses(product),
     dosage: getDosage(product),
+    sideEffects: getSideEffects(product),
+    warnings: getWarnings(product),
+    safetyInformation: getSafetyInformation(product),
     precautions: getPrecautions(product),
     storage: getStorage(product),
     ingredients: getIngredients(product),
@@ -418,8 +610,14 @@ function generateProductDetails(product: Product): ProductDetails {
     faqs: getFaqs(product),
     images: generateImages(product),
     reviewSummary: generateReviewSummary(product),
-    estimatedDeliveryDays: product.categorySlug === "lab-tests" ? 1 : 2,
+    estimatedDeliveryDays,
     returnable: !product.requiresPrescription && product.categorySlug !== "lab-tests",
+    sku: getSku(product),
+    strength: getStrength(product),
+    availability: getAvailability(product),
+    freeDelivery,
+    reviews: generateReviews(product, generateImages(product)),
+    questions: generateQuestions(product, estimatedDeliveryDays, freeDelivery),
   };
 }
 
