@@ -20,6 +20,8 @@ export function DiscoveryRecommendations() {
   );
 }
 
+const sectionBackground = "bg-transparent";
+
 function BestSellersSection() {
   const query = useBestSellers(12);
   const { addItem } = useCart();
@@ -40,6 +42,7 @@ function BestSellersSection() {
       isLoading={query.isLoading}
       isEmpty={!query.isLoading && (query.data?.length ?? 0) === 0}
       skeletonCount={4}
+      background={sectionBackground}
     >
       <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
@@ -66,6 +69,7 @@ function TrendingSection() {
       isLoading={query.isLoading}
       isEmpty={!query.isLoading && (query.data?.length ?? 0) === 0}
       skeletonCount={4}
+      background={sectionBackground}
     >
       <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
@@ -92,6 +96,7 @@ function NewArrivalsSection() {
       isLoading={query.isLoading}
       isEmpty={!query.isLoading && (query.data?.length ?? 0) === 0}
       skeletonCount={4}
+      background={sectionBackground}
     >
       <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>

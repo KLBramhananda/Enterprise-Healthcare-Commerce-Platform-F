@@ -28,8 +28,8 @@ import {
   Button,
   Container,
   EmptyState,
+  HorizontalProductScroll,
   ImageGallery,
-  ProductCard,
   QuantitySelector,
   RatingBreakdown,
   SectionHeader,
@@ -80,6 +80,32 @@ export default function ProductDetailsPage() {
       trackView(id);
     }
   }, [id, detailsQuery.isSuccess, trackView]);
+
+  const handleProductAddToCart = (productId: string) => {
+    const p =
+      relatedQuery.data?.find((x) => x.id === productId) ??
+      similarQuery.data?.find((x) => x.id === productId) ??
+      recentProductsQuery.data?.find((x) => x.id === productId);
+    if (p) {
+      addItem(p);
+      notifyAddedToCart(p);
+    }
+  };
+
+  const handleProductWishlistToggle = (productId: string) => {
+    const p =
+      relatedQuery.data?.find((x) => x.id === productId) ??
+      similarQuery.data?.find((x) => x.id === productId) ??
+      recentProductsQuery.data?.find((x) => x.id === productId);
+    if (!p) return;
+    if (isInWishlist(productId)) {
+      removeWishlist(productId);
+      notifyRemovedFromWishlist(p);
+    } else {
+      addWishlist(p);
+      notifyAddedToWishlist(p);
+    }
+  };
 
   if (detailsQuery.isLoading) {
     return <DetailsSkeleton />;
@@ -171,13 +197,13 @@ export default function ProductDetailsPage() {
             title="Related Products"
             subtitle={`More from ${details.brandName}`}
           />
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
-            {relatedQuery.data.map((product) => (
-              <div key={product.id} className="w-52 shrink-0">
-                <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
-              </div>
-            ))}
-          </div>
+          <HorizontalProductScroll
+            products={relatedQuery.data ?? []}
+            isInWishlist={isInWishlist}
+            onToggleWishlist={handleProductWishlistToggle}
+            onAddToCart={handleProductAddToCart}
+            className="mt-6"
+          />
         </Container>
       )}
 
@@ -188,13 +214,13 @@ export default function ProductDetailsPage() {
             title="Similar Products"
             subtitle="You might also like these"
           />
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
-            {similarQuery.data.map((product) => (
-              <div key={product.id} className="w-52 shrink-0">
-                <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
-              </div>
-            ))}
-          </div>
+          <HorizontalProductScroll
+            products={similarQuery.data ?? []}
+            isInWishlist={isInWishlist}
+            onToggleWishlist={handleProductWishlistToggle}
+            onAddToCart={handleProductAddToCart}
+            className="mt-6"
+          />
         </Container>
       )}
 
@@ -205,13 +231,13 @@ export default function ProductDetailsPage() {
             title="Recently Viewed"
             subtitle="Continue browsing where you left off"
           />
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
-            {recentProductsQuery.data.map((product) => (
-              <div key={product.id} className="w-52 shrink-0">
-                <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = relatedQuery.data?.find((x) => x.id === id) ?? similarQuery.data?.find((x) => x.id === id) ?? recentProductsQuery.data?.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
-              </div>
-            ))}
-          </div>
+          <HorizontalProductScroll
+            products={recentProductsQuery.data ?? []}
+            isInWishlist={isInWishlist}
+            onToggleWishlist={handleProductWishlistToggle}
+            onAddToCart={handleProductAddToCart}
+            className="mt-6"
+          />
         </Container>
       )}
     </div>
