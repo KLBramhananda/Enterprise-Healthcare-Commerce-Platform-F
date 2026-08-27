@@ -123,10 +123,12 @@ export default function MiniCartDrawer({ isOpen, onClose }: MiniCartDrawerProps)
             </div>
 
             {/* Actions */}
-            <Button fullWidth size="lg" disabled>
-              <ArrowRight size={16} className="mr-2" aria-hidden="true" />
-              Checkout Coming Soon
-            </Button>
+            <Link to="/checkout" onClick={onClose} className="block">
+              <Button fullWidth size="lg">
+                <ArrowRight size={16} className="mr-2" aria-hidden="true" />
+                Proceed to Checkout
+              </Button>
+            </Link>
             <Link
               to="/wishlist"
               onClick={onClose}

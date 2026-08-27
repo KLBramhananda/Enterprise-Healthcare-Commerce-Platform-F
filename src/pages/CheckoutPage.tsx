@@ -104,7 +104,7 @@ export default function CheckoutPage() {
         <Breadcrumb
           items={[
             { label: "Home", path: "/" },
-            { label: "Cart", path: "/cart" },
+            { label: "Categories", path: "/categories" },
             { label: "Checkout" },
           ]}
         />
@@ -200,13 +200,21 @@ export default function CheckoutPage() {
 
         {/* ── Mobile Summary Bar ── */}
         <div className="fixed bottom-0 left-0 right-0 z-sticky border-t border-surface-200 bg-surface-0 p-4 shadow-lg lg:hidden">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs text-surface-500">Grand Total</p>
               <p className="text-lg font-bold text-brand-700">
                 ${grandTotal.toFixed(2)}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={handlePlaceOrder}
+              disabled={!canPlaceOrder || isPlacing}
+              className="rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-surface-300 disabled:text-surface-500"
+            >
+              {isPlacing ? "Placing..." : "Place Order"}
+            </button>
           </div>
         </div>
       </Container>

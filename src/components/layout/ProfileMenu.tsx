@@ -44,11 +44,21 @@ export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Desktop: click-outside to close
+  // Click-outside to close.
+  // On desktop the dropdown lives inside dropdownRef (inside the header),
+  // so contains() correctly identifies inside/outside clicks.
+  // On mobile the Drawer is portaled to document.body, placing it outside
+  // the header. Without the dialog check below, the handler would treat
+  // Drawer content as an "outside" click, closing the drawer before the
+  // menu item's click event fires — preventing navigation entirely.
+  // The Drawer already handles its own close via backdrop clicks and
+  // Escape, so we defer to it for clicks inside a [role="dialog"].
   useEffect(() => {
     if (!isOpen) return;
     const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
+        if (target instanceof Element && target.closest("[role='dialog']")) return;
         onClose();
       }
     };
@@ -110,7 +120,7 @@ export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
               <MenuItem icon={<Sparkles size={15} />} label="Membership" onClick={() => navigateAndClose("/membership")} />
               <div className="my-1 border-t border-surface-100" />
               <MenuItem icon={<Bell size={15} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
-              <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => navigateAndClose("/profile")} />
+              <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => navigateAndClose("/settings")} />
               <div className="my-1 border-t border-surface-100" />
               <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
                 Support
@@ -203,7 +213,7 @@ export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
 
               <div className="mt-4 space-y-1 border-t border-surface-100 pt-4">
                 <DrawerItem icon={<Bell size={16} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
-                <DrawerItem icon={<Settings size={16} />} label="Settings" onClick={() => navigateAndClose("/profile")} />
+                <DrawerItem icon={<Settings size={16} />} label="Settings" onClick={() => navigateAndClose("/settings")} />
               </div>
 
               <div className="mt-4 space-y-1 border-t border-surface-100 pt-4">

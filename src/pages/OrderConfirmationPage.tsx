@@ -2,7 +2,7 @@
  * OrderConfirmationPage
  *
  * Post-order confirmation with order ID, estimated delivery,
- * and navigation actions.
+ * and navigation actions. Reads order from persisted Zustand store.
  */
 
 import { Link, useParams } from "react-router-dom";
@@ -10,14 +10,14 @@ import { CheckCircle, Package, ShoppingBag } from "lucide-react";
 import { Container, Button } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
-import { useOrderHistory } from "@/hooks/checkout/useCheckout";
+import { useCheckoutStore } from "@/store/checkoutStore";
 
 export default function OrderConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>();
   usePageTitle("Order Confirmed");
 
-  const { data: orders } = useOrderHistory();
-  const order = orders?.find((o) => o.id === orderId);
+  const orders = useCheckoutStore((s) => s.orders);
+  const order = orders.find((o) => o.id === orderId);
 
   return (
     <div className="bg-surface-50 pb-12">

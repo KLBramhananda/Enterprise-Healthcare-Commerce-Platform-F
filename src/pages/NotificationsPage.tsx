@@ -77,7 +77,7 @@ export default function NotificationsPage() {
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
-  const notificationStore = useNotificationStore();
+  const isRead = useNotificationStore((s) => s.isRead);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allNotifications.length };
@@ -93,7 +93,7 @@ export default function NotificationsPage() {
   }, [allNotifications, activeCategory]);
 
   const isNotificationRead = (id: string, serverRead: boolean) => {
-    return notificationStore.isRead(id) || serverRead;
+    return isRead(id) || serverRead;
   };
 
   return (

@@ -129,9 +129,9 @@ export default function ProductCard({
               onToggleWishlist(id);
             }}
             className={cn(
-              "absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-lg opacity-0 shadow-sm transition-opacity duration-fast focus:opacity-100 group-hover:opacity-100 focus-visible:opacity-100",
+              "absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-lg shadow-sm transition-opacity duration-fast sm:opacity-0 sm:focus:opacity-100 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 sm:focus-visible:opacity-100",
               isInWishlist
-                ? "bg-danger-50 text-danger-500 hover:bg-danger-100"
+                ? "bg-danger-50 text-danger-500 hover:bg-danger-100 sm:opacity-100"
                 : "bg-surface-0 text-surface-400 hover:bg-surface-50 hover:text-danger-500",
             )}
             aria-label={isInWishlist ? `Remove ${name} from wishlist` : `Add ${name} to wishlist`}
@@ -147,7 +147,7 @@ export default function ProductCard({
               e.stopPropagation();
               if (id) onAddToCart?.(id);
             }}
-            className="absolute bottom-2 left-2 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white opacity-0 shadow-sm transition-opacity duration-fast focus:opacity-100 group-hover:opacity-100 hover:bg-brand-700 focus-visible:opacity-100 disabled:cursor-not-allowed disabled:bg-surface-300 disabled:text-surface-500"
+            className="absolute bottom-2 left-2 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm transition-opacity duration-fast sm:opacity-0 sm:focus:opacity-100 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-surface-300 disabled:text-surface-500"
             aria-label={
               isOutOfStock ? `${name} is out of stock` : `Add ${name} to cart`
             }

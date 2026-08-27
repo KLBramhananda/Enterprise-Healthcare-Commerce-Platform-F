@@ -3,6 +3,8 @@
  *
  * Hook for notification operations.
  * Wraps the notification service with React Query for caching and mutations.
+ * Unread count is derived from the notifications list + persisted store
+ * to stay consistent across page reloads.
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +14,6 @@ import type { NotificationCategory } from "@/types/account";
 
 const notificationService = new MockNotificationService();
 const NOTIFICATIONS_QUERY_KEY = ["notifications"];
-const UNREAD_COUNT_QUERY_KEY = ["notifications", "unread-count"];
 
 export function useNotifications(category?: NotificationCategory) {
   return useQuery({
@@ -22,10 +23,14 @@ export function useNotifications(category?: NotificationCategory) {
 }
 
 export function useUnreadNotificationCount() {
-  return useQuery({
-    queryKey: UNREAD_COUNT_QUERY_KEY,
-    queryFn: () => notificationService.getUnreadCount(),
-  });
+  const { data: allNotifications = [] } = useNotifications();
+  const readIds = useNotificationStore((s) => s.readIds);
+
+  const unreadCount = allNotifications.filter(
+    (n) => !readIds.has(n.id) && !n.read,
+  ).length;
+
+  return { data: unreadCount, isLoading: false };
 }
 
 export function useMarkNotificationAsRead() {
@@ -36,7 +41,7 @@ export function useMarkNotificationAsRead() {
     mutationFn: (id: string) => notificationService.markAsRead(id),
     onSuccess: (_data, id) => {
       storeMarkAsRead(id);
-      queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
     },
   });
 }
@@ -47,7 +52,7 @@ export function useMarkAllNotificationsAsRead() {
 
   return useMutation({
     mutationFn: () => notificationService.markAllAsRead(),
-    onSuccess: async () => {
+    onSuccess: () => {
       const data = queryClient.getQueryData<import("@/types/account").Notification[]>(
         NOTIFICATIONS_QUERY_KEY,
       );
@@ -55,7 +60,6 @@ export function useMarkAllNotificationsAsRead() {
         storeMarkAllAsRead(data.map((n) => n.id));
       }
       queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: UNREAD_COUNT_QUERY_KEY });
     },
   });
 }

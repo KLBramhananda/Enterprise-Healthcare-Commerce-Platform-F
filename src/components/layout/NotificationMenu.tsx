@@ -7,7 +7,7 @@
  *
  * Displays real notifications from useNotifications() with unread count,
  * recent notification items (max 7), mark-all-as-read, per-item mark-as-read
- * on hover/focus, and a "View all" navigation action.
+ * via explicit button, and a "View all" navigation action.
  */
 
 import { useEffect, useRef } from "react";
@@ -162,9 +162,9 @@ function NotificationItem({
 export default function NotificationMenu({ isOpen, onClose }: NotificationMenuProps) {
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { data: unreadCount = 0, isLoading: isCountLoading } = useUnreadNotificationCount();
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: allNotifications = [], isLoading } = useNotifications();
-  const store = useNotificationStore();
+  const readIds = useNotificationStore((s) => s.readIds);
   const markAllAsRead = useMarkAllNotificationsAsRead();
   const markAsRead = useMarkNotificationAsRead();
 
@@ -229,7 +229,7 @@ export default function NotificationMenu({ isOpen, onClose }: NotificationMenuPr
               <NotificationItem
                 key={n.id}
                 notification={n}
-                isRead={store.isRead(n.id) || n.read}
+                isRead={readIds.has(n.id) || n.read}
                 onMarkRead={handleMarkRead}
               />
             ))}
@@ -276,7 +276,7 @@ export default function NotificationMenu({ isOpen, onClose }: NotificationMenuPr
             <div className="flex items-center justify-between border-b border-surface-100 px-4 py-3">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-surface-900">Notifications</h3>
-                {!isCountLoading && unreadCount > 0 && (
+                {unreadCount > 0 && (
                   <span className="rounded-full bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
