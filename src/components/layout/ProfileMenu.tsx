@@ -10,7 +10,7 @@
  * or unauthenticated sign-in/register actions.
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback, type RefObject } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Award,
@@ -28,7 +28,7 @@ import {
   Tag,
   User,
 } from "lucide-react";
-import { Drawer } from "@/components/ui/Drawer";
+import { Drawer, Popover } from "@/components/ui";
 import { APP_NAME } from "@/config/constants";
 import { useAuth } from "@/hooks/auth";
 import { useAuthStore } from "@/store/authStore";
@@ -36,45 +36,14 @@ import { useAuthStore } from "@/store/authStore";
 interface ProfileMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Anchor element (the header account button) for the desktop popover. */
+  anchorRef?: RefObject<HTMLButtonElement | null>;
 }
 
-export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
+export default function ProfileMenu({ isOpen, onClose, anchorRef }: ProfileMenuProps) {
   const { isAuthenticated, user } = useAuth();
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Click-outside to close.
-  // On desktop the dropdown lives inside dropdownRef (inside the header),
-  // so contains() correctly identifies inside/outside clicks.
-  // On mobile the Drawer is portaled to document.body, placing it outside
-  // the header. Without the dialog check below, the handler would treat
-  // Drawer content as an "outside" click, closing the drawer before the
-  // menu item's click event fires — preventing navigation entirely.
-  // The Drawer already handles its own close via backdrop clicks and
-  // Escape, so we defer to it for clicks inside a [role="dialog"].
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-        if (target instanceof Element && target.closest("[role='dialog']")) return;
-        onClose();
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [isOpen, onClose]);
-
-  // Desktop: Escape to close
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [isOpen, onClose]);
 
   const handleLogout = useCallback(() => {
     clearAuth();
@@ -92,11 +61,19 @@ export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
 
   return (
     <>
-      {/* ── Desktop dropdown (sm+) ── */}
-      <div className="relative hidden sm:block" ref={dropdownRef}>
-        {isOpen && (
-          <div role="menu" aria-label="Account menu" className="absolute right-0 top-full z-dropdown mt-1 w-56 rounded-xl border border-surface-200 bg-surface-0 py-1 shadow-lg">
-            {isAuthenticated ? (
+      {/* ── Desktop popover (sm+) ── */}
+      <Popover
+        open={isOpen}
+        onOpenChange={(o) => {
+          if (!o) onClose();
+        }}
+        anchorRef={anchorRef}
+        placement="bottom-end"
+        role="menu"
+        ariaLabel="Account menu"
+        className="hidden w-56 py-1 sm:block"
+      >
+        {isAuthenticated ? (
             <>
               <div className="border-b border-surface-100 px-4 py-3">
                 <p className="text-sm font-semibold text-surface-900">
@@ -166,9 +143,7 @@ export default function ProfileMenu({ isOpen, onClose }: ProfileMenuProps) {
               <MenuItem icon={<ClipboardList size={15} />} label="Upload Prescription" onClick={() => navigateAndClose("/auth/login")} />
             </>
           )}
-        </div>
-        )}
-      </div>
+      </Popover>
 
       {/* ── Mobile drawer (<sm) ── */}
       <Drawer isOpen={isOpen} onClose={onClose} side="right" title="Account">
@@ -286,6 +261,7 @@ function MenuItem({
   return (
     <button
       type="button"
+      role="menuitem"
       onClick={onClick}
       className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-surface-700 transition-colors duration-fast hover:bg-surface-50 hover:text-brand-700"
     >

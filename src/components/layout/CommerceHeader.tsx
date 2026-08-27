@@ -22,12 +22,16 @@ import {
   Activity,
   Bell,
   ChevronDown,
+  Globe,
+  HelpCircle,
   MapPin,
   ShoppingCart,
   User,
 } from "lucide-react";
 import { commerceCategories, type NavigationItem } from "@/config/navigation";
-import { ANNOUNCEMENT_TEXT, APP_NAME } from "@/config/constants";
+import { APP_NAME } from "@/config/constants";
+import { getLanguageOption } from "@/config/languages";
+import { useLanguageStore } from "@/store/languageStore";
 import { cn } from "@/utils/cn";
 import { cartDrawerEvents } from "@/utils/cartDrawerEvents";
 import { Container } from "@/components/ui";
@@ -40,6 +44,8 @@ import HeaderSearch from "./HeaderSearch";
 import MobileNavigationDrawer from "./MobileNavigationDrawer";
 import ProfileMenu from "./ProfileMenu";
 import NotificationMenu from "./NotificationMenu";
+import AnnouncementTicker from "./AnnouncementTicker";
+import LanguageSelector from "./LanguageSelector";
 
 export default function CommerceHeader() {
   const mainNavRef = useRef<HTMLElement>(null);
@@ -48,13 +54,17 @@ export default function CommerceHeader() {
   const menuToggleRef = useRef<HTMLButtonElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
 
   const { isAuthenticated, user } = useAuth();
+  const locale = useLanguageStore((s) => s.locale);
+  const currentLanguage = getLanguageOption(locale);
   const { totalItems } = useCart();
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const pathname = useLocation().pathname;
@@ -96,6 +106,7 @@ export default function CommerceHeader() {
     setMobileNavOpen(false);
     setProfileOpen(false);
     setNotificationOpen(false);
+    setLanguageOpen(false);
   }
 
   // Close overlays on Escape (top-level handler for buttons)
@@ -107,10 +118,12 @@ export default function CommerceHeader() {
       if (
         active === profileButtonRef.current ||
         active === notificationButtonRef.current ||
+        active === languageButtonRef.current ||
         active === menuToggleRef.current
       ) {
         setProfileOpen(false);
         setNotificationOpen(false);
+        setLanguageOpen(false);
       }
     };
     document.addEventListener("keydown", handleEscape);
@@ -119,9 +132,9 @@ export default function CommerceHeader() {
 
   return (
     <>
-      {/* ── Announcement Bar (scrolls away) ── */}
-      <div ref={announceRef} className="bg-brand-600 px-4 py-2 text-center">
-        <p className="text-xs font-medium text-white sm:text-sm">{ANNOUNCEMENT_TEXT}</p>
+      {/* ── Announcement Bar (scrolling ticker, scrolls away) ── */}
+      <div ref={announceRef}>
+        <AnnouncementTicker />
       </div>
 
       <header className="w-full">
@@ -182,6 +195,51 @@ export default function CommerceHeader() {
 
               {/* Account, Notifications & Cart */}
               <div className="flex items-center gap-2">
+                {/* Language Selector (desktop) */}
+                <button
+                  type="button"
+                  ref={languageButtonRef}
+                  onClick={() => {
+                    setLanguageOpen((prev) => !prev);
+                    setProfileOpen(false);
+                    setNotificationOpen(false);
+                  }}
+                  aria-expanded={languageOpen}
+                  aria-haspopup="listbox"
+                  aria-label="Select language"
+                  className={cn(
+                    "hidden h-10 items-center gap-1.5 rounded-lg border border-surface-200 px-3 text-sm transition-colors duration-fast md:flex",
+                    languageOpen
+                      ? "border-brand-300 bg-brand-50 text-brand-700"
+                      : "text-surface-700 hover:border-brand-300 hover:bg-brand-50",
+                  )}
+                >
+                  <Globe size={15} className="text-brand-600" aria-hidden="true" />
+                  <span className="text-xs font-medium text-surface-700">{currentLanguage.nativeName}</span>
+                  <ChevronDown
+                    size={13}
+                    className={cn(
+                      "text-surface-400 transition-transform duration-fast",
+                      languageOpen && "rotate-180",
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+                <LanguageSelector
+                  isOpen={languageOpen}
+                  onClose={() => setLanguageOpen(false)}
+                  anchorRef={languageButtonRef}
+                />
+
+                {/* Need Help? quick link (desktop/tablet; mobile lives in nav drawer) */}
+                <Link
+                  to="/help"
+                  className="hidden h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-surface-600 transition-colors duration-fast hover:bg-surface-100 hover:text-brand-700 md:flex"
+                >
+                  <HelpCircle size={15} className="-ml-0.5 text-surface-400" aria-hidden="true" />
+                  Need Help?
+                </Link>
+
                 {/* Account — triggers ProfileMenu (desktop dropdown + mobile drawer) */}
                 <button
                   type="button"
@@ -193,7 +251,7 @@ export default function CommerceHeader() {
                   aria-expanded={profileOpen}
                   aria-haspopup="true"
                   className={cn(
-                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-fast",
+                    "flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors duration-fast",
                     profileOpen
                       ? "bg-brand-50 text-brand-700"
                       : "text-surface-700 hover:bg-surface-100",
@@ -214,7 +272,11 @@ export default function CommerceHeader() {
                     )}
                   />
                 </button>
-                <ProfileMenu isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+                <ProfileMenu
+                  isOpen={profileOpen}
+                  onClose={() => setProfileOpen(false)}
+                  anchorRef={profileButtonRef}
+                />
 
                 {/* Notifications */}
                 <button
@@ -247,6 +309,7 @@ export default function CommerceHeader() {
                 <NotificationMenu
                   isOpen={notificationOpen}
                   onClose={() => setNotificationOpen(false)}
+                  anchorRef={notificationButtonRef}
                 />
 
                 {/* Cart */}

@@ -7,11 +7,16 @@
  * Account-related items are accessible via the Profile menu (hamburger → account icon).
  */
 
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, MapPin, X } from "lucide-react";
+import { Activity, ChevronDown, Globe, HelpCircle, MapPin, X } from "lucide-react";
 import { Drawer } from "@/components/ui/Drawer";
 import { APP_NAME } from "@/config/constants";
+import { getLanguageOption } from "@/config/languages";
 import { commerceCategories, type NavigationItem } from "@/config/navigation";
+import { useLanguageStore } from "@/store/languageStore";
+import { cn } from "@/utils/cn";
+import { LanguageOptionList } from "./LanguageSelector";
 
 interface MobileNavigationDrawerProps {
   isOpen: boolean;
@@ -22,6 +27,10 @@ export default function MobileNavigationDrawer({
   isOpen,
   onClose,
 }: MobileNavigationDrawerProps) {
+  const locale = useLanguageStore((s) => s.locale);
+  const currentLanguage = getLanguageOption(locale);
+  const [languageOpen, setLanguageOpen] = useState(false);
+
   const drawerHeader = (
     <div className="flex items-center justify-between border-b border-surface-200 px-5 py-4">
       <Link to="/" onClick={onClose} className="flex items-center gap-2">
@@ -59,6 +68,47 @@ export default function MobileNavigationDrawer({
             </p>
           </div>
         </button>
+
+        {/* Need Help? */}
+        <Link
+          to="/help"
+          onClick={onClose}
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-3 text-sm font-medium text-surface-600 transition-colors duration-fast hover:bg-brand-50 hover:text-brand-700"
+        >
+          <HelpCircle size={16} className="text-brand-600" />
+          <span>Need Help?</span>
+        </Link>
+
+        {/* Language selector */}
+        <div className="rounded-lg border border-surface-200">
+          <button
+            type="button"
+            onClick={() => setLanguageOpen((prev) => !prev)}
+            aria-expanded={languageOpen}
+            className="flex w-full items-center justify-between gap-2.5 px-3 py-3 text-sm transition-colors duration-fast hover:bg-brand-50"
+          >
+            <span className="flex items-center gap-2.5 font-medium text-surface-600">
+              <Globe size={16} className="text-brand-600" />
+              Language
+            </span>
+            <span className="flex items-center gap-2 text-surface-800">
+              <span className="text-sm font-semibold">{currentLanguage.nativeName}</span>
+              <ChevronDown
+                size={15}
+                className={cn(
+                  "text-surface-400 transition-transform duration-fast",
+                  languageOpen && "rotate-180",
+                )}
+                aria-hidden="true"
+              />
+            </span>
+          </button>
+          {languageOpen && (
+            <div className="border-t border-surface-100 p-2">
+              <LanguageOptionList onSelect={() => setLanguageOpen(false)} />
+            </div>
+          )}
+        </div>
 
         {/* Categories */}
         <div className="border-t border-surface-100 pt-2">

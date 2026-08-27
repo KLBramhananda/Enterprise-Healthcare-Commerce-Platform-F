@@ -111,6 +111,7 @@ export default function AddressSection({ selectedAddressId, onSelectAddress }: A
         isOpen={formOpen}
         onClose={() => { setFormOpen(false); setEditingAddress(null); }}
         title={editingAddress ? "Edit Address" : "Add New Address"}
+        size="xl"
       >
         <AddressForm
           address={editingAddress}

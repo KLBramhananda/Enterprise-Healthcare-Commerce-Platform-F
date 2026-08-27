@@ -10,7 +10,6 @@
  * via explicit button, and a "View all" navigation action.
  */
 
-import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -22,7 +21,7 @@ import {
   Shield,
   Tag,
 } from "lucide-react";
-import { Drawer } from "@/components/ui/Drawer";
+import { Drawer, Popover } from "@/components/ui";
 import {
   useNotifications,
   useUnreadNotificationCount,
@@ -32,10 +31,13 @@ import {
 import { useNotificationStore } from "@/store/notificationStore";
 import type { Notification, NotificationCategory } from "@/types/account";
 import { cn } from "@/utils/cn";
+import type { RefObject } from "react";
 
 interface NotificationMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Anchor element (the header bell button) for the desktop popover. */
+  anchorRef?: RefObject<HTMLButtonElement | null>;
 }
 
 const CATEGORY_ICONS: Record<NotificationCategory, typeof Package> = {
@@ -159,9 +161,12 @@ function NotificationItem({
 
 /* ── Main component ── */
 
-export default function NotificationMenu({ isOpen, onClose }: NotificationMenuProps) {
+export default function NotificationMenu({
+  isOpen,
+  onClose,
+  anchorRef,
+}: NotificationMenuProps) {
   const navigate = useNavigate();
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: allNotifications = [], isLoading } = useNotifications();
   const readIds = useNotificationStore((s) => s.readIds);
@@ -174,29 +179,6 @@ export default function NotificationMenu({ isOpen, onClose }: NotificationMenuPr
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 7);
 
-  // Desktop: click-outside to close
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [isOpen, onClose]);
-
-  // Desktop: Escape to close
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [isOpen, onClose]);
-
-  // Navigate to /notifications reliably.
   // onClose() triggers a state update that unmounts this component.
   // If navigate() is called in the same synchronous block, the component
   // unmounts before React Router can process the navigation.
@@ -264,41 +246,43 @@ export default function NotificationMenu({ isOpen, onClose }: NotificationMenuPr
 
   return (
     <>
-      {/* ── Desktop dropdown (sm+) ── */}
-      <div className="relative hidden sm:block" ref={dropdownRef}>
-        {isOpen && (
-          <div
-            role="menu"
-            aria-label="Notifications"
-            className="absolute right-0 top-full z-dropdown mt-1 w-96 rounded-xl border border-surface-200 bg-surface-0 shadow-lg"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-surface-100 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-surface-900">Notifications</h3>
-                {unreadCount > 0 && (
-                  <span className="rounded-full bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </div>
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleMarkAllRead}
-                  disabled={markAllAsRead.isPending}
-                  className="flex items-center gap-1 text-[11px] font-medium text-surface-500 transition-colors hover:text-brand-600 disabled:opacity-50"
-                >
-                  <CheckCheck size={13} />
-                  Mark all read
-                </button>
-              )}
-            </div>
-
-            {dropdownContent}
+      {/* ── Desktop popover (sm+) ── */}
+      <Popover
+        open={isOpen}
+        onOpenChange={(o) => {
+          if (!o) onClose();
+        }}
+        anchorRef={anchorRef}
+        placement="bottom-end"
+        role="menu"
+        ariaLabel="Notifications"
+        className="hidden w-96 sm:block"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-surface-100 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-surface-900">Notifications</h3>
+            {unreadCount > 0 && (
+              <span className="rounded-full bg-danger-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </div>
-        )}
-      </div>
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={handleMarkAllRead}
+              disabled={markAllAsRead.isPending}
+              className="flex items-center gap-1 text-[11px] font-medium text-surface-500 transition-colors hover:text-brand-600 disabled:opacity-50"
+            >
+              <CheckCheck size={13} />
+              Mark all read
+            </button>
+          )}
+        </div>
+
+        {dropdownContent}
+      </Popover>
 
       {/* ── Mobile drawer (<sm) ── */}
       <Drawer isOpen={isOpen} onClose={onClose} side="right" title="Notifications">

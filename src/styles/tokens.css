@@ -124,8 +124,15 @@
    *   sticky   (100)   – Sticky/fixed navigation headers (global shell primary layer).
    *   main-nav (110)   – Primary sticky navigation bar (always above category nav).
    *   overlay  (200)   – Non-modal overlays (carousel controls, tooltip-like elements).
-   *   modal    (300)   – Modal dialogs and their backdrops.
-   *   toast    (400)   – Toast notifications (highest user-facing layer).
+   *   popover  (320)   – Floating layers portaled to <body> (Popover primitive). Escapes all
+   *                       layout stacking contexts, so it settles above page content, sticky
+   *                       headers/navs, and below dialogs.
+   *   modal    (330)   – Modal/dialog layers and their backdrops (Modal + Drawer primitives,
+   *                       both portal to <body>). Always the highest visual layer above every
+   *                       page component — including popovers — so open dialogs can never be
+   *                       covered by a floating menu, sticky bar, or drawer.
+   *   toast    (400)   – Toast notifications (transient; highest user-facing layer so
+   *                       feedback always appears above any dialog).
    *
    * Containment principle:
    *   <main> uses isolation:isolate, preventing any child stacking context from
@@ -137,7 +144,8 @@
   --z-sticky: 100;
   --z-main-nav: 110;
   --z-overlay: 200;
-  --z-modal: 300;
+  --z-popover: 320;
+  --z-modal: 330;
   --z-toast: 400;
 
   /* ── Layout Spacing Scale ── */
@@ -187,6 +195,18 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+/* Continuous right-to-left marquee for the announcement ticker.
+ * The track renders the message list twice and translates by -50% to form a
+ * seamless, GPU-accelerated loop (transform-only, no layout thrash). */
+@keyframes announcement-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 

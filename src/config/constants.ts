@@ -10,7 +10,30 @@ export const APP_TAGLINE = "Your Trusted Healthcare Partner";
 
 export const APP_DESCRIPTION = "KeeMeds - Online Healthcare Commerce Platform";
 
-export const ANNOUNCEMENT_TEXT = "Free delivery on orders above $50 | Use code HEALTH20 for 20% off your first order";
+/**
+ * Promotional announcements shown in the scrolling announcement ticker.
+ * Each message rotates/repeats continuously from right to left.
+ */
+export const ANNOUNCEMENTS = [
+  "🚚 Free delivery on orders above $50",
+  "🎉 Use code HEALTH20 for 20% OFF your first order",
+  "💊 Genuine Medicines from Trusted Pharmacies",
+  "🧪 NABL Certified Lab Tests",
+  "👨‍⚕️ Book Online Doctor Consultations",
+  "⚡ Fast & Reliable Healthcare Delivery",
+] as const;
+
+/** Single static announcement (kept for backwards compatibility). */
+export const ANNOUNCEMENT_TEXT = ANNOUNCEMENTS[0];
+
+/* ── Mobile App Store Links ── */
+/**
+ * Official mobile store URLs. These are config-driven so the downloadable
+ * KeeMeds app links can be swapped in later without changing any UI code.
+ */
+export const APP_STORE_URL = "https://apps.apple.com/us/iphone/today";
+
+export const GOOGLE_PLAY_URL = "https://play.google.com/store/apps?hl=en_IN";
 
 export const DEFAULT_PAGE_SIZE = 20;
 

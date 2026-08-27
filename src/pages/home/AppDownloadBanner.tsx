@@ -8,7 +8,6 @@
  */
 
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
 import {
   Apple,
   BellRing,
@@ -18,7 +17,7 @@ import {
   Scan,
   ShieldCheck,
 } from "lucide-react";
-import { APP_NAME } from "@/config/constants";
+import { APP_NAME, APP_STORE_URL, GOOGLE_PLAY_URL } from "@/config/constants";
 import { Container } from "@/components/ui";
 
 const features = [
@@ -47,8 +46,10 @@ function StoreButton({
       : "border-white/40 bg-white/5 text-white hover:border-white hover:bg-white/10 focus-visible:ring-white";
 
   return (
-    <Link
-      to={href}
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
       className={`inline-flex min-w-0 flex-1 items-center justify-center gap-3 rounded-xl border px-5 py-3 transition-colors duration-fast focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-700 sm:flex-none sm:px-6 ${styles}`}
     >
       <span className="text-2xl" aria-hidden="true">
@@ -58,7 +59,7 @@ function StoreButton({
         <span className="text-[10px] uppercase tracking-wide opacity-80">{topLine}</span>
         <span className="text-base font-semibold">{bottomLine}</span>
       </span>
-    </Link>
+    </a>
   );
 }
 
@@ -228,14 +229,14 @@ export default function AppDownloadBanner() {
             {/* Store buttons */}
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start lg:gap-4">
               <StoreButton
-                href="/app"
+                href={APP_STORE_URL}
                 topLine="Download on the"
                 bottomLine="App Store"
                 icon={<Apple size={26} fill="currentColor" />}
                 variant="primary"
               />
               <StoreButton
-                href="/app"
+                href={GOOGLE_PLAY_URL}
                 topLine="Get it on"
                 bottomLine="Google Play"
                 icon={<Play size={26} fill="currentColor" />}
