@@ -1,24 +1,52 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { resolve } from "node:path";
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
+/**
+ * Vite configuration for the KeeMeds commerce frontend.
+ *
+ * Fully self-contained: no dependency on the ERPNext/Frappe workspace layout.
+ * Everything runtime-configurable (dev port, API proxy target, build output)
+ * is read from VITE_* environment variables with sensible defaults, so the
+ * project can be cloned and run on any machine.
+ */
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "VITE_");
 
-  resolve: {
-    alias: {
-      "@": `${import.meta.dirname}/src`,
-    },
-  },
+  /** Backend origin the dev-server `/api` proxy forwards to. */
+  const proxyTarget = env.VITE_PROXY_TARGET || "http://localhost:8000";
 
-  server: {
-    port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:8000",
-        changeOrigin: true,
-        secure: false,
+  /** Dev server port (defaults to 5173). */
+  const devPort = Number.parseInt(env.VITE_DEV_PORT || "5173", 10);
+
+  return {
+    plugins: [react(), tailwindcss()],
+
+    resolve: {
+      alias: {
+        "@": resolve(import.meta.dirname, "src"),
       },
     },
-  },
+
+    server: {
+      port: devPort,
+      open: false,
+      proxy: {
+        "/api": {
+          target: proxyTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
+
+    build: {
+      outDir: "dist",
+      target: "es2023",
+      sourcemap: false,
+    },
+
+    envPrefix: "VITE_",
+  };
 });

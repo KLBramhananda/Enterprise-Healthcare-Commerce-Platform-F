@@ -38,6 +38,7 @@ const ForgotPasswordPage = lazy(() => import("@/pages/auth/ForgotPasswordPage"))
 const VerifyOTPPage = lazy(() => import("@/pages/auth/VerifyOTPPage"));
 const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage"));
 const CheckoutPage = lazy(() => import("@/pages/CheckoutPage"));
+const PaymentProcessingPage = lazy(() => import("@/pages/payment/PaymentProcessingPage"));
 const OrderConfirmationPage = lazy(() => import("@/pages/OrderConfirmationPage"));
 const WishlistPage = lazy(() => import("@/pages/WishlistPage"));
 const OrdersPage = lazy(() => import("@/pages/OrdersPage"));
@@ -90,6 +91,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<CommerceLayout />}>
             <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/checkout/payment/:orderId" element={<PaymentProcessingPage />} />
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />

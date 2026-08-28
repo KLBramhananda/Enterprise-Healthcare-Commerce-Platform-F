@@ -1,14 +1,24 @@
 /**
  * Application Constants
  *
- * Centralized constants used across the commerce application.
+ * Static, non-environment constants used across the commerce application.
+ *
+ * Environment-driven configuration (app name, API base URL, timeouts, feature
+ * flags, store links, ...) lives in `./env` and is re-exported here so existing
+ * imports from `@/config/constants` keep working while every configurable value
+ * resolves through a single source of truth.
  */
 
-export const APP_NAME = "KeeMeds";
-
-export const APP_TAGLINE = "Your Trusted Healthcare Partner";
-
-export const APP_DESCRIPTION = "KeeMeds - Online Healthcare Commerce Platform";
+export {
+  APP_NAME,
+  APP_TAGLINE,
+  APP_DESCRIPTION,
+  APP_STORE_URL,
+  GOOGLE_PLAY_URL,
+  API_TIMEOUT,
+  QUERY_STALE_TIME,
+  QUERY_RETRY_COUNT,
+} from "./env";
 
 /**
  * Promotional announcements shown in the scrolling announcement ticker.
@@ -26,26 +36,11 @@ export const ANNOUNCEMENTS = [
 /** Single static announcement (kept for backwards compatibility). */
 export const ANNOUNCEMENT_TEXT = ANNOUNCEMENTS[0];
 
-/* ── Mobile App Store Links ── */
-/**
- * Official mobile store URLs. These are config-driven so the downloadable
- * KeeMeds app links can be swapped in later without changing any UI code.
- */
-export const APP_STORE_URL = "https://apps.apple.com/us/iphone/today";
-
-export const GOOGLE_PLAY_URL = "https://play.google.com/store/apps?hl=en_IN";
-
 export const DEFAULT_PAGE_SIZE = 20;
 
 export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 
 export const DEBOUNCE_DELAY = 300;
-
-export const API_TIMEOUT = 30000;
-
-export const QUERY_STALE_TIME = 1000 * 60 * 5;
-
-export const QUERY_RETRY_COUNT = 1;
 
 export const COMMERCE_CATEGORIES = [
   "Medicines",

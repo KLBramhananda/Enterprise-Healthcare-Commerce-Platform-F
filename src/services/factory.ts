@@ -13,6 +13,7 @@ import { MockAddressService } from "./addressMock";
 import { MockAuthService } from "./authMock";
 import { MockCatalogService } from "./catalogMock";
 import { MockCheckoutService } from "./checkoutMock";
+import { MockPaymentService } from "./paymentMock";
 import { MockEngagementService } from "./engagementMock";
 import { MockHomepageService } from "./homepageMock";
 import { MockNotificationService } from "./notificationMock";
@@ -24,6 +25,7 @@ export const services = {
   auth: new MockAuthService(),
   catalog: new MockCatalogService(),
   checkout: new MockCheckoutService(),
+  payment: new MockPaymentService(),
   engagement: new MockEngagementService(),
   homepage: new MockHomepageService(),
   notification: new MockNotificationService(),

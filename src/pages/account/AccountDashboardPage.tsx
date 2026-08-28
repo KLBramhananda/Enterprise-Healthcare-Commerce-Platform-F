@@ -35,7 +35,9 @@ const STATUS_VARIANTS: Record<OrderStatus, "success" | "warning" | "info" | "dan
   placed: "info",
   confirmed: "info",
   processing: "warning",
+  packed: "warning",
   shipped: "warning",
+  out_for_delivery: "warning",
   delivered: "success",
   cancelled: "danger",
 };

@@ -11,7 +11,7 @@
  * service abstraction (mock today, ERPNext-ready later).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
@@ -165,7 +165,7 @@ export default function ProductDetailsPage() {
   }
 
   return (
-    <div className="bg-surface-50 pb-28 lg:pb-16">
+    <div className="bg-surface-50 pb-24 lg:pb-12">
       <Container>
         <LayoutBreadcrumb
           items={[
@@ -177,8 +177,8 @@ export default function ProductDetailsPage() {
       </Container>
 
       {/* ── Gallery + Summary ── */}
-      <Container className="mt-5">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12">
+      <Container className="mt-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8">
           <ProductGallerySection details={details} />
           <ProductSummary details={details} />
         </div>
@@ -186,58 +186,60 @@ export default function ProductDetailsPage() {
 
       {/* ── Prescription guidance ── */}
       {details.requiresPrescription && (
-        <Container className="mt-8">
+        <Container className="mt-6">
           <PrescriptionNotice details={details} />
         </Container>
       )}
 
       {/* ── Information accordion ── */}
-      <Container className="mt-10">
+      <Container className="mt-6">
         <ProductInfoSections details={details} />
       </Container>
 
       {/* ── Reviews + Q&A ── */}
-      <Container className="mt-10">
+      <Container className="mt-6">
         <ReviewsSection details={details} />
       </Container>
 
       {/* ── Frequently Bought Together ── */}
       {fbtQuery.data && fbtQuery.data.length > 0 && (
-        <Container className="mt-10">
+        <Container className="mt-6">
           <FrequentlyBoughtTogetherSection source={details} items={fbtQuery.data} />
         </Container>
       )}
 
       {/* ── Similar Products ── */}
       {similarQuery.data && similarQuery.data.length > 0 && (
-        <Container className="mt-10">
+        <Container className="mt-6">
           <SectionHeader
             title="Similar Products"
             subtitle="You might also like these"
+            className="mb-3 sm:mb-3"
           />
           <HorizontalProductScroll
             products={similarQuery.data ?? []}
             isInWishlist={isInWishlist}
             onToggleWishlist={handleProductWishlistToggle}
             onAddToCart={handleProductAddToCart}
-            className="mt-6"
+            className="mt-3"
           />
         </Container>
       )}
 
       {/* ── Recently Viewed ── */}
       {recentProductsQuery.data && recentProductsQuery.data.length > 0 && (
-        <Container className="mt-10">
+        <Container className="mt-6">
           <SectionHeader
             title="Recently Viewed"
             subtitle="Continue browsing where you left off"
+            className="mb-3 sm:mb-3"
           />
           <HorizontalProductScroll
             products={recentProductsQuery.data ?? []}
             isInWishlist={isInWishlist}
             onToggleWishlist={handleProductWishlistToggle}
             onAddToCart={handleProductAddToCart}
-            className="mt-6"
+            className="mt-3"
           />
         </Container>
       )}
@@ -342,7 +344,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* Brand + name + rating */}
       <div>
         <div className="flex items-start justify-between gap-3">
@@ -360,11 +362,11 @@ function ProductSummary({ details }: { details: ProductDetails }) {
           </button>
         </div>
 
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-surface-900 sm:text-3xl">
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-surface-900 sm:text-3xl">
           {details.name}
         </h1>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
           <StarRating value={details.rating} size={16} />
           <span className="text-sm text-surface-500">
             {details.rating.toFixed(1)} &middot; {details.reviewCount.toLocaleString()} reviews
@@ -403,7 +405,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
             You save {formatCurrency(savings)} on MRP
           </p>
         )}
-        <p className="mt-2 flex items-center gap-1 text-xs text-surface-400">
+        <p className="mt-1.5 flex items-center gap-1 text-xs text-surface-400">
           <Info size={12} aria-hidden="true" />
           Inclusive of all taxes
         </p>
@@ -412,7 +414,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
       {/* Availability */}
       <div
         className={cn(
-          "rounded-lg border px-4 py-3 text-sm font-medium",
+          "rounded-lg border px-3.5 py-2.5 text-sm font-medium",
           isOutOfStock
             ? "border-danger-200 bg-danger-50 text-danger-700"
             : "border-success-200 bg-success-50 text-success-700",
@@ -431,7 +433,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
       </div>
 
       {/* Product meta */}
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-xl border border-surface-200 bg-surface-0 p-4 text-sm">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-xl border border-surface-200 bg-surface-0 p-3.5 text-sm">
         {[
           { label: "Manufacturer", value: details.manufacturer, icon: Building2 },
           { label: "Form", value: details.form, icon: Package },
@@ -451,7 +453,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
       </dl>
 
       {/* Delivery info */}
-      <div className="rounded-xl border border-surface-200 bg-surface-0 p-4">
+      <div className="rounded-xl border border-surface-200 bg-surface-0 p-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-sm">
             <MapPin size={16} className="shrink-0 text-surface-400" aria-hidden="true" />
@@ -466,7 +468,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
             </button>
           </div>
         </div>
-        <div className="mt-3 space-y-2.5 text-sm">
+        <div className="mt-2.5 space-y-2 text-sm">
           <div className="flex items-center gap-2.5">
             <Truck size={16} className="shrink-0 text-brand-600" aria-hidden="true" />
             <span className="text-surface-600">
@@ -508,7 +510,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
 
       {/* Prescription notice */}
       {details.requiresPrescription && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-info-200 bg-info-50 p-4 text-sm text-info-700">
+        <div className="flex items-start gap-2.5 rounded-xl border border-info-200 bg-info-50 p-3.5 text-sm text-info-700">
           <FileText size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
           <div>
             <p className="font-semibold">Prescription required</p>
@@ -565,7 +567,7 @@ function ProductSummary({ details }: { details: ProductDetails }) {
       </div>
 
       {/* Trust strip */}
-      <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-xl border border-surface-200 bg-surface-0 p-4 text-xs text-surface-500">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-xl border border-surface-200 bg-surface-0 p-3.5 text-xs text-surface-500">
         <span className="inline-flex items-center gap-1.5">
           <BadgeCheck size={15} className="text-brand-600" aria-hidden="true" /> 100% genuine
         </span>
@@ -754,7 +756,7 @@ function ProductInfoSections({ details }: { details: ProductDetails }) {
 
   return (
     <div>
-      <SectionHeader title="Product Information" subtitle="Everything you need to know before you order" />
+      <SectionHeader title="Product Information" subtitle="Everything you need to know before you order" className="mb-4 sm:mb-4" />
       <div className="overflow-hidden rounded-2xl border border-surface-200 bg-surface-0">
         {INFO_SECTIONS.map((section, index) => {
           const isOpen = open.has(section.key);
@@ -767,7 +769,7 @@ function ProductInfoSections({ details }: { details: ProductDetails }) {
                 type="button"
                 onClick={() => toggle(section.key)}
                 aria-expanded={isOpen}
-                className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-50 sm:px-6"
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-50 sm:px-5"
               >
                 <span className="flex items-center gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
@@ -787,7 +789,7 @@ function ProductInfoSections({ details }: { details: ProductDetails }) {
                 />
               </button>
               {isOpen && (
-                <div className="px-5 pb-5 sm:px-6" data-testid={`section-${section.key}`}>
+                <div className="px-4 pb-4 sm:px-5" data-testid={`section-${section.key}`}>
                   {section.render(details)}
                 </div>
               )}
@@ -803,10 +805,11 @@ function ProductInfoSections({ details }: { details: ProductDetails }) {
 
 function ReviewsSection({ details }: { details: ProductDetails }) {
   return (
-    <div className="rounded-2xl border border-surface-200 bg-surface-0 p-5 sm:p-6">
+    <div className="rounded-2xl border border-surface-200 bg-surface-0 p-4 sm:p-5">
       <SectionHeader
         title="Ratings & Reviews"
         subtitle="What our customers are saying"
+        className="mb-3 sm:mb-4"
         action={
           <Button variant="secondary" size="sm" disabled title="Writing reviews coming soon">
             <PenLine size={15} className="mr-1.5" aria-hidden="true" />
@@ -819,19 +822,20 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
         averageRating={details.reviewSummary.averageRating}
         totalReviews={details.reviewSummary.totalReviews}
         distribution={details.reviewSummary.distribution}
+        className="gap-3 sm:gap-4"
       />
 
       {/* Review list */}
-      <div className="mt-8 space-y-6">
+      <div className="mt-5 space-y-4">
         {details.reviews.map((review) => (
           <article
             key={review.id}
-            className="rounded-xl border border-surface-100 bg-surface-50/50 p-4 sm:p-5"
+            className="rounded-xl border border-surface-100 bg-surface-50/50 p-3.5 sm:p-4"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700"
                   aria-hidden="true"
                 >
                   {review.author.charAt(0).toUpperCase()}
@@ -850,19 +854,19 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
               )}
             </div>
 
-            <div className="mt-3">
+            <div className="mt-2.5">
               <StarRating value={review.rating} size={14} />
-              <h4 className="mt-1.5 text-sm font-semibold text-surface-900">{review.title}</h4>
-              <p className="mt-1 text-sm leading-relaxed text-surface-600">{review.content}</p>
+              <h4 className="mt-1 text-sm font-semibold text-surface-900">{review.title}</h4>
+              <ReviewContent text={review.content} />
             </div>
 
             {/* Review images placeholder */}
             {review.images.length > 0 && (
-              <div className="mt-3 flex gap-2">
+              <div className="mt-2.5 flex gap-2">
                 {review.images.map((url, i) => (
                   <div
                     key={i}
-                    className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-surface-200 bg-surface-100"
+                    className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-surface-200 bg-surface-100"
                   >
                     <img src={url} alt="" className="h-full w-full object-cover" loading="lazy" />
                   </div>
@@ -870,7 +874,7 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
               </div>
             )}
 
-            <div className="mt-3 flex items-center gap-2 text-xs text-surface-400">
+            <div className="mt-2 flex items-center gap-2 text-xs text-surface-400">
               <button
                 type="button"
                 disabled
@@ -885,7 +889,7 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
       </div>
 
       {/* Q&A */}
-      <div className="mt-10 border-t border-surface-100 pt-8">
+      <div className="mt-6 border-t border-surface-100 pt-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-base font-semibold text-surface-900">Customer Questions & Answers</h3>
           <Button variant="secondary" size="sm" disabled title="Asking questions coming soon">
@@ -893,9 +897,9 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
             Ask a Question
           </Button>
         </div>
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 space-y-3">
           {details.questions.map((qa) => (
-            <div key={qa.id} className="rounded-xl border border-surface-100 bg-surface-50/50 p-4">
+            <div key={qa.id} className="rounded-xl border border-surface-100 bg-surface-50/50 p-3.5">
               <div className="flex items-start gap-2.5">
                 <MessageCircle size={16} className="mt-0.5 shrink-0 text-brand-600" aria-hidden="true" />
                 <div>
@@ -905,12 +909,48 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
                   </p>
                 </div>
               </div>
-              <p className="mt-2 pl-[26px] text-sm leading-relaxed text-surface-600">{qa.answer}</p>
+              <p className="mt-1.5 pl-[26px] text-sm leading-relaxed text-surface-600">{qa.answer}</p>
             </div>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── Review content with collapse/expand ── */
+
+function ReviewContent({ text }: { text: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [clamped, setClamped] = useState(true);
+  const [overflows, setOverflows] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el) setOverflows(el.scrollHeight > el.clientHeight);
+  }, []);
+
+  return (
+    <>
+      <p
+        ref={ref}
+        className={cn(
+          "mt-1 text-sm leading-relaxed text-surface-600",
+          clamped && "line-clamp-3",
+        )}
+      >
+        {text}
+      </p>
+      {overflows && (
+        <button
+          type="button"
+          onClick={() => setClamped((prev) => !prev)}
+          className="mt-1 text-xs font-semibold text-brand-600 transition-colors duration-fast hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+        >
+          {clamped ? "Read more" : "Show less"}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -946,15 +986,16 @@ function FrequentlyBoughtTogetherSection({
   };
 
   return (
-    <div className="rounded-2xl border border-surface-200 bg-surface-0 p-5 sm:p-6">
+    <div className="rounded-2xl border border-surface-200 bg-surface-0 p-4 sm:p-5">
       <SectionHeader
         title="Frequently Bought Together"
         subtitle="Customers who bought this also purchased"
+        className="mb-4 sm:mb-4"
       />
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="flex-1 divide-y divide-surface-100">
-          <div className="flex items-center gap-3 py-3">
+          <div className="flex items-center gap-3 py-2.5">
             <span className="flex h-5 w-5 items-center justify-center rounded bg-brand-100 text-brand-600">
               <Check size={12} aria-hidden="true" />
             </span>
@@ -968,7 +1009,7 @@ function FrequentlyBoughtTogetherSection({
           {items.map((item) => (
             <label
               key={item.id}
-              className="-mx-2 flex cursor-pointer items-center gap-3 rounded px-2 py-3 transition-colors hover:bg-surface-50"
+              className="-mx-2 flex cursor-pointer items-center gap-3 rounded px-2 py-2.5 transition-colors hover:bg-surface-50"
             >
               <input
                 type="checkbox"
@@ -985,16 +1026,16 @@ function FrequentlyBoughtTogetherSection({
           ))}
         </div>
 
-        <div className="shrink-0 rounded-xl border border-surface-200 bg-surface-50 p-4 lg:w-56">
+        <div className="shrink-0 rounded-xl border border-surface-200 bg-surface-50 p-3.5 lg:w-52">
           <p className="text-xs font-medium uppercase tracking-wide text-surface-400">Combined Price</p>
-          <p className="mt-1 text-xl font-bold text-brand-700">{formatCurrency(combinedPrice)}</p>
+          <p className="mt-1 text-lg font-bold text-brand-700">{formatCurrency(combinedPrice)}</p>
           {combinedMrp > combinedPrice && (
             <p className="text-xs text-surface-400">
               You save {formatCurrency(combinedMrp - combinedPrice)} (
               {Math.round(((combinedMrp - combinedPrice) / combinedMrp) * 100)}%)
             </p>
           )}
-          <Button onClick={handleAddAll} fullWidth className="mt-3" size="sm">
+          <Button onClick={handleAddAll} fullWidth className="mt-2.5" size="sm">
             <ShoppingCart size={14} className="mr-1.5" aria-hidden="true" />
             Add All to Cart
           </Button>
@@ -1068,8 +1109,8 @@ function DetailsSkeleton() {
       <Container>
         <Skeleton className="h-4 w-64" />
       </Container>
-      <Container className="mt-5">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+      <Container className="mt-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
           <div className="flex flex-col gap-3 sm:flex-row-reverse">
             <Skeleton className="aspect-square w-full flex-1 rounded-2xl" />
             <div className="flex gap-2 sm:flex-col">
@@ -1092,12 +1133,12 @@ function DetailsSkeleton() {
             <Skeleton className="h-16 w-full rounded-xl" />
           </div>
         </div>
-        <div className="mt-10 space-y-2 rounded-2xl border border-surface-200 bg-surface-0">
+        <div className="mt-6 space-y-2 rounded-2xl border border-surface-200 bg-surface-0">
           {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-14 w-full rounded-none first:rounded-t-2xl last:rounded-b-2xl" />
+            <Skeleton key={i} className="h-12 w-full rounded-none first:rounded-t-2xl last:rounded-b-2xl" />
           ))}
         </div>
-        <div className="mt-10">
+        <div className="mt-6">
           <Skeleton className="mb-6 h-7 w-48" />
           <div className="flex gap-4">
             {Array.from({ length: 4 }, (_, i) => (

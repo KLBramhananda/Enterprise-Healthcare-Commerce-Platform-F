@@ -25,7 +25,7 @@ import {
   TestimonialsSection,
   AppDownloadBanner,
   DiscoveryRecommendations,
-} from "./home";
+} from "./home/index";
 
 export default function Home() {
   usePageTitle("Home", "Your Trusted Healthcare Partner");
