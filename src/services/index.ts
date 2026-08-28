@@ -15,6 +15,8 @@ export type { IAddressService } from "./addressService";
 export { MockAddressService } from "./addressMock";
 export type { ICheckoutService } from "./checkoutService";
 export { MockCheckoutService } from "./checkoutMock";
+export type { IPaymentService } from "./paymentService";
+export { MockPaymentService } from "./paymentMock";
 export type { INotificationService } from "./notificationService";
 export { MockNotificationService } from "./notificationMock";
 export type { IAccountService } from "./accountService";

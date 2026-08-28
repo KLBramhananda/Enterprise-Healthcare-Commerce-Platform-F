@@ -5,7 +5,7 @@
  * and promo discount. Responsive: sidebar on desktop, bottom bar on mobile.
  */
 
-import { ShoppingBag } from "lucide-react";
+import { Lock, ShieldCheck, ShoppingBag } from "lucide-react";
 import { formatCurrency } from "@/utils/formatters";
 import type { CartItem } from "@/store/cartStore";
 import type { AppliedPromo } from "@/types/checkout";
@@ -32,7 +32,7 @@ export default function OrderSummaryCard({
   appliedPromo,
 }: OrderSummaryCardProps) {
   return (
-    <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
+    <div className="rounded-xl border border-surface-200 bg-surface-0 p-4">
       <div className="flex items-center gap-2">
         <ShoppingBag size={16} className="text-brand-600" />
         <h3 className="text-sm font-semibold text-surface-900">
@@ -40,7 +40,7 @@ export default function OrderSummaryCard({
         </h3>
       </div>
 
-      <ul className="mt-3 space-y-2.5">
+      <ul className="mt-2.5 space-y-2">
         {items.map((item) => (
           <li key={item.product.id} className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -54,7 +54,7 @@ export default function OrderSummaryCard({
         ))}
       </ul>
 
-      <div className="mt-4 space-y-2 border-t border-surface-100 pt-4">
+      <div className="mt-3 space-y-1.5 border-t border-surface-100 pt-3">
         <div className="flex justify-between text-sm">
           <span className="text-surface-500">Subtotal</span>
           <span className="font-medium text-surface-900">{formatCurrency(subtotal)}</span>
@@ -87,9 +87,17 @@ export default function OrderSummaryCard({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-surface-200 pt-3">
-        <span className="text-base font-bold text-surface-900">Grand Total</span>
-        <span className="text-base font-bold text-brand-700">{formatCurrency(grandTotal)}</span>
+      <div className="mt-3 flex items-center justify-between rounded-lg bg-brand-50/70 px-3 py-2.5">
+        <span className="text-sm font-semibold text-surface-900">Grand Total</span>
+        <span className="text-lg font-bold text-brand-700">{formatCurrency(grandTotal)}</span>
+      </div>
+
+      <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-surface-400">
+        <ShieldCheck size={12} className="text-success-600" />
+        <span>100% secure checkout</span>
+        <span className="text-surface-300">·</span>
+        <Lock size={11} className="text-surface-500" />
+        <span>256-bit encrypted</span>
       </div>
     </div>
   );

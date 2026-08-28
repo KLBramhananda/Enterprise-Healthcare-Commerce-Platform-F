@@ -12,6 +12,7 @@ import type {
   CheckoutSession,
   DeliverySpeed,
   PaymentMethodType,
+  PaymentInstrument,
   PrescriptionFile,
   AppliedPromo,
   Order,
@@ -26,8 +27,10 @@ interface CheckoutState {
   setDeliveryNote: (note: string) => void;
   addPrescription: (file: PrescriptionFile) => void;
   removePrescription: (fileId: string) => void;
+  setPrescriptionUploadLater: (value: boolean) => void;
   setAppliedPromo: (promo: AppliedPromo | null) => void;
   setPaymentMethod: (method: PaymentMethodType) => void;
+  setPaymentInstrument: (instrument: PaymentInstrument | null) => void;
   addOrder: (order: Order) => void;
   resetSession: () => void;
 }
@@ -37,8 +40,10 @@ const INITIAL_SESSION: CheckoutSession = {
   deliverySpeed: "standard",
   deliveryNote: "",
   prescriptionFiles: [],
+  prescriptionUploadLater: false,
   appliedPromo: null,
   paymentMethod: null,
+  paymentInstrument: null,
 };
 
 export const useCheckoutStore = create<CheckoutState>()(
@@ -72,14 +77,25 @@ export const useCheckoutStore = create<CheckoutState>()(
           },
         })),
 
+      setPrescriptionUploadLater: (prescriptionUploadLater) =>
+        set((state) => ({ session: { ...state.session, prescriptionUploadLater } })),
+
       setAppliedPromo: (appliedPromo) =>
         set((state) => ({ session: { ...state.session, appliedPromo } })),
 
       setPaymentMethod: (paymentMethod) =>
         set((state) => ({ session: { ...state.session, paymentMethod } })),
 
+      setPaymentInstrument: (paymentInstrument) =>
+        set((state) => ({ session: { ...state.session, paymentInstrument } })),
+
       addOrder: (order) =>
-        set((state) => ({ orders: [order, ...state.orders] })),
+        set((state) => ({
+          orders: [
+            order,
+            ...state.orders.filter((existing) => existing.id !== order.id),
+          ],
+        })),
 
       resetSession: () => set({ session: { ...INITIAL_SESSION } }),
     }),

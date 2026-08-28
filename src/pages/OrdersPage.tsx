@@ -7,13 +7,16 @@ import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useOrderHistory } from "@/hooks/checkout/useCheckout";
 import { useCart } from "@/hooks/shopping";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { ORDER_STATUS_LABELS } from "@/utils/orderTracking";
 import type { OrderStatus, Order, Product } from "@/types";
 
 const STATUS_VARIANTS: Record<OrderStatus, "success" | "warning" | "info" | "danger"> = {
   placed: "info",
   confirmed: "info",
   processing: "warning",
+  packed: "warning",
   shipped: "warning",
+  out_for_delivery: "warning",
   delivered: "success",
   cancelled: "danger",
 };
@@ -24,6 +27,7 @@ const STATUS_TABS: { id: string; label: string; filter: OrderStatus | "all" }[] 
   { id: "confirmed", label: "Confirmed", filter: "confirmed" },
   { id: "processing", label: "Processing", filter: "processing" },
   { id: "shipped", label: "Shipped", filter: "shipped" },
+  { id: "out_for_delivery", label: "Out for Delivery", filter: "out_for_delivery" },
   { id: "delivered", label: "Delivered", filter: "delivered" },
   { id: "cancelled", label: "Cancelled", filter: "cancelled" },
 ];
@@ -164,7 +168,7 @@ export default function OrdersPage() {
                                 {order.id}
                               </span>
                               <Badge variant={STATUS_VARIANTS[order.status]}>
-                                {order.status}
+                                {ORDER_STATUS_LABELS[order.status]}
                               </Badge>
                             </div>
 

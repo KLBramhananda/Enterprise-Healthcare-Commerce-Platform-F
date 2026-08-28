@@ -13,16 +13,18 @@ import type {
   OrderItem,
   DeliverySpeed,
   PaymentMethodType,
+  OrderPaymentInfo,
+  Invoice,
 } from "@/types/checkout";
 import type { Product } from "@/types/catalog";
-import { DELIVERY_OPTIONS } from "@/config/checkout";
+import {
+  CHECKOUT_OFFERS,
+  DELIVERY_OPTIONS,
+  isFreeDeliveryEligible,
+} from "@/config/checkout";
 import type { ICheckoutService } from "./checkoutService";
 
-const VALID_PROMOS: Record<string, { discountPercent: number; maxDiscount: number; minOrder: number; description: string }> = {
-  HEALTH20: { discountPercent: 20, maxDiscount: 15, minOrder: 25, description: "20% off up to $15" },
-};
-
-let orderCounter = 1000;
+let orderCounter = 0;
 const orderHistory: Map<string, Order> = new Map();
 
 function delay(ms = 300): Promise<void> {
@@ -30,7 +32,13 @@ function delay(ms = 300): Promise<void> {
 }
 
 function generateOrderId(): string {
-  return `ORD-${String(++orderCounter).padStart(6, "0")}`;
+  const year = new Date().getFullYear();
+  return `KM${year}${String(++orderCounter).padStart(5, "0")}`;
+}
+
+function generateTrackingId(): string {
+  const rand = String(Math.floor(100000000 + Math.random() * 900000000));
+  return `KMTRK-${rand}`;
 }
 
 function calculateTax(subtotal: number): number {
@@ -53,17 +61,30 @@ export class MockCheckoutService implements ICheckoutService {
 
   async validatePromoCode(code: string, subtotal: number): Promise<AppliedPromo | null> {
     await delay(250);
-    const promo = VALID_PROMOS[code.toUpperCase()];
-    if (!promo) return null;
-    if (subtotal < promo.minOrder) return null;
-    const discountAmount = Math.min(
-      Math.round(subtotal * (promo.discountPercent / 100) * 100) / 100,
-      promo.maxDiscount,
-    );
+    const offer = CHECKOUT_OFFERS.find((o) => o.code.toUpperCase() === code.toUpperCase());
+    if (!offer) return null;
+    if (offer.minOrder !== undefined && subtotal < offer.minOrder) return null;
+
+    let discountPercent = offer.discountPercent ?? 0;
+    let discountAmount: number;
+
+    if (offer.discountType === "flat") {
+      discountPercent = 0;
+      discountAmount = Math.min(offer.flatAmount ?? 0, subtotal);
+    } else if (offer.discountType === "free_delivery") {
+      discountPercent = 0;
+      discountAmount = 0;
+    } else {
+      discountAmount =
+        Math.round(subtotal * (discountPercent / 100) * 100) / 100;
+    }
+
     return {
-      code: code.toUpperCase(),
-      discountPercent: promo.discountPercent,
+      code: offer.code.toUpperCase(),
+      discountPercent,
       discountAmount,
+      minOrder: offer.minOrder,
+      discountType: offer.discountType,
     };
   }
 
@@ -98,7 +119,10 @@ export class MockCheckoutService implements ICheckoutService {
     );
 
     const deliveryOption = DELIVERY_OPTIONS.find((o) => o.speed === params.deliverySpeed);
-    const deliveryCharge = deliveryOption?.charge ?? 0;
+    const baseDeliveryCharge = deliveryOption?.charge ?? 0;
+    const deliveryCharge = isFreeDeliveryEligible(params.appliedPromo, subtotal)
+      ? 0
+      : baseDeliveryCharge;
 
     const discount = params.appliedPromo?.discountAmount ?? 0;
     const tax = calculateTax(subtotal - discount);
@@ -106,6 +130,8 @@ export class MockCheckoutService implements ICheckoutService {
 
     const order: Order = {
       id: generateOrderId(),
+      invoiceId: "",
+      trackingId: generateTrackingId(),
       items,
       address: { id: params.addressId } as never, // resolved by caller
       deliverySpeed: params.deliverySpeed,
@@ -118,12 +144,26 @@ export class MockCheckoutService implements ICheckoutService {
       tax,
       grandTotal,
       paymentMethod: params.paymentMethod,
+      payment: { method: params.paymentMethod, status: "pending" },
       status: "placed",
       placedAt: new Date().toISOString(),
       estimatedDelivery: getEstimatedDelivery(params.deliverySpeed, deliveryOption?.estimatedDays ?? 4),
     };
 
     orderHistory.set(order.id, order);
+    return order;
+  }
+
+  async confirmPayment(orderId: string, payment: OrderPaymentInfo): Promise<Order> {
+    await delay(350);
+    const order = orderHistory.get(orderId);
+    if (!order) throw new Error(`Order ${orderId} was not found.`);
+    order.payment = { ...payment };
+    order.invoiceId = `INV-${order.id}`;
+    if (payment.status === "paid") {
+      order.status = "confirmed";
+    }
+    orderHistory.set(orderId, order);
     return order;
   }
 
@@ -137,5 +177,40 @@ export class MockCheckoutService implements ICheckoutService {
     return Array.from(orderHistory.values()).sort(
       (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime(),
     );
+  }
+
+  async getInvoice(orderId: string): Promise<Invoice | null> {
+    await delay(250);
+    const order = orderHistory.get(orderId);
+    if (!order) return null;
+
+    const taxRate = order.subtotal - order.discount > 0 ? Math.round((order.tax / (order.subtotal - order.discount)) * 100) : 0;
+
+    return {
+      id: order.invoiceId || `INV-${order.id}`,
+      orderId: order.id,
+      issuedAt: order.payment?.paidAt ?? order.placedAt,
+      seller: {
+        name: "KeeMeds Commerce Pvt. Ltd.",
+        address: "24 Wellness Avenue, Sector 62, Bengaluru, Karnataka 560102, India",
+        gstin: "29ABSCK1234F1Z2",
+        contact: "support@keemeds.in",
+      },
+      billingAddress: order.address,
+      items: order.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        unitPrice: item.product.price,
+        amount: Math.round(item.product.price * item.quantity * 100) / 100,
+      })),
+      subtotal: order.subtotal,
+      discount: order.discount,
+      deliveryCharge: order.deliveryCharge,
+      tax: order.tax,
+      taxRate,
+      grandTotal: order.grandTotal,
+      paymentMethod: order.payment?.method ?? order.paymentMethod,
+      transactionId: order.payment?.transactionId,
+    };
   }
 }

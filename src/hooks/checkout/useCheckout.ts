@@ -10,9 +10,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { useCartStore } from "@/store/cartStore";
 import { services } from "@/services/factory";
-import { DELIVERY_OPTIONS } from "@/config/checkout";
+import { DELIVERY_OPTIONS, isFreeDeliveryEligible } from "@/config/checkout";
 import { useAddresses } from "./useAddress";
-import type { AppliedPromo } from "@/types/checkout";
+import type { AppliedPromo, Order } from "@/types/checkout";
 
 const checkoutService = services.checkout;
 
@@ -31,8 +31,10 @@ export function useCheckoutSession() {
   const setDeliveryNote = useCheckoutStore((s) => s.setDeliveryNote);
   const setAppliedPromo = useCheckoutStore((s) => s.setAppliedPromo);
   const setPaymentMethod = useCheckoutStore((s) => s.setPaymentMethod);
+  const setPaymentInstrument = useCheckoutStore((s) => s.setPaymentInstrument);
   const addPrescription = useCheckoutStore((s) => s.addPrescription);
   const removePrescription = useCheckoutStore((s) => s.removePrescription);
+  const setPrescriptionUploadLater = useCheckoutStore((s) => s.setPrescriptionUploadLater);
   const addOrder = useCheckoutStore((s) => s.addOrder);
   const resetSession = useCheckoutStore((s) => s.resetSession);
 
@@ -45,8 +47,10 @@ export function useCheckoutSession() {
 
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const savings = items.reduce((sum, i) => sum + (i.product.mrp - i.product.price) * i.quantity, 0);
-  const deliveryCharge =
-    DELIVERY_OPTIONS.find((o) => o.speed === session.deliverySpeed)?.charge ?? 0;
+  const freeDelivery = isFreeDeliveryEligible(session.appliedPromo, subtotal);
+  const deliveryCharge = freeDelivery
+    ? 0
+    : DELIVERY_OPTIONS.find((o) => o.speed === session.deliverySpeed)?.charge ?? 0;
   const discount = session.appliedPromo?.discountAmount ?? 0;
   const tax = Math.round((subtotal - discount) * 0.08 * 100) / 100;
   const grandTotal = Math.round((subtotal - discount + deliveryCharge + tax) * 100) / 100;
@@ -55,14 +59,22 @@ export function useCheckoutSession() {
     items.length > 0 &&
     session.addressId !== null &&
     session.paymentMethod !== null &&
-    (!hasPrescriptionItems || session.prescriptionFiles.length > 0);
+    (!hasPrescriptionItems ||
+      session.prescriptionFiles.length > 0 ||
+      session.prescriptionUploadLater);
 
   // In-flight lock so double clicks (before React re-renders) cannot submit
   // twice. The rendered button is also disabled while `isPendingOrder`.
   const isPlacingRef = useRef(false);
   const [isPendingOrder, setIsPendingOrder] = useState(false);
 
-  const placeOrder = useCallback(async () => {
+  /**
+   * Creates the order record WITHOUT clearing the cart. Payment happens next:
+   *  - COD:  finalized immediately (see finalizeCodOrder).
+   *  - Online: cart persists until the gateway succeeds, so a failed payment
+   *    can be retried or re-routed without losing the cart.
+   */
+  const createOrder = useCallback(async (): Promise<Order | null> => {
     if (isPlacingRef.current || !canPlaceOrder || !session.addressId || !session.paymentMethod) {
       return null;
     }
@@ -80,15 +92,32 @@ export function useCheckoutSession() {
       });
       const address = addresses?.find((a) => a.id === session.addressId);
       if (address) order.address = address;
-      addOrder(order);
-      clearCart();
-      resetSession();
       return order;
     } finally {
       isPlacingRef.current = false;
       setIsPendingOrder(false);
     }
-  }, [canPlaceOrder, session, items, addresses, addOrder, clearCart, resetSession]);
+  }, [canPlaceOrder, session, items, addresses]);
+
+  /** Accepts an order on the customer side (COD): confirm + persist + clear. */
+  const finalizeCodOrder = useCallback(
+    async (order: Order): Promise<Order | null> => {
+      try {
+        const updated = await checkoutService.confirmPayment(order.id, {
+          method: order.paymentMethod,
+          status: "pending",
+          instrumentSummary: "Cash on Delivery",
+        });
+        addOrder(updated);
+        clearCart();
+        resetSession();
+        return updated;
+      } catch {
+        return null;
+      }
+    },
+    [addOrder, clearCart, resetSession],
+  );
 
   return {
     session,
@@ -108,9 +137,12 @@ export function useCheckoutSession() {
     setDeliveryNote,
     setAppliedPromo,
     setPaymentMethod,
+    setPaymentInstrument,
     addPrescription,
     removePrescription,
-    placeOrder,
+    setPrescriptionUploadLater,
+    createOrder,
+    finalizeCodOrder,
   };
 }
 

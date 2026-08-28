@@ -8,6 +8,10 @@
  * Displays authenticated account links (profile, orders, prescriptions,
  * wishlist, addresses, engagement, notifications, settings, logout)
  * or unauthenticated sign-in/register actions.
+ *
+ * The desktop dropdown is bounded to the viewport (header offset subtracted)
+ * and scrolls internally; the Logout action is pinned at the bottom of the
+ * menu, visually separated from the navigation items.
  */
 
 import { useCallback, type RefObject } from "react";
@@ -31,6 +35,15 @@ import {
 import { Drawer, Popover } from "@/components/ui";
 import { APP_NAME } from "@/config/constants";
 import { useAuth } from "@/hooks/auth";
+
+/**
+ * Desktop dropdown height cap: the menu must never exceed the viewport.
+ * The measured header offset (main nav + category nav, from useScrollLayout)
+ * is subtracted so the list scrolls internally instead of pushing the page
+ * or cutting off items on short viewports.
+ */
+const PROFILE_MENU_MAX_HEIGHT =
+  "calc(100vh - var(--layout-header-main-h) - var(--layout-header-cat-h) - 1rem)";
 
 interface ProfileMenuProps {
   isOpen: boolean;
@@ -69,47 +82,54 @@ export default function ProfileMenu({ isOpen, onClose, anchorRef }: ProfileMenuP
         placement="bottom-end"
         role="menu"
         ariaLabel="Account menu"
-        className="hidden w-56 py-1 sm:block"
+        maxHeight={PROFILE_MENU_MAX_HEIGHT}
+        className="hidden w-56 py-1 sm:flex sm:flex-col"
       >
         {isAuthenticated ? (
             <>
-              <div className="border-b border-surface-100 px-4 py-3">
-                <p className="text-sm font-semibold text-surface-900">
-                  {user?.fullName ?? "My Account"}
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <div className="border-b border-surface-100 px-4 py-3">
+                  <p className="text-sm font-semibold text-surface-900">
+                    {user?.fullName ?? "My Account"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-surface-500">{user?.email}</p>
+                </div>
+                <MenuItem icon={<User size={15} />} label="My Profile" onClick={() => navigateAndClose("/profile")} />
+                <MenuItem icon={<Package size={15} />} label="My Orders" onClick={() => navigateAndClose("/orders")} />
+                <MenuItem icon={<ClipboardList size={15} />} label="Prescriptions" onClick={() => navigateAndClose("/prescriptions")} />
+                <MenuItem icon={<Heart size={15} />} label="Wishlist" onClick={() => navigateAndClose("/wishlist")} />
+                <MenuItem icon={<MapPin size={15} />} label="My Addresses" onClick={() => navigateAndClose("/addresses")} />
+                <div className="my-1 border-t border-surface-100" />
+                <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
+                  Engagement
                 </p>
-                <p className="mt-0.5 text-xs text-surface-500">{user?.email}</p>
+                <MenuItem icon={<Tag size={15} />} label="Offers & Deals" onClick={() => navigateAndClose("/offers")} />
+                <MenuItem icon={<Percent size={15} />} label="My Coupons" onClick={() => navigateAndClose("/coupons")} />
+                <MenuItem icon={<Award size={15} />} label="Loyalty Points" onClick={() => navigateAndClose("/rewards")} />
+                <MenuItem icon={<Gift size={15} />} label="Refer & Earn" onClick={() => navigateAndClose("/referral")} />
+                <MenuItem icon={<Sparkles size={15} />} label="Membership" onClick={() => navigateAndClose("/membership")} />
+                <div className="my-1 border-t border-surface-100" />
+                <MenuItem icon={<Bell size={15} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
+                <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => navigateAndClose("/settings")} />
+                <div className="my-1 border-t border-surface-100" />
+                <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
+                  Support
+                </p>
+                <MenuItem icon={<HelpCircle size={15} />} label="Help Center" onClick={() => navigateAndClose("/help")} />
               </div>
-              <MenuItem icon={<User size={15} />} label="My Profile" onClick={() => navigateAndClose("/profile")} />
-              <MenuItem icon={<Package size={15} />} label="My Orders" onClick={() => navigateAndClose("/orders")} />
-              <MenuItem icon={<ClipboardList size={15} />} label="Prescriptions" onClick={() => navigateAndClose("/prescriptions")} />
-              <MenuItem icon={<Heart size={15} />} label="Wishlist" onClick={() => navigateAndClose("/wishlist")} />
-              <MenuItem icon={<MapPin size={15} />} label="My Addresses" onClick={() => navigateAndClose("/addresses")} />
-              <div className="my-1 border-t border-surface-100" />
-              <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
-                Engagement
-              </p>
-              <MenuItem icon={<Tag size={15} />} label="Offers & Deals" onClick={() => navigateAndClose("/offers")} />
-              <MenuItem icon={<Percent size={15} />} label="My Coupons" onClick={() => navigateAndClose("/coupons")} />
-              <MenuItem icon={<Award size={15} />} label="Loyalty Points" onClick={() => navigateAndClose("/rewards")} />
-              <MenuItem icon={<Gift size={15} />} label="Refer & Earn" onClick={() => navigateAndClose("/referral")} />
-              <MenuItem icon={<Sparkles size={15} />} label="Membership" onClick={() => navigateAndClose("/membership")} />
-              <div className="my-1 border-t border-surface-100" />
-              <MenuItem icon={<Bell size={15} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
-              <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => navigateAndClose("/settings")} />
-              <div className="my-1 border-t border-surface-100" />
-              <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
-                Support
-              </p>
-              <MenuItem icon={<HelpCircle size={15} />} label="Help Center" onClick={() => navigateAndClose("/help")} />
-              <div className="my-1 border-t border-surface-100" />
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-danger-600 transition-colors duration-fast hover:bg-danger-50"
-              >
-                <LogOut size={15} />
-                <span>Log out</span>
-              </button>
+
+              {/* Logout — pinned footer, always visible and separated from navigation */}
+              <div className="border-t border-surface-100 p-2">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium text-danger-600 transition-colors duration-fast hover:bg-danger-50"
+                >
+                  <LogOut size={15} />
+                  <span>Log out</span>
+                </button>
+              </div>
             </>
           ) : (
             <>

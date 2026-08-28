@@ -52,6 +52,28 @@ export function Drawer({
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isOpenRef = useRef(isOpen);
 
+  // When `desktopHidden`, the drawer is only visible below `sm` (640px). Track
+  // whether the current viewport hides it so its body scroll lock never fires
+  // on larger viewports, where a matching Popover owns the UI. Without this,
+  // a hidden drawer would still lock the document scroll and cause a
+  // scrollbar-driven viewport width / layout shift.
+  const [viewportHidesDrawer, setViewportHidesDrawer] = useState(
+    () =>
+      desktopHidden &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 640px)").matches,
+  );
+
+  // Keep the hidden-on-desktop state in sync across viewport resizes.
+  useEffect(() => {
+    if (!desktopHidden) return;
+    const mq = window.matchMedia("(min-width: 640px)");
+    const update = () => setViewportHidesDrawer(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [desktopHidden]);
+
   // Track the isOpen prop for the focus trap callback
   useEffect(() => {
     isOpenRef.current = isOpen;
@@ -87,15 +109,17 @@ export function Drawer({
     }
   }, [isOpen]);
 
-  // Body scroll lock
+  // Body scroll lock — skipped when a `desktopHidden` drawer is hidden on
+  // sm+ viewports, so opening a desktop Popover never alters page scrolling,
+  // the scrollbar, or the viewport width.
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || (desktopHidden && viewportHidesDrawer)) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [isOpen]);
+  }, [isOpen, desktopHidden, viewportHidesDrawer]);
 
   // Escape key handler
   useEffect(() => {

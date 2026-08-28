@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import {
   Package,
   ArrowLeft,
-  Download,
   RotateCcw,
   XCircle,
   Truck,
@@ -14,35 +13,33 @@ import {
   HelpCircle,
   MessageCircle,
   FileText,
+  Mail,
+  Phone,
+  UserCircle,
+  Receipt,
 } from "lucide-react";
 import { Container, Badge, Button, Modal, Select, Textarea } from "@/components/ui";
-import Timeline from "@/components/ui/Timeline";
-import type { TimelineEvent } from "@/components/ui/Timeline";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useOrderHistory } from "@/hooks/checkout/useCheckout";
 import { useCart } from "@/hooks/shopping";
 import { useAddresses } from "@/hooks/checkout/useAddress";
-import { formatCurrency } from "@/utils/formatters";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { formatCurrency, formatDate } from "@/utils/formatters";
 import { DELIVERY_SPEED_LABELS, PAYMENT_METHOD_LABELS } from "@/config/checkout";
+import { InvoiceDownloadButton, OrderTrackingTimeline } from "@/components/order";
+import { ORDER_STATUS_LABELS } from "@/utils/orderTracking";
 import type { OrderStatus } from "@/types/checkout";
 
-const STATUS_VARIANTS: Record<string, "success" | "warning" | "info" | "danger"> = {
+const STATUS_VARIANTS: Record<OrderStatus, "success" | "warning" | "info" | "danger"> = {
   placed: "info",
   confirmed: "info",
   processing: "warning",
+  packed: "warning",
   shipped: "warning",
+  out_for_delivery: "warning",
   delivered: "success",
   cancelled: "danger",
-};
-
-const STATUS_ORDER: Record<OrderStatus, number> = {
-  placed: 0,
-  confirmed: 1,
-  processing: 2,
-  shipped: 3,
-  delivered: 4,
-  cancelled: 5,
 };
 
 const CANCEL_REASONS = [
@@ -60,76 +57,6 @@ const RETURN_REASONS = [
   { label: "Other", value: "other" },
 ];
 
-function buildTimeline(status: OrderStatus): TimelineEvent[] {
-  const now = new Date().toISOString();
-  const events: TimelineEvent[] = [];
-
-  events.push({
-    type: "placed",
-    label: "Order Placed",
-    timestamp: now,
-    description: "Your order has been received",
-    isCompleted: status !== "cancelled" && STATUS_ORDER[status] > 0,
-    isCurrent: status === "placed",
-  });
-
-  if (STATUS_ORDER[status] >= 1 && status !== "cancelled") {
-    events.push({
-      type: "confirmed",
-      label: "Order Confirmed",
-      timestamp: now,
-      description: "Your order has been confirmed",
-      isCompleted: STATUS_ORDER[status] > 1,
-      isCurrent: status === "confirmed",
-    });
-  }
-
-  if (STATUS_ORDER[status] >= 2 && status !== "cancelled") {
-    events.push({
-      type: "processing",
-      label: "Processing",
-      timestamp: now,
-      description: "Your order is being prepared",
-      isCompleted: STATUS_ORDER[status] > 2,
-      isCurrent: status === "processing",
-    });
-  }
-
-  if (STATUS_ORDER[status] >= 3 && status !== "cancelled") {
-    events.push({
-      type: "shipped",
-      label: "Shipped",
-      timestamp: now,
-      description: "Your order is on the way",
-      isCompleted: STATUS_ORDER[status] > 3,
-      isCurrent: status === "shipped",
-    });
-  }
-
-  if (status === "delivered") {
-    events.push({
-      type: "delivered",
-      label: "Delivered",
-      timestamp: now,
-      description: "Your order has been delivered",
-      isCompleted: true,
-    });
-  }
-
-  if (status === "cancelled") {
-    events.push({
-      type: "cancelled",
-      label: "Cancelled",
-      timestamp: now,
-      description: "Your order has been cancelled",
-      isCompleted: true,
-      isCancelled: true,
-    });
-  }
-
-  return events;
-}
-
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
   usePageTitle("Order Detail");
@@ -137,6 +64,7 @@ export default function OrderDetailPage() {
   const { data: orders, isLoading } = useOrderHistory();
   const { addItem } = useCart();
   const { data: addresses } = useAddresses();
+  const { user } = useAuth();
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
@@ -189,8 +117,6 @@ export default function OrderDetailPage() {
     );
   }
 
-  const timeline = buildTimeline(order.status);
-
   const handleReorder = () => {
     order.items.forEach((item) => {
       for (let i = 0; i < item.quantity; i++) {
@@ -232,14 +158,19 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Package size={20} className="text-brand-600" />
             <h1 className="text-xl font-bold tracking-tight text-surface-900">
               Order {order.id}
             </h1>
             <Badge variant={STATUS_VARIANTS[order.status]}>
-              {order.status.replace("_", " ")}
+              {ORDER_STATUS_LABELS[order.status] ?? order.status.replace("_", " ")}
             </Badge>
+            {order.payment && (
+              <Badge variant={order.payment.status === "paid" ? "success" : "warning"}>
+                Payment {order.payment.status}
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-surface-500">
             Placed on{" "}
@@ -253,8 +184,9 @@ export default function OrderDetailPage() {
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
+            {/* Order Items */}
             <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
-              <h2 className="mb-4 text-base font-semibold text-surface-900">Order Items</h2>
+              <h2 className="mb-4 text-base font-semibold text-surface-900">Order Summary</h2>
               <div className="divide-y divide-surface-100">
                 {order.items.map((item) => (
                   <div key={item.product.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
@@ -277,9 +209,36 @@ export default function OrderDetailPage() {
               </div>
             </div>
 
+            {/* Customer Information */}
+            <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
+              <h2 className="mb-3 text-base font-semibold text-surface-900">Customer Information</h2>
+              {user ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-3">
+                    <UserCircle size={16} className="mt-0.5 shrink-0 text-surface-400" />
+                    <div>
+                      <p className="text-sm font-medium text-surface-900">{user.fullName}</p>
+                      <p className="text-sm text-surface-500">Customer ID: {user.id}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Mail size={16} className="shrink-0 text-surface-400" />
+                    <span className="text-sm text-surface-600">{user.email}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone size={16} className="shrink-0 text-surface-400" />
+                    <span className="text-sm text-surface-600">{user.phone}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-surface-500">Not available for this session.</p>
+              )}
+            </div>
+
+            {/* Delivery Information */}
             {deliveryAddress && (
               <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
-                <h2 className="mb-3 text-base font-semibold text-surface-900">Delivery Information</h2>
+                <h2 className="mb-3 text-base font-semibold text-surface-900">Delivery Address</h2>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <MapPin size={16} className="mt-0.5 text-surface-400" />
@@ -301,24 +260,78 @@ export default function OrderDetailPage() {
                       {DELIVERY_SPEED_LABELS[order.deliverySpeed] ?? order.deliverySpeed}
                     </span>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <Truck size={16} className="text-surface-400" />
+                    <span className="text-sm text-surface-600">
+                      Tracking: {order.trackingId || "Yet to be generated"}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
 
+            {/* Payment Information */}
             <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
-              <h2 className="mb-3 text-base font-semibold text-surface-900">Payment Method</h2>
-              <div className="flex items-center gap-3">
-                <CreditCard size={16} className="text-surface-400" />
-                <span className="text-sm text-surface-600">
-                  {PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod}
-                </span>
+              <h2 className="mb-3 text-base font-semibold text-surface-900">Payment Information</h2>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-3">
+                  <CreditCard size={16} className="shrink-0 text-surface-400" />
+                  <span className="text-sm text-surface-600">
+                    {PAYMENT_METHOD_LABELS[order.paymentMethod] ?? order.paymentMethod}
+                  </span>
+                </div>
+                {order.payment?.instrumentSummary && (
+                  <div className="flex items-center gap-3">
+                    <CreditCard size={16} className="shrink-0 text-surface-400" />
+                    <span className="text-sm text-surface-600">{order.payment.instrumentSummary}</span>
+                  </div>
+                )}
+                {order.payment?.transactionId && (
+                  <div className="flex items-center gap-3">
+                    <FileText size={16} className="shrink-0 text-surface-400" />
+                    <span className="text-sm text-surface-600">
+                      Transaction ID: {order.payment.transactionId}
+                    </span>
+                  </div>
+                )}
+                {order.payment?.paidAt && (
+                  <div className="flex items-center gap-3">
+                    <FileText size={16} className="shrink-0 text-surface-400" />
+                    <span className="text-sm text-surface-600">
+                      Paid on {formatDate(order.payment.paidAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Invoice */}
+              <div className="mt-4 border-t border-surface-100 pt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Receipt size={16} className="shrink-0 text-surface-400" />
+                    <div>
+                      <p className="text-sm font-medium text-surface-900">
+                        Invoice {order.invoiceId || "(pending)"}
+                      </p>
+                      <p className="text-xs text-surface-400">
+                        Download a printable copy (mock)
+                      </p>
+                    </div>
+                  </div>
+                  <InvoiceDownloadButton
+                    orderId={order.id}
+                    size="sm"
+                    label="Download"
+                    className="shrink-0"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           <div className="space-y-6">
             <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
-              <h2 className="mb-4 text-base font-semibold text-surface-900">Order Summary</h2>
+              <h2 className="mb-4 text-base font-semibold text-surface-900">Price Details</h2>
               <div className="space-y-2.5">
                 <div className="flex justify-between text-sm">
                   <span className="text-surface-500">Subtotal</span>
@@ -358,49 +371,30 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
-              <h2 className="mb-4 text-base font-semibold text-surface-900">Order Timeline</h2>
-              <Timeline events={timeline} />
+              <h2 className="mb-4 text-base font-semibold text-surface-900">Order Tracking</h2>
+              <OrderTrackingTimeline order={order} />
             </div>
 
             <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
               <h2 className="mb-4 text-base font-semibold text-surface-900">Actions</h2>
               <div className="space-y-3">
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={handleReorder}
-                >
+                <Button variant="primary" fullWidth onClick={handleReorder}>
                   <ShoppingCart size={16} className="mr-2" />
                   Reorder
                 </Button>
+                <InvoiceDownloadButton orderId={order.id} variant="secondary" fullWidth />
                 {order.status !== "cancelled" && order.status !== "delivered" && (
-                  <Button
-                    variant="danger"
-                    fullWidth
-                    onClick={() => setCancelModalOpen(true)}
-                  >
+                  <Button variant="danger" fullWidth onClick={() => setCancelModalOpen(true)}>
                     <XCircle size={16} className="mr-2" />
                     Cancel Order
                   </Button>
                 )}
                 {order.status === "delivered" && (
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onClick={() => setReturnModalOpen(true)}
-                  >
+                  <Button variant="secondary" fullWidth onClick={() => setReturnModalOpen(true)}>
                     <RotateCcw size={16} className="mr-2" />
                     Return Request
                   </Button>
                 )}
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  disabled
-                >
-                  <Download size={16} className="mr-2" />
-                  Download Invoice
-                </Button>
               </div>
             </div>
 
