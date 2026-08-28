@@ -1,0 +1,9 @@
+export { default as HelpCenterPage } from "./HelpCenterPage";
+export { default as FAQPage } from "./FAQPage";
+export { default as ContactPage } from "./ContactPage";
+export { default as ReturnsRefundsPage } from "./ReturnsRefundsPage";
+export { default as LiveChatPage } from "./LiveChatPage";
+export { default as TicketListPage } from "./TicketListPage";
+export { default as TicketDetailPage } from "./TicketDetailPage";
+export { default as CreateTicketPage } from "./CreateTicketPage";
+export { default as SupportDashboardPage } from "./SupportDashboardPage";

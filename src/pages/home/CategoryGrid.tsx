@@ -1,59 +1,63 @@
 /**
  * CategoryGrid
  *
- * Horizontal category navigation with visual cards for quick access.
+ * Featured category navigation with visual tiles.
+ * Content is sourced from the homepage service layer.
+ * Uses Container, SectionHeader, IconTile from the design system.
  */
 
 import { Link } from "react-router-dom";
-import { Pill, Leaf, TestTube, Stethoscope, User, Apple, Flower2, Droplets } from "lucide-react";
-
-const categories = [
-  { title: "Medicines", path: "/category/medicines", icon: Pill, color: "bg-blue-100 text-blue-600" },
-  { title: "Wellness", path: "/category/wellness", icon: Leaf, color: "bg-green-100 text-green-600" },
-  { title: "Lab Tests", path: "/category/lab-tests", icon: TestTube, color: "bg-purple-100 text-purple-600" },
-  { title: "Health Devices", path: "/category/health-devices", icon: Stethoscope, color: "bg-amber-100 text-amber-600" },
-  { title: "Personal Care", path: "/category/personal-care", icon: User, color: "bg-pink-100 text-pink-600" },
-  { title: "Nutrition", path: "/category/nutrition", icon: Apple, color: "bg-orange-100 text-orange-600" },
-  { title: "Ayurveda", path: "/category/ayurveda", icon: Flower2, color: "bg-emerald-100 text-emerald-600" },
-  { title: "Homeopathy", path: "/category/homeopathy", icon: Droplets, color: "bg-cyan-100 text-cyan-600" },
-];
+import { ArrowRight } from "lucide-react";
+import { Container, SectionHeader, IconTile, Skeleton } from "@/components/ui";
+import { useHomepageContent } from "@/hooks/homepage";
 
 export default function CategoryGrid() {
-  return (
-    <section className="bg-white py-10 sm:py-12">
-      <div className="mx-auto max-w-7xl px-4 lg:px-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Shop by Category</h2>
-          <Link
-            to="/categories"
-            className="text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-700"
-          >
-            View All
-          </Link>
-        </div>
+  const { data, isLoading } = useHomepageContent();
 
-        <div className="grid grid-cols-4 gap-3 sm:grid-cols-8 sm:gap-4">
-          {categories.map((category) => {
-            const Icon = category.icon;
-            return (
-              <Link
-                key={category.title}
-                to={category.path}
-                className="group flex flex-col items-center gap-2 rounded-xl p-3 transition-all hover:bg-slate-50 sm:p-4"
-              >
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110 sm:h-14 sm:w-14 ${category.color}`}
-                >
-                  <Icon size={22} />
+  return (
+    <section className="bg-surface-50 py-10 sm:py-12">
+      <Container>
+        <SectionHeader
+          title="Shop by Category"
+          subtitle="Everything your family needs, organized for you"
+          action={
+            <Link
+              to="/categories"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 transition-colors duration-fast hover:text-brand-700"
+            >
+              View All
+              <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          }
+        />
+
+        <div className="grid grid-cols-4 gap-x-3 gap-y-5 sm:grid-cols-8">
+          {isLoading
+            ? Array.from({ length: 8 }, (_, i) => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <Skeleton className="h-12 w-12 rounded-xl sm:h-14 sm:w-14" />
+                  <Skeleton className="h-3 w-12" />
                 </div>
-                <span className="text-center text-[11px] font-medium leading-tight text-slate-700 sm:text-xs">
-                  {category.title}
-                </span>
-              </Link>
-            );
-          })}
+              ))
+            : data?.categories.map((category) => (
+                <Link
+                  key={category.id}
+                  to={category.path}
+                  className="group flex flex-col items-center gap-2 rounded-xl p-2 transition-colors duration-normal ease-smooth hover:bg-surface-50 focus-visible:bg-surface-50 focus:outline-none sm:p-3"
+                >
+                  <IconTile
+                    icon={<category.icon size={22} aria-hidden="true" />}
+                    size="md"
+                    color={category.color}
+                    className="transition-transform duration-normal ease-smooth group-hover:scale-110"
+                  />
+                  <span className="text-center text-[11px] font-medium leading-tight text-surface-700 group-hover:text-brand-700 sm:text-xs">
+                    {category.title}
+                  </span>
+                </Link>
+              ))}
         </div>
-      </div>
+      </Container>
     </section>
   );
 }

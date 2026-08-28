@@ -8,6 +8,12 @@ import {
   Apple,
   Flower2,
   Droplets,
+  Award,
+  Flame,
+  Sparkles,
+  HeartPulse,
+  Tag,
+  LayoutGrid,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -25,4 +31,13 @@ export const commerceCategories: NavigationItem[] = [
   { title: "Nutrition", path: "/category/nutrition", icon: Apple },
   { title: "Ayurveda", path: "/category/ayurveda", icon: Flower2 },
   { title: "Homeopathy", path: "/category/homeopathy", icon: Droplets },
+];
+
+export const discoveryLinks: NavigationItem[] = [
+  { title: "Brands", path: "/brands", icon: Award },
+  { title: "Best Sellers", path: "/collection/best-sellers", icon: Flame },
+  { title: "New Arrivals", path: "/collection/new-arrivals", icon: Sparkles },
+  { title: "Collections", path: "/collections", icon: LayoutGrid },
+  { title: "Health Concerns", path: "/health-concerns", icon: HeartPulse },
+  { title: "All Brands", path: "/brands", icon: Tag },
 ];

@@ -1,66 +1,45 @@
 /**
  * ServicesSection
  *
- * Healthcare services offered by KeeMeds with placeholder cards.
+ * Healthcare services grid.
+ * Content is sourced from the homepage service layer.
+ * Uses Container, SectionHeader, ServiceCard, Grid from the design system.
  */
 
-import { FileText, TestTube, Truck, Phone } from "lucide-react";
-
-const services = [
-  {
-    icon: FileText,
-    title: "Upload Prescription",
-    description: "Upload your prescription and get medicines delivered hassle-free",
-    color: "bg-blue-50 text-blue-600 border-blue-200",
-  },
-  {
-    icon: TestTube,
-    title: "Book Lab Tests",
-    description: "Schedule lab tests from certified labs at discounted prices",
-    color: "bg-purple-50 text-purple-600 border-purple-200",
-  },
-  {
-    icon: Truck,
-    title: "Express Delivery",
-    description: "Get your medicines delivered within 2 hours in your city",
-    color: "bg-emerald-50 text-emerald-600 border-emerald-200",
-  },
-  {
-    icon: Phone,
-    title: "Doctor Consultation",
-    description: "Consult with certified doctors online, anytime anywhere",
-    color: "bg-amber-50 text-amber-600 border-amber-200",
-  },
-];
+import { Container, SectionHeader, ServiceCard, Grid } from "@/components/ui";
+import { useHomepageContent } from "@/hooks/homepage";
 
 export default function ServicesSection() {
-  return (
-    <section className="bg-slate-50 py-10 sm:py-12">
-      <div className="mx-auto max-w-7xl px-4 lg:px-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Our Services</h2>
-          <p className="mt-1 text-sm text-slate-500">Healthcare made simple, accessible, and reliable</p>
-        </div>
+  const { data, isLoading } = useHomepageContent();
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((service) => {
-            const Icon = service.icon;
-            return (
-              <button
-                key={service.title}
-                type="button"
-                className={`group rounded-xl border p-6 text-left transition-all hover:shadow-md ${service.color}`}
-              >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-                  <Icon size={20} />
-                </div>
-                <h3 className="text-base font-semibold text-slate-900">{service.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{service.description}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+  return (
+    <section className="bg-surface-100 py-10 sm:py-12">
+      <Container>
+        <SectionHeader
+          title="Our Services"
+          subtitle="Healthcare made simple, accessible, and reliable"
+        />
+
+        <Grid
+          cols={1}
+          gap="md"
+          responsive={{ sm: { cols: 2 }, lg: { cols: 4 } }}
+        >
+          {isLoading
+            ? Array.from({ length: 4 }, (_, i) => (
+                <div key={i} className="h-44 animate-pulse rounded-xl border border-surface-200 bg-surface-0" />
+              ))
+            : data?.services.map((service) => (
+                <ServiceCard
+                  key={service.id}
+                  icon={<service.icon size={20} className="text-inherit" aria-hidden="true" />}
+                  title={service.title}
+                  description={service.description}
+                  color={service.color}
+                />
+              ))}
+        </Grid>
+      </Container>
     </section>
   );
 }
