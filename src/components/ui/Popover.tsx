@@ -121,12 +121,15 @@ export default function Popover({
   // Resolve the anchor: an internally owned trigger, or the external anchorRef.
   const anchor = trigger ? internalTriggerRef : (anchorRef ?? internalTriggerRef);
 
-  const floatingRef = useRef<HTMLDivElement | null>(null);
   const prevFocusRef = useRef<HTMLElement | null>(null);
   const generatedId = useId();
   const contentId = `popover-${generatedId}`;
 
-  const { coords } = useFloatingPosition({
+  // The floating element ref is owned by useFloatingPosition: the hook measures
+  // the portal content through it to resolve coordinates. Attaching this same
+  // ref to the portal div keeps the hook's measurements and this component's
+  // outside-click / focus logic pointing at the same DOM node.
+  const { coords, floatingRef } = useFloatingPosition({
     open,
     anchorRef: anchor,
     placement,
@@ -156,7 +159,7 @@ export default function Popover({
     };
     document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
-  }, [open, closeOnOutsideClick, close, anchor]);
+  }, [open, closeOnOutsideClick, close, anchor, floatingRef]);
 
   // ── Escape ──
   useEffect(() => {
@@ -186,7 +189,7 @@ export default function Popover({
       if (focusables.length > 0) focusables[0].focus({ preventScroll: true });
       else floatEl.focus({ preventScroll: true });
     }
-  }, [open, role, trapFocus, focusOnOpen]);
+  }, [open, role, trapFocus, focusOnOpen, floatingRef]);
 
   // ── Return focus on close ──
   useEffect(() => {
@@ -222,7 +225,7 @@ export default function Popover({
     };
     floatEl.addEventListener("keydown", onKey);
     return () => floatEl.removeEventListener("keydown", onKey);
-  }, [open, role, trapFocus]);
+  }, [open, role, trapFocus, floatingRef]);
 
   // ── Keyboard navigation for listbox / menu ──
   const handleContentKeyDown = (e: ReactKeyboardEvent) => {
@@ -314,9 +317,8 @@ export default function Popover({
     </div>
   ) : null;
 
-  // Reposition once portal content is mounted (after a frame).
-  // (The positioning hook also repositions on open; this covers the brief
-  // window where body scroll-lock or layout shifts during mount.)
+  // The positioning hook repositions on open (rAF after mount) and on
+  // scroll/resize/anchor/content size changes via ResizeObserver.
 
   const portal = floatingContent
     ? createPortal(floatingContent, document.body)

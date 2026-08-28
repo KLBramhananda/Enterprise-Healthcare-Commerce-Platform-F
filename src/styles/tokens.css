@@ -113,40 +113,7 @@
   --width-narrow: 48rem;
   --width-wide: 80rem;
 
-  /*
-   * Z-Index Scale
-   *
-   * Every stacking layer has a reserved numeric range.
-   * Components MUST use the token that matches their layer — never hardcode values.
-   *
-   *   base       (0)   – Page content. All page content lives inside <main> with isolation:isolate.
-   *   dropdown  (50)   – Dropdown menus, suggestion lists, popover content, category nav (desktop).
-   *   sticky   (100)   – Sticky/fixed navigation headers (global shell primary layer).
-   *   main-nav (110)   – Primary sticky navigation bar (always above category nav).
-   *   overlay  (200)   – Non-modal overlays (carousel controls, tooltip-like elements).
-   *   popover  (320)   – Floating layers portaled to <body> (Popover primitive). Escapes all
-   *                       layout stacking contexts, so it settles above page content, sticky
-   *                       headers/navs, and below dialogs.
-   *   modal    (330)   – Modal/dialog layers and their backdrops (Modal + Drawer primitives,
-   *                       both portal to <body>). Always the highest visual layer above every
-   *                       page component — including popovers — so open dialogs can never be
-   *                       covered by a floating menu, sticky bar, or drawer.
-   *   toast    (400)   – Toast notifications (transient; highest user-facing layer so
-   *                       feedback always appears above any dialog).
-   *
-   * Containment principle:
-   *   <main> uses isolation:isolate, preventing any child stacking context from
-   *   escaping above the global header. Future components automatically inherit
-   *   correct layering without page-specific fixes.
-   */
-  --z-base: 0;
-  --z-dropdown: 50;
-  --z-sticky: 100;
-  --z-main-nav: 110;
-  --z-overlay: 200;
-  --z-popover: 320;
-  --z-modal: 330;
-  --z-toast: 400;
+  /* Layout spacing tokens (see below) — z-index scale moved to :root + @utility below. */
 
   /* ── Layout Spacing Scale ── */
   /*
@@ -185,6 +152,64 @@
 
   /* ── Keyframes ── */
   --animate-slideInRight: slideInRight var(--duration-normal) var(--ease-smooth);
+}
+
+/*
+ * Z-Index Scale
+ *
+ * Every stacking layer has a reserved numeric range.
+ * Components MUST use the token that matches their layer — never hardcode values.
+ *
+ *   base       (0)   – Page content. All page content lives inside <main> with isolation:isolate.
+ *   dropdown  (50)   – Dropdown menus, suggestion lists, popover content, category nav (desktop).
+ *   sticky   (100)   – Sticky/fixed navigation headers (global shell primary layer).
+ *   main-nav (110)   – Primary sticky navigation bar (always above category nav).
+ *   overlay  (200)   – Non-modal overlays (carousel controls, tooltip-like elements).
+ *   popover  (320)   – Floating layers portaled to <body> (Popover primitive). Escapes all
+ *                       layout stacking contexts, so it settles above page content, sticky
+ *                       headers/navs, and below dialogs.
+ *   modal    (330)   – Modal/dialog layers and their backdrops (Modal + Drawer primitives,
+ *                       both portal to <body>). Always the highest visual layer above every
+ *                       page component — including popovers — so open dialogs can never be
+ *                       covered by a floating menu, sticky bar, or drawer.
+ *   toast    (400)   – Toast notifications (transient; highest user-facing layer so
+ *                       feedback always appears above any dialog).
+ *
+ * Containment principle:
+ *   <main> uses isolation:isolate, preventing any child stacking context from
+ *   escaping above the global header. Future components automatically inherit
+ *   correct layering without page-specific fixes.
+ *
+ * Implementation note: Tailwind v4 (as shipped) does not derive named
+ * `z-<name>` utilities from the `--z-<name>` theme namespace, so the scale is
+ * declared here as plain custom properties on `:root` and the layers used by
+ * the header overlay stack are registered as first-class `@utility` rules.
+ */
+:root {
+  --z-base: 0;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-main-nav: 110;
+  --z-overlay: 200;
+  --z-popover: 320;
+  --z-modal: 330;
+  --z-toast: 400;
+}
+
+@utility z-dropdown {
+  z-index: var(--z-dropdown);
+}
+
+@utility z-main-nav {
+  z-index: var(--z-main-nav);
+}
+
+@utility z-popover {
+  z-index: var(--z-popover);
+}
+
+@utility z-modal {
+  z-index: var(--z-modal);
 }
 
 @keyframes slideInRight {
