@@ -6,6 +6,7 @@
  */
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/utils/cn";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "link";
@@ -15,6 +16,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
+  loading?: boolean;
   children: ReactNode;
 }
 
@@ -41,13 +43,17 @@ export default function Button({
   variant = "primary",
   size = "md",
   fullWidth = false,
+  loading = false,
   className,
   children,
+  disabled,
   ...props
 }: ButtonProps) {
   return (
     <button
       type="button"
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       className={cn(
         "inline-flex items-center justify-center rounded-md font-medium transition-colors duration-fast ease-smooth focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         variantStyles[variant],
@@ -57,6 +63,7 @@ export default function Button({
       )}
       {...props}
     >
+      {loading && <Loader2 size={16} className="mr-2 animate-spin" aria-hidden="true" />}
       {children}
     </button>
   );

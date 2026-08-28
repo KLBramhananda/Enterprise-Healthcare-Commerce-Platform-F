@@ -8,6 +8,7 @@ import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useAuth } from "@/hooks/auth";
 import { useAccountPreferences, useUpdatePreferences, useUpdateProfile } from "@/hooks/account";
 import { useAuthStore } from "@/store/authStore";
+import { useToast } from "@/providers/ToastProvider";
 
 const LANGUAGE_OPTIONS = [
   { label: "English", value: "en" },
@@ -28,6 +29,7 @@ export default function AccountSettingsPage() {
   const { data: preferences } = useAccountPreferences();
   const updateProfile = useUpdateProfile();
   const updatePreferences = useUpdatePreferences();
+  const { addToast } = useToast();
 
   const [fullName, setFullName] = useState(user?.fullName ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
@@ -50,8 +52,10 @@ export default function AccountSettingsPage() {
             setUser({ ...user, fullName, phone }, tokens);
           }
           setProfileSaved(true);
+          addToast("Profile updated successfully.", "success");
           setTimeout(() => setProfileSaved(false), 2000);
         },
+        onError: () => addToast("Failed to update profile. Please try again.", "error"),
       },
     );
   };
@@ -62,8 +66,10 @@ export default function AccountSettingsPage() {
       {
         onSuccess: () => {
           setPrefsSaved(true);
+          addToast("Communication preferences updated.", "success");
           setTimeout(() => setPrefsSaved(false), 2000);
         },
+        onError: () => addToast("Failed to update preferences. Please try again.", "error"),
       },
     );
   };
@@ -74,8 +80,10 @@ export default function AccountSettingsPage() {
       {
         onSuccess: () => {
           setLangSaved(true);
+          addToast("Language preference updated.", "success");
           setTimeout(() => setLangSaved(false), 2000);
         },
+        onError: () => addToast("Failed to update language. Please try again.", "error"),
       },
     );
   };
@@ -128,7 +136,7 @@ export default function AccountSettingsPage() {
                 <div className="flex items-center gap-2 pt-2">
                   <Button
                     onClick={handleSaveProfile}
-                    disabled={updateProfile.isPending}
+                    loading={updateProfile.isPending}
                   >
                     {profileSaved ? (
                       <CheckCircle size={14} className="mr-1.5" />
@@ -186,10 +194,10 @@ export default function AccountSettingsPage() {
                 />
               </div>
               <div className="flex items-center gap-2 pt-4">
-                <Button
-                  onClick={handleSavePreferences}
-                  disabled={updatePreferences.isPending}
-                >
+                  <Button
+                    onClick={handleSavePreferences}
+                    loading={updatePreferences.isPending}
+                  >
                   {prefsSaved ? (
                     <CheckCircle size={14} className="mr-1.5" />
                   ) : (
@@ -240,7 +248,7 @@ export default function AccountSettingsPage() {
                 <div className="flex items-center gap-2 pt-2">
                   <Button
                     onClick={handleSaveLanguage}
-                    disabled={updatePreferences.isPending}
+                    loading={updatePreferences.isPending}
                   >
                     {langSaved ? (
                       <CheckCircle size={14} className="mr-1.5" />

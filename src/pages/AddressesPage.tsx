@@ -11,6 +11,7 @@ import {
   useSetDefaultAddress,
 } from "@/hooks/checkout/useAddress";
 import { AddressCard, AddressForm } from "@/components/checkout";
+import { useToast } from "@/providers/ToastProvider";
 import type { Address } from "@/types/checkout";
 import type { AddressFormData } from "@/hooks/checkout/schemas";
 
@@ -23,8 +24,11 @@ const LABEL_TABS: { value: LabelFilter; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+const ADDRESS_ERROR_MESSAGE = "Something went wrong while saving the address. Please try again.";
+
 export default function AddressesPage() {
   usePageTitle("My Addresses");
+  const { addToast } = useToast();
   const { data: addresses, isLoading } = useAddresses();
   const addAddress = useAddAddress();
   const updateAddress = useUpdateAddress();
@@ -59,7 +63,11 @@ export default function AddressesPage() {
 
   const handleAdd = (data: AddressFormData) => {
     addAddress.mutate(data, {
-      onSuccess: () => setFormOpen(false),
+      onSuccess: () => {
+        setFormOpen(false);
+        addToast("Address added successfully", "success");
+      },
+      onError: () => addToast(ADDRESS_ERROR_MESSAGE, "error"),
     });
   };
 
@@ -71,9 +79,25 @@ export default function AddressesPage() {
         onSuccess: () => {
           setFormOpen(false);
           setEditingAddress(null);
+          addToast("Address updated successfully", "success");
         },
+        onError: () => addToast(ADDRESS_ERROR_MESSAGE, "error"),
       },
     );
+  };
+
+  const handleDelete = (id: string) => {
+    deleteAddress.mutate(id, {
+      onSuccess: () => addToast("Address deleted", "success"),
+      onError: () => addToast("Could not delete the address. Please try again.", "error"),
+    });
+  };
+
+  const handleSetDefault = (id: string) => {
+    setDefault.mutate(id, {
+      onSuccess: () => addToast("Address set as default", "success"),
+      onError: () => addToast("Could not update the default address. Please try again.", "error"),
+    });
   };
 
   const openAddForm = () => {
@@ -107,7 +131,7 @@ export default function AddressesPage() {
               </p>
             )}
           </div>
-          <Button size="sm" onClick={openAddForm}>
+          <Button size="sm" onClick={openAddForm} loading={addAddress.isPending}>
             <Plus size={14} className="mr-1" />
             Add New
           </Button>
@@ -125,14 +149,16 @@ export default function AddressesPage() {
                 placeholder="Search by name, city, or label..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search addresses"
                 className="w-full rounded-lg border border-surface-300 bg-surface-0 py-2 pl-9 pr-3 text-sm text-surface-900 placeholder:text-surface-400 focus:border-surface-400 focus:outline-none"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2" role="group" aria-label="Filter addresses by label">
               {LABEL_TABS.map((tab) => (
                 <button
                   key={tab.value}
                   onClick={() => setActiveLabel(tab.value)}
+                  aria-pressed={activeLabel === tab.value}
                   className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                     activeLabel === tab.value
                       ? "bg-surface-900 text-surface-0"
@@ -180,8 +206,8 @@ export default function AddressesPage() {
                   address={addr}
                   onSelect={undefined}
                   onEdit={openEditForm}
-                  onDelete={(id) => deleteAddress.mutate(id)}
-                  onSetDefault={(id) => setDefault.mutate(id)}
+                  onDelete={handleDelete}
+                  onSetDefault={handleSetDefault}
                   showActions
                 />
               ))}

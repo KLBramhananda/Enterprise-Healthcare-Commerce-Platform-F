@@ -84,6 +84,7 @@ export default function HeaderSearch() {
           ref={inputRef}
           type="text"
           placeholder="Search for medicines, wellness products, lab tests..."
+          aria-label="Search"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onFocus={() => setOpen(true)}

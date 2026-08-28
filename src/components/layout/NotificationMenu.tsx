@@ -285,7 +285,7 @@ export default function NotificationMenu({
       </Popover>
 
       {/* ── Mobile drawer (<sm) ── */}
-      <Drawer isOpen={isOpen} onClose={onClose} side="right" title="Notifications">
+      <Drawer isOpen={isOpen} onClose={onClose} side="right" title="Notifications" desktopHidden>
         {/* Mobile header with mark-all */}
         {!isLoading && unreadCount > 0 && (
           <div className="flex items-center justify-end border-b border-surface-100 px-5 py-2.5">

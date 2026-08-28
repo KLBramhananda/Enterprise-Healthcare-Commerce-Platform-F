@@ -23,6 +23,7 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ label, error, options, placeholder, className, id, ...props }, ref) => {
     const selectId = id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    const errorId = selectId ? `${selectId}-error` : undefined;
 
     return (
       <div className="w-full">
@@ -37,6 +38,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           id={selectId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           className={cn(
             "w-full rounded-lg border border-surface-300 bg-surface-0 px-3 py-2 text-sm text-surface-900",
             "transition-colors duration-fast ease-smooth",
@@ -58,7 +61,11 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {error && <p className="mt-1 text-xs text-danger-600">{error}</p>}
+        {error && (
+          <p id={errorId} role="alert" className="mt-1 text-xs text-danger-600">
+            {error}
+          </p>
+        )}
       </div>
     );
   },

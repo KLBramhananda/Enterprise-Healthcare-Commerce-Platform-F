@@ -1,8 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { MockSupportService } from "@/services/supportMock";
+import { services } from "@/services/factory";
 import type { ContactFormData } from "@/types/support";
 
-const supportService = new MockSupportService();
+const supportService = services.support;
 
 export function useSupportChannels() {
   return useQuery({

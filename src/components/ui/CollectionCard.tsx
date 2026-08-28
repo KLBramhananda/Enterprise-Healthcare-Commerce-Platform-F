@@ -35,16 +35,16 @@ export function CollectionCard({ collection, className = "" }: CollectionCardPro
     >
       <div className={`h-2 bg-gradient-to-r ${gradientClass}`} />
       <div className="p-6">
-        <h3 className="text-body-lg font-semibold text-text-primary group-hover:text-brand-600 transition-colors">
+        <h3 className="text-body-lg font-semibold text-surface-900 group-hover:text-brand-600 transition-colors">
           {collection.title}
         </h3>
         {collection.description && (
-          <p className="mt-1 text-body text-text-secondary line-clamp-2">
+          <p className="mt-1 text-body text-surface-500 line-clamp-2">
             {collection.description}
           </p>
         )}
         {collection.productCount > 0 && (
-          <p className="mt-3 text-caption text-text-muted">
+          <p className="mt-3 text-caption text-surface-400">
             {collection.productCount} product{collection.productCount !== 1 ? "s" : ""}
           </p>
         )}

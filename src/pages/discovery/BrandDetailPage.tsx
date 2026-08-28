@@ -22,13 +22,10 @@ import { Breadcrumb } from "@/components/layout";
 import { useBrandBySlug, useBrandProducts } from "@/hooks/catalog";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import type { DiscoverySortOption } from "@/types/catalog";
-import { useCart, useWishlist } from "@/hooks/shopping";
-import { notifyAddedToCart, notifyAddedToWishlist, notifyRemovedFromWishlist } from "@/utils/notifications";
+import { useProductActions } from "@/hooks/shopping";
 import { CATALOG_SORT_OPTIONS, CATALOG_PAGE_SIZE } from "@/config/constants";
 
 export default function BrandDetailPage() {
-  const { addItem } = useCart();
-  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
   const { slug } = useParams<{ slug: string }>();
   const brandQuery = useBrandBySlug(slug);
   const brand = brandQuery.data;
@@ -40,6 +37,9 @@ export default function BrandDetailPage() {
 
   const productsQuery = useBrandProducts(slug, { sortBy, page, pageSize: CATALOG_PAGE_SIZE });
   const products = productsQuery.data;
+  const { handleAddToCart, handleToggleWishlist, isInWishlist } = useProductActions(
+    products?.items ?? [],
+  );
 
   const goToPage = (next: number) => {
     setPage(next);
@@ -169,7 +169,7 @@ export default function BrandDetailPage() {
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
               {products.items.map((product) => (
                 <li key={product.id}>
-                    <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = products.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = products.items.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
+                    <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} />
                 </li>
               ))}
             </ul>

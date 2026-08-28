@@ -6,15 +6,16 @@
  */
 
 import { useRef } from "react";
-import { FileText, UploadCloud, X, AlertCircle } from "lucide-react";
+import { FileText, UploadCloud, X, AlertCircle, Loader2 } from "lucide-react";
 import { usePrescriptionUpload } from "@/hooks/checkout/usePrescriptionUpload";
+import { cn } from "@/utils/cn";
 
 interface PrescriptionUploadProps {
   requiredProducts: Array<{ id: string; name: string }>;
 }
 
 export default function PrescriptionUpload({ requiredProducts }: PrescriptionUploadProps) {
-  const { files, addFiles, removeFile, error } = usePrescriptionUpload();
+  const { files, addFiles, removeFile, error, isProcessing } = usePrescriptionUpload();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,24 +40,34 @@ export default function PrescriptionUpload({ requiredProducts }: PrescriptionUpl
       </ul>
 
       <div
-        className="mt-4 rounded-xl border-2 border-dashed border-surface-300 bg-surface-50 p-6 text-center transition-colors hover:border-brand-400"
+        className={cn(
+          "mt-4 rounded-xl border-2 border-dashed border-surface-300 bg-surface-50 p-6 text-center transition-colors",
+          isProcessing ? "cursor-wait opacity-60" : "hover:border-brand-400",
+        )}
+        aria-busy={isProcessing || undefined}
         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+          if (!isProcessing && e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
         }}
       >
         <UploadCloud size={24} className="mx-auto text-surface-400" />
         <p className="mt-2 text-sm font-medium text-surface-700">
-          Drag &amp; drop or{" "}
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="text-brand-600 hover:text-brand-700"
-          >
-            browse files
-          </button>
+          {isProcessing ? (
+            "Uploading prescription..."
+          ) : (
+            <>
+              Drag &amp; drop or{" "}
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="text-brand-600 hover:text-brand-700"
+              >
+                browse files
+              </button>
+            </>
+          )}
         </p>
         <p className="mt-1 text-xs text-surface-400">JPG, PNG or PDF &middot; Max 10 MB each</p>
         <input
@@ -65,10 +76,18 @@ export default function PrescriptionUpload({ requiredProducts }: PrescriptionUpl
           accept=".jpg,.jpeg,.png,.pdf"
           multiple
           onChange={handleFileChange}
+          disabled={isProcessing}
           className="hidden"
           aria-label="Upload prescription files"
         />
       </div>
+
+      {isProcessing && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-surface-500">
+          <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+          Processing files...
+        </p>
+      )}
 
       {error && (
         <div className="mt-3 flex items-center gap-2 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-700">

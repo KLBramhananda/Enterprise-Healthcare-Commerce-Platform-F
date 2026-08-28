@@ -3,8 +3,17 @@ import { z } from "zod";
 export const ticketSchema = z.object({
   subject: z.string().min(5, "Subject must be at least 5 characters"),
   description: z.string().min(20, "Description must be at least 20 characters"),
-  category: z.string().min(1, "Please select a category"),
-  priority: z.string().min(1, "Please select a priority"),
+  category: z.enum([
+    "order_issue",
+    "delivery",
+    "payment",
+    "prescription",
+    "product",
+    "account",
+    "technical",
+    "other",
+  ]),
+  priority: z.enum(["low", "medium", "high", "urgent"]),
   orderId: z.string().optional(),
 });
 

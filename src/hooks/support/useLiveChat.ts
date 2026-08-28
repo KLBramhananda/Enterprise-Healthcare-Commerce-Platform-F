@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MockSupportService } from "@/services/supportMock";
+import { services } from "@/services/factory";
 
-const supportService = new MockSupportService();
+const supportService = services.support;
 
 export function useChatStatus() {
   return useQuery({

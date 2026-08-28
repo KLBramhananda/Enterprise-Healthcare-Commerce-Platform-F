@@ -15,6 +15,8 @@ interface ProductImageProps {
   className?: string;
   aspect?: "square" | "video" | "portrait";
   size?: "sm" | "md" | "lg";
+  /** Use browser-native lazy loading (off-screen images). Defaults to false. */
+  lazy?: boolean;
 }
 
 function PlaceholderIcon({ size }: { size: "sm" | "md" | "lg" }) {
@@ -41,10 +43,19 @@ export default function ProductImage({
   className,
   aspect = "square",
   size = "md",
+  lazy = false,
 }: ProductImageProps) {
   const [state, setState] = useState<"idle" | "loading" | "loaded" | "error">(
     src ? "loading" : "error",
   );
+
+  // Derived state from props: reset image state when src changes
+  // (e.g. different product variant) without an effect.
+  const [lastSrc, setLastSrc] = useState(src);
+  if (lastSrc !== src) {
+    setLastSrc(src);
+    setState(src ? "loading" : "error");
+  }
 
   const aspectClass = aspect === "video" ? "aspect-video" : aspect === "portrait" ? "aspect-[3/4]" : "aspect-square";
 
@@ -63,6 +74,8 @@ export default function ProductImage({
         <img
           src={src}
           alt={alt}
+          loading={lazy ? "lazy" : undefined}
+          decoding="async"
           className={cn(
             "h-full w-full object-contain transition-opacity duration-normal",
             state === "loaded" ? "opacity-100" : "opacity-0",

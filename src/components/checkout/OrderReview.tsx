@@ -9,6 +9,7 @@
 import { ShieldCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui";
 import { formatCurrency } from "@/utils/formatters";
+import { DELIVERY_SPEED_LABELS, PAYMENT_METHOD_LABELS } from "@/config/checkout";
 import type { Address, DeliverySpeed, PaymentMethodType } from "@/types/checkout";
 
 interface OrderReviewProps {
@@ -22,20 +23,6 @@ interface OrderReviewProps {
   isPlacing: boolean;
   onPlaceOrder: () => void;
 }
-
-const DELIVERY_LABELS: Record<DeliverySpeed, string> = {
-  standard: "Standard Delivery (3-5 days)",
-  express: "Express Delivery (1-2 days)",
-  same_day: "Same Day Delivery",
-};
-
-const PAYMENT_LABELS: Record<PaymentMethodType, string> = {
-  cod: "Cash on Delivery",
-  upi: "UPI",
-  card: "Credit / Debit Card",
-  net_banking: "Net Banking",
-  wallet: "Wallet",
-};
 
 export default function OrderReview({
   address,
@@ -68,7 +55,7 @@ export default function OrderReview({
         {/* Delivery summary */}
         <div className="rounded-lg bg-surface-50 p-3">
           <p className="text-xs font-medium uppercase tracking-wider text-surface-400">Delivery</p>
-          <p className="mt-1 text-sm text-surface-700">{DELIVERY_LABELS[deliverySpeed]}</p>
+          <p className="mt-1 text-sm text-surface-700">{DELIVERY_SPEED_LABELS[deliverySpeed]}</p>
         </div>
 
         {/* Prescription summary */}
@@ -85,7 +72,7 @@ export default function OrderReview({
         <div className="rounded-lg bg-surface-50 p-3">
           <p className="text-xs font-medium uppercase tracking-wider text-surface-400">Payment</p>
           {paymentMethod ? (
-            <p className="mt-1 text-sm text-surface-700">{PAYMENT_LABELS[paymentMethod]}</p>
+            <p className="mt-1 text-sm text-surface-700">{PAYMENT_METHOD_LABELS[paymentMethod]}</p>
           ) : (
             <p className="mt-1 text-sm text-danger-600">No payment method selected</p>
           )}

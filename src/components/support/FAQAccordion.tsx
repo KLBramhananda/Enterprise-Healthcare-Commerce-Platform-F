@@ -17,12 +17,12 @@ export default function FAQAccordion({ item }: { item: FAQItem }) {
 
   return (
     <div className={cn("rounded-xl border transition-colors", isOpen ? "border-brand-200 bg-brand-50/30" : "border-surface-200 bg-surface-0")}>
-      <button type="button" onClick={() => setIsOpen(!isOpen)} className="flex w-full items-center gap-3 px-5 py-4 text-left">
+      <button type="button" id={`faq-button-${item.id}`} onClick={() => setIsOpen(!isOpen)} aria-expanded={isOpen} aria-controls={`faq-panel-${item.id}`} className="flex w-full items-center gap-3 px-5 py-4 text-left">
         <span className="flex-1 text-sm font-semibold text-surface-900">{item.question}</span>
         <ChevronDown size={18} className={cn("shrink-0 text-surface-400 transition-transform duration-200", isOpen && "rotate-180")} />
       </button>
       {isOpen && (
-        <div className="px-5 pb-5">
+        <div id={`faq-panel-${item.id}`} role="region" aria-labelledby={`faq-button-${item.id}`} className="px-5 pb-5">
           <p className="text-sm leading-relaxed text-surface-600">{item.answer}</p>
           <div className="mt-4 flex items-center gap-3 border-t border-surface-100 pt-3">
             <span className="text-xs text-surface-400">Was this helpful?</span>

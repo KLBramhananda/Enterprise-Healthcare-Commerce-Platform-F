@@ -27,6 +27,12 @@ interface DrawerProps {
   children: ReactNode;
   side?: "left" | "right";
   className?: string;
+  /**
+   * Hide the drawer on sm+ viewports. Used when a desktop Popover already
+   * serves the same content, to avoid rendering two overlays at once (which
+   * would stack a full-screen backdrop and a second focus trap on desktop).
+   */
+  desktopHidden?: boolean;
 }
 
 type RenderPhase = "mounted" | "unmounted";
@@ -39,6 +45,7 @@ export function Drawer({
   children,
   side = "right",
   className,
+  desktopHidden = false,
 }: DrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<Element | null>(null);
@@ -158,6 +165,7 @@ export function Drawer({
     <div
       className={cn(
         "fixed inset-0 z-modal transition-opacity duration-300",
+        desktopHidden && "sm:hidden",
         isOpen ? "opacity-100" : "opacity-0 pointer-events-none",
       )}
     >

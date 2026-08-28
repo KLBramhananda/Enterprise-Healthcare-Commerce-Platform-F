@@ -24,6 +24,7 @@ import { useOrderHistory } from "@/hooks/checkout/useCheckout";
 import { useCart } from "@/hooks/shopping";
 import { useAddresses } from "@/hooks/checkout/useAddress";
 import { formatCurrency } from "@/utils/formatters";
+import { DELIVERY_SPEED_LABELS, PAYMENT_METHOD_LABELS } from "@/config/checkout";
 import type { OrderStatus } from "@/types/checkout";
 
 const STATUS_VARIANTS: Record<string, "success" | "warning" | "info" | "danger"> = {
@@ -128,20 +129,6 @@ function buildTimeline(status: OrderStatus): TimelineEvent[] {
 
   return events;
 }
-
-const DELIVERY_SPEED_LABELS: Record<string, string> = {
-  standard: "Standard Delivery (3-5 days)",
-  express: "Express Delivery (1-2 days)",
-  same_day: "Same Day Delivery",
-};
-
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cod: "Cash on Delivery",
-  upi: "UPI",
-  card: "Credit/Debit Card",
-  net_banking: "Net Banking",
-  wallet: "Wallet",
-};
 
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();

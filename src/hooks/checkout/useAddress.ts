@@ -6,10 +6,10 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MockAddressService } from "@/services/addressMock";
+import { services } from "@/services/factory";
 import type { AddressFormData } from "./schemas";
 
-const addressService = new MockAddressService();
+const addressService = services.address;
 const ADDRESS_QUERY_KEY = ["addresses"];
 
 export function useAddresses() {

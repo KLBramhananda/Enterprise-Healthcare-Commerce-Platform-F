@@ -60,7 +60,13 @@ export default function PromoCodeInput() {
   }
 
   return (
-    <div>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!isValidating) handleApply();
+      }}
+      className="w-full"
+    >
       <div className="flex gap-2">
         <div className="flex-1">
           <Input
@@ -71,9 +77,10 @@ export default function PromoCodeInput() {
           />
         </div>
         <Button
+          type="submit"
           variant="secondary"
-          onClick={handleApply}
-          disabled={!code.trim() || isValidating}
+          loading={isValidating}
+          disabled={!code.trim()}
         >
           {isValidating ? "Checking..." : "Apply"}
         </Button>
@@ -84,6 +91,6 @@ export default function PromoCodeInput() {
           {error}
         </div>
       )}
-    </div>
+    </form>
   );
 }

@@ -458,7 +458,9 @@ function ProductSummary({ details }: { details: ProductDetails }) {
             <span className="text-surface-500">Deliver to</span>
             <button
               type="button"
-              className="font-medium text-brand-600 transition-colors hover:text-brand-700"
+              disabled
+              title="Changing delivery location coming soon"
+              className="font-medium text-brand-600 transition-colors hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Home, 10001
             </button>
@@ -806,7 +808,7 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
         title="Ratings & Reviews"
         subtitle="What our customers are saying"
         action={
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" disabled title="Writing reviews coming soon">
             <PenLine size={15} className="mr-1.5" aria-hidden="true" />
             Write a Review
           </Button>
@@ -871,7 +873,9 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
             <div className="mt-3 flex items-center gap-2 text-xs text-surface-400">
               <button
                 type="button"
-                className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-surface-100 hover:text-surface-600"
+                disabled
+                title="Voting coming soon"
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-surface-100 hover:text-surface-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Helpful ({review.helpfulCount})
               </button>
@@ -884,7 +888,7 @@ function ReviewsSection({ details }: { details: ProductDetails }) {
       <div className="mt-10 border-t border-surface-100 pt-8">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-base font-semibold text-surface-900">Customer Questions & Answers</h3>
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" disabled title="Asking questions coming soon">
             <MessageSquare size={15} className="mr-1.5" aria-hidden="true" />
             Ask a Question
           </Button>

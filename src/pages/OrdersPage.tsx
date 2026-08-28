@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Package, ShoppingBag, Search, RefreshCw, ArrowRight } from "lucide-react";
+import { Package, ShoppingBag, Search, RefreshCw, ArrowRight, AlertCircle } from "lucide-react";
 import { Container, Badge, Button, EmptyState, Tabs } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
@@ -43,7 +43,7 @@ function handleReorder(order: Order, addItem: (product: Product, quantity?: numb
 
 export default function OrdersPage() {
   usePageTitle("My Orders");
-  const { data: orders, isLoading } = useOrderHistory();
+  const { data: orders, isLoading, isError, refetch } = useOrderHistory();
   const { addItem } = useCart();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,7 +103,19 @@ export default function OrdersPage() {
               description="Please wait while we fetch your order history."
               action={<RefreshCw size={16} className="animate-spin" />}
             />
-          ) : !orders || orders.length === 0 ? (
+          ) : isError || !orders ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-danger-200 bg-danger-50 p-12 text-center">
+              <AlertCircle size={40} className="text-danger-400" />
+              <h2 className="mt-4 text-lg font-semibold text-surface-900">Failed to load orders</h2>
+              <p className="mt-1 max-w-sm text-sm text-surface-500">
+                We couldn't fetch your order history. Please check your connection and try again.
+              </p>
+              <Button onClick={() => refetch()} className="mt-5">
+                <RefreshCw size={16} className="mr-2" />
+                Try again
+              </Button>
+            </div>
+          ) : orders.length === 0 ? (
             <EmptyState
               title="No orders yet"
               description="Your order history will appear here after you place your first order."
@@ -124,6 +136,7 @@ export default function OrdersPage() {
                 <input
                   type="text"
                   placeholder="Search by order ID..."
+                  aria-label="Search orders by order ID"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full rounded-lg border border-surface-300 bg-surface-0 py-2 pl-9 pr-3 text-sm text-surface-900 placeholder-surface-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"

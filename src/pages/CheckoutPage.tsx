@@ -14,6 +14,7 @@ import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useCart } from "@/hooks/shopping";
 import { useCheckoutSession } from "@/hooks/checkout/useCheckout";
 import { useAddresses } from "@/hooks/checkout/useAddress";
+import { formatCurrency } from "@/utils/formatters";
 import {
   AddressSection,
   PrescriptionUpload,
@@ -47,6 +48,7 @@ export default function CheckoutPage() {
     setDeliveryNote,
     setPaymentMethod,
     placeOrder,
+    isPendingOrder,
   } = useCheckoutSession();
   const [isPlacing, setIsPlacing] = useState(false);
 
@@ -62,10 +64,14 @@ export default function CheckoutPage() {
         addToast(`Order ${order.id} placed successfully!`, "success");
         navigate(`/orders/${order.id}/confirmation`);
       } else {
-        addToast("Failed to place order. Please try again.", "error");
+        addToast("Please complete all required details before placing the order.", "error");
       }
-    } catch {
-      addToast("Something went wrong. Please try again.", "error");
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Something went wrong. Please try again.";
+      addToast(message, "error");
     } finally {
       setIsPlacing(false);
     }
@@ -175,7 +181,7 @@ export default function CheckoutPage() {
                 hasPrescriptionItems={hasPrescriptionItems}
                 grandTotal={grandTotal}
                 canPlaceOrder={canPlaceOrder}
-                isPlacing={isPlacing}
+                isPlacing={isPlacing || isPendingOrder}
                 onPlaceOrder={handlePlaceOrder}
               />
             </section>
@@ -204,16 +210,16 @@ export default function CheckoutPage() {
             <div>
               <p className="text-xs text-surface-500">Grand Total</p>
               <p className="text-lg font-bold text-brand-700">
-                ${grandTotal.toFixed(2)}
+                {formatCurrency(grandTotal)}
               </p>
             </div>
             <button
               type="button"
               onClick={handlePlaceOrder}
-              disabled={!canPlaceOrder || isPlacing}
+              disabled={!canPlaceOrder || isPlacing || isPendingOrder}
               className="rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-surface-300 disabled:text-surface-500"
             >
-              {isPlacing ? "Placing..." : "Place Order"}
+              {isPlacing || isPendingOrder ? "Placing..." : "Place Order"}
             </button>
           </div>
         </div>

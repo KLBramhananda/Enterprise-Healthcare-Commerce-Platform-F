@@ -31,7 +31,6 @@ import {
 import { Drawer, Popover } from "@/components/ui";
 import { APP_NAME } from "@/config/constants";
 import { useAuth } from "@/hooks/auth";
-import { useAuthStore } from "@/store/authStore";
 
 interface ProfileMenuProps {
   isOpen: boolean;
@@ -41,15 +40,14 @@ interface ProfileMenuProps {
 }
 
 export default function ProfileMenu({ isOpen, onClose, anchorRef }: ProfileMenuProps) {
-  const { isAuthenticated, user } = useAuth();
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = useCallback(() => {
-    clearAuth();
+    logout();
     onClose();
     navigate("/", { replace: true });
-  }, [clearAuth, navigate, onClose]);
+  }, [logout, navigate, onClose]);
 
   const navigateAndClose = useCallback(
     (path: string) => {
@@ -146,7 +144,7 @@ export default function ProfileMenu({ isOpen, onClose, anchorRef }: ProfileMenuP
       </Popover>
 
       {/* ── Mobile drawer (<sm) ── */}
-      <Drawer isOpen={isOpen} onClose={onClose} side="right" title="Account">
+      <Drawer isOpen={isOpen} onClose={onClose} side="right" title="Account" desktopHidden>
         <div className="p-4">
           {isAuthenticated ? (
             <>

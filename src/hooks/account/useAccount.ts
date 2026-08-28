@@ -6,11 +6,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MockAccountService } from "@/services/accountMock";
+import { services } from "@/services/factory";
 import { useAccountStore } from "@/store/accountStore";
 import type { AccountPreferences } from "@/types/account";
 
-const accountService = new MockAccountService();
+const accountService = services.account;
 const PREFERENCES_QUERY_KEY = ["account", "preferences"];
 const COMPLETION_QUERY_KEY = ["account", "completion"];
 const PROFILE_QUERY_KEY = ["account", "profile"];

@@ -23,34 +23,43 @@ export function usePrescriptionUpload() {
     async (fileList: FileList | File[]) => {
       setError(null);
       setIsProcessing(true);
+
       const newFiles = Array.from(fileList);
+      const validFiles: File[] = [];
+      let firstError: string | null = null;
 
       for (const file of newFiles) {
         if (!ACCEPTED_TYPES.includes(file.type)) {
-          setError(`"${file.name}" is not a supported file type. Use JPG, PNG, or PDF.`);
-          setIsProcessing(false);
-          return;
+          firstError ??= `"${file.name}" is not a supported file type. Use JPG, PNG, or PDF.`;
+          continue;
         }
         if (file.size > MAX_SIZE) {
-          setError(`"${file.name}" exceeds the 10MB size limit.`);
-          setIsProcessing(false);
-          return;
+          firstError ??= `"${file.name}" exceeds the 10MB size limit.`;
+          continue;
         }
+        validFiles.push(file);
       }
 
-      for (const file of newFiles) {
-        const dataUrl = await readFileAsDataUrl(file);
-        const prescription: PrescriptionFile = {
-          id: `rx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          dataUrl,
-          uploadedAt: new Date().toISOString(),
-        };
-        addPrescription(prescription);
+      if (firstError) setError(firstError);
+
+      try {
+        for (const file of validFiles) {
+          const dataUrl = await readFileAsDataUrl(file);
+          const prescription: PrescriptionFile = {
+            id: `rx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            dataUrl,
+            uploadedAt: new Date().toISOString(),
+          };
+          addPrescription(prescription);
+        }
+      } catch {
+        setError("Failed to read the selected file. Please try again.");
+      } finally {
+        setIsProcessing(false);
       }
-      setIsProcessing(false);
     },
     [addPrescription],
   );

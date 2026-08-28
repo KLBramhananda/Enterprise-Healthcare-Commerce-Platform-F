@@ -5,15 +5,16 @@
  * Provides validation, order summary, and place order action.
  */
 
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { useCartStore } from "@/store/cartStore";
-import { MockCheckoutService } from "@/services/checkoutMock";
+import { services } from "@/services/factory";
+import { DELIVERY_OPTIONS } from "@/config/checkout";
 import { useAddresses } from "./useAddress";
 import type { AppliedPromo } from "@/types/checkout";
 
-const checkoutService = new MockCheckoutService();
+const checkoutService = services.checkout;
 
 export function useDeliveryOptions() {
   const { data: options, isLoading } = useQuery({
@@ -44,7 +45,8 @@ export function useCheckoutSession() {
 
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const savings = items.reduce((sum, i) => sum + (i.product.mrp - i.product.price) * i.quantity, 0);
-  const deliveryCharge = 0;
+  const deliveryCharge =
+    DELIVERY_OPTIONS.find((o) => o.speed === session.deliverySpeed)?.charge ?? 0;
   const discount = session.appliedPromo?.discountAmount ?? 0;
   const tax = Math.round((subtotal - discount) * 0.08 * 100) / 100;
   const grandTotal = Math.round((subtotal - discount + deliveryCharge + tax) * 100) / 100;
@@ -55,23 +57,37 @@ export function useCheckoutSession() {
     session.paymentMethod !== null &&
     (!hasPrescriptionItems || session.prescriptionFiles.length > 0);
 
+  // In-flight lock so double clicks (before React re-renders) cannot submit
+  // twice. The rendered button is also disabled while `isPendingOrder`.
+  const isPlacingRef = useRef(false);
+  const [isPendingOrder, setIsPendingOrder] = useState(false);
+
   const placeOrder = useCallback(async () => {
-    if (!canPlaceOrder || !session.addressId || !session.paymentMethod) return null;
-    const order = await checkoutService.placeOrder({
-      items,
-      addressId: session.addressId,
-      deliverySpeed: session.deliverySpeed,
-      deliveryNote: session.deliveryNote,
-      prescriptionFileIds: session.prescriptionFiles.map((f) => f.id),
-      appliedPromo: session.appliedPromo,
-      paymentMethod: session.paymentMethod,
-    });
-    const address = addresses?.find((a) => a.id === session.addressId);
-    if (address) order.address = address;
-    addOrder(order);
-    clearCart();
-    resetSession();
-    return order;
+    if (isPlacingRef.current || !canPlaceOrder || !session.addressId || !session.paymentMethod) {
+      return null;
+    }
+    isPlacingRef.current = true;
+    setIsPendingOrder(true);
+    try {
+      const order = await checkoutService.placeOrder({
+        items,
+        addressId: session.addressId,
+        deliverySpeed: session.deliverySpeed,
+        deliveryNote: session.deliveryNote,
+        prescriptionFileIds: session.prescriptionFiles.map((f) => f.id),
+        appliedPromo: session.appliedPromo,
+        paymentMethod: session.paymentMethod,
+      });
+      const address = addresses?.find((a) => a.id === session.addressId);
+      if (address) order.address = address;
+      addOrder(order);
+      clearCart();
+      resetSession();
+      return order;
+    } finally {
+      isPlacingRef.current = false;
+      setIsPendingOrder(false);
+    }
   }, [canPlaceOrder, session, items, addresses, addOrder, clearCart, resetSession]);
 
   return {
@@ -86,6 +102,7 @@ export function useCheckoutSession() {
     tax,
     grandTotal,
     canPlaceOrder,
+    isPendingOrder,
     setAddress,
     setDeliverySpeed,
     setDeliveryNote,
@@ -116,8 +133,13 @@ export function useValidatePromo() {
 }
 
 export function useOrderHistory() {
-  return useQuery({
-    queryKey: ["orders"],
-    queryFn: () => checkoutService.getOrders(),
-  });
+  const orders = useCheckoutStore((s) => s.orders);
+  return {
+    data: [...orders].sort(
+      (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime(),
+    ),
+    isLoading: false,
+    isError: false,
+    refetch: () => Promise.resolve(),
+  };
 }

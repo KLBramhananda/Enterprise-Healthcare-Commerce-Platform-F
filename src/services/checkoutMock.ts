@@ -8,7 +8,6 @@
 
 import type { CartItem } from "@/store/cartStore";
 import type {
-  DeliveryOption,
   AppliedPromo,
   Order,
   OrderItem,
@@ -16,34 +15,8 @@ import type {
   PaymentMethodType,
 } from "@/types/checkout";
 import type { Product } from "@/types/catalog";
+import { DELIVERY_OPTIONS } from "@/config/checkout";
 import type { ICheckoutService } from "./checkoutService";
-
-const DELIVERY_OPTIONS: DeliveryOption[] = [
-  {
-    speed: "standard",
-    label: "Standard Delivery",
-    description: "Delivered in 3-5 business days",
-    estimatedDays: 4,
-    estimatedDate: "Aug 28 - Aug 30",
-    charge: 0,
-  },
-  {
-    speed: "express",
-    label: "Express Delivery",
-    description: "Delivered in 1-2 business days",
-    estimatedDays: 2,
-    estimatedDate: "Aug 26 - Aug 27",
-    charge: 4.99,
-  },
-  {
-    speed: "same_day",
-    label: "Same Day Delivery",
-    description: "Delivered today by 9 PM",
-    estimatedDays: 0,
-    estimatedDate: "Today",
-    charge: 9.99,
-  },
-];
 
 const VALID_PROMOS: Record<string, { discountPercent: number; maxDiscount: number; minOrder: number; description: string }> = {
   HEALTH20: { discountPercent: 20, maxDiscount: 15, minOrder: 25, description: "20% off up to $15" },
@@ -73,7 +46,7 @@ function getEstimatedDelivery(speed: DeliverySpeed, days: number): string {
 }
 
 export class MockCheckoutService implements ICheckoutService {
-  async getDeliveryOptions(): Promise<DeliveryOption[]> {
+  async getDeliveryOptions() {
     await delay(150);
     return [...DELIVERY_OPTIONS];
   }

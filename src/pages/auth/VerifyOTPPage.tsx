@@ -4,8 +4,8 @@
  * Enter 6-digit verification code for password reset.
  */
 
-import { useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, KeyRound } from "lucide-react";
@@ -14,11 +14,27 @@ import Input from "@/components/ui/Input";
 import { useVerifyOTP } from "@/hooks/auth";
 import { verifyOTPSchema, type VerifyOTPFormData } from "@/hooks/auth/schemas";
 
+const RESEND_COOLDOWN = 30;
+
 export default function VerifyOTPPage() {
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email") ?? "";
   const navigate = useNavigate();
-  const { verify, isPending, error, clearError } = useVerifyOTP();
+  const { verify, resend, isPending, isResending, error, clearError } = useVerifyOTP();
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  const handleResend = useCallback(() => {
+    if (cooldown > 0 || isResending) return;
+    clearError();
+    resend(email);
+    setCooldown(RESEND_COOLDOWN);
+  }, [cooldown, isResending, clearError, resend, email]);
 
   const {
     register,
@@ -90,13 +106,17 @@ export default function VerifyOTPPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-surface-500">
-          <Link
-            to="/auth/forgot-password"
-            className="font-medium text-brand-600 transition-colors hover:text-brand-700"
+        <p className="mt-6 flex items-center justify-center gap-1.5 text-sm text-surface-500">
+          <span>Didn&apos;t receive a code?</span>
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={cooldown > 0 || isResending}
+            className="inline-flex items-center gap-1 font-medium text-brand-600 transition-colors hover:text-brand-700 disabled:cursor-not-allowed disabled:text-surface-400 disabled:hover:text-surface-400"
           >
-            Didn&apos;t receive a code? Try again
-          </Link>
+            {isResending && <Loader2 size={14} className="animate-spin" />}
+            {cooldown > 0 ? `Resend in ${cooldown}s` : isResending ? "Resending..." : "Resend code"}
+          </button>
         </p>
       </CardBody>
     </Card>

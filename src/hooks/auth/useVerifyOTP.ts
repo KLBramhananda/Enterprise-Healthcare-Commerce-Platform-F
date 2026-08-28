@@ -5,14 +5,15 @@
  */
 
 import { useState, useCallback } from "react";
-import { MockAuthService } from "@/services";
+import { services } from "@/services/factory";
 import type { VerifyOTPFormData } from "./schemas";
 
-const authService = new MockAuthService();
+const authService = services.auth;
 
 export function useVerifyOTP() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const verify = useCallback(async (data: VerifyOTPFormData, email: string) => {
     setError(null);
@@ -31,7 +32,22 @@ export function useVerifyOTP() {
     }
   }, []);
 
+  const resend = useCallback(async (email: string) => {
+    setError(null);
+    setIsResending(true);
+
+    try {
+      await authService.forgotPassword({ email });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setError(message);
+    } finally {
+      setIsResending(false);
+    }
+  }, []);
+
   const clearError = useCallback(() => setError(null), []);
 
-  return { verify, isPending, error, clearError };
+  return { verify, resend, isPending, isResending, error, clearError };
 }

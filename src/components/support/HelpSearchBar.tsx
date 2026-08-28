@@ -45,6 +45,7 @@ export default function HelpSearchBar({ className, placeholder = "Search for hel
         <input
           type="text"
           value={query}
+          aria-label={placeholder}
           onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }}
           onFocus={() => setShowDropdown(true)}
           onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}

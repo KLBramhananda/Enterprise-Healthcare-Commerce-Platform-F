@@ -30,13 +30,10 @@ import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { emptyCatalogFilters, hasActiveFilters } from "@/types/catalog";
 import type { CatalogFilters, CatalogSortOption } from "@/types/catalog";
 import { CATALOG_PAGE_SIZE, CATALOG_SORT_OPTIONS } from "@/config/constants";
-import { useCart, useWishlist } from "@/hooks/shopping";
-import { notifyAddedToCart, notifyAddedToWishlist, notifyRemovedFromWishlist } from "@/utils/notifications";
+import { useProductActions } from "@/hooks/shopping";
 import { cn } from "@/utils/cn";
 
 export default function CatalogPage() {
-  const { addItem } = useCart();
-  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
   const { slug } = useParams<{ slug: string }>();
   const categoryQuery = useCatalogCategory(slug);
   const category = categoryQuery.data;
@@ -60,6 +57,9 @@ export default function CatalogPage() {
   });
   const products = productsQuery.data;
   const filtersActive = hasActiveFilters(filters);
+  const { handleAddToCart, handleToggleWishlist, isInWishlist } = useProductActions(
+    products?.items ?? [],
+  );
 
   const handleFilterChange = (next: CatalogFilters) => {
     setFilters(next);
@@ -231,7 +231,7 @@ export default function CatalogPage() {
                     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
                       {products.items.map((product) => (
                         <li key={product.id}>
-                           <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = products.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = products.items.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
+                           <ProductCard {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} />
                         </li>
                       ))}
                     </ul>
@@ -239,7 +239,7 @@ export default function CatalogPage() {
                     <ul className="flex flex-col gap-3">
                       {products.items.map((product) => (
                         <li key={product.id}>
-                           <ProductListItem {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={(id) => { const p = products.items.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} onToggleWishlist={(id) => { const p = products.items.find((x) => x.id === id); if (p) { if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); } else { addWishlist(p); notifyAddedToWishlist(p); } } }} />
+                           <ProductListItem {...product} originalPrice={product.mrp} isInWishlist={isInWishlist(product.id)} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} />
                         </li>
                       ))}
                     </ul>

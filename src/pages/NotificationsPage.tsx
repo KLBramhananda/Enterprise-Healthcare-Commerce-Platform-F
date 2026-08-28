@@ -9,6 +9,7 @@ import {
   Shield,
   CheckCircle,
   Mail,
+  AlertCircle,
 } from "lucide-react";
 import { Container, Button, EmptyState } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
@@ -73,7 +74,7 @@ export default function NotificationsPage() {
 
   const [activeCategory, setActiveCategory] = useState<NotificationCategory | "all">("all");
 
-  const { data: allNotifications = [], isLoading } = useNotifications();
+  const { data: allNotifications = [], isLoading, isError, refetch } = useNotifications();
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
@@ -179,6 +180,19 @@ export default function NotificationsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-danger-200 bg-danger-50 p-12 text-center">
+              <AlertCircle size={40} className="text-danger-400" />
+              <h2 className="mt-4 text-lg font-semibold text-surface-900">
+                Failed to load notifications
+              </h2>
+              <p className="mt-1 max-w-sm text-sm text-surface-500">
+                We couldn't fetch your notifications. Please check your connection and try again.
+              </p>
+              <Button onClick={() => refetch()} className="mt-5">
+                Try again
+              </Button>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <EmptyState

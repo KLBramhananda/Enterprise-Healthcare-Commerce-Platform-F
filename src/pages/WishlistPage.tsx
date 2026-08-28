@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ShoppingCart, Trash2, ArrowUpDown, Share2 } from "lucide-react";
-import { Button, Container, EmptyState, ProductImage } from "@/components/ui";
+import { Heart, ShoppingCart, ArrowUpDown, Share2 } from "lucide-react";
+import { Button, Container, EmptyState, ProductCard } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { useWishlist, useCart } from "@/hooks/shopping";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
@@ -11,7 +11,6 @@ import {
   notifyRemovedFromWishlist,
   notifyAddedAllToCart,
 } from "@/utils/notifications";
-import { formatCurrency } from "@/utils/formatters";
 
 type SortKey = "recent" | "price_asc" | "price_desc" | "name";
 
@@ -163,71 +162,28 @@ export default function WishlistPage() {
           {sortedItems.map((item) => {
             const p = item.product;
             return (
-              <article
+              <ProductCard
                 key={p.id}
-                className="group flex flex-col rounded-xl border border-surface-200 bg-surface-0 p-4 hover:border-brand-200 hover:shadow-md transition-all"
-              >
-                <Link
-                  to={`/product/${p.id}`}
-                  className="mb-3 flex aspect-square items-center justify-center rounded-lg border border-surface-100 bg-surface-50"
-                >
-                  <ProductImage src={p.imageUrl} alt={`${p.name} product image`} aspect="square" size="sm" className="h-full w-full border-0" />
-                </Link>
-
-                <div className="flex flex-1 flex-col gap-1">
-                  <p className="text-xs font-medium uppercase tracking-wide text-surface-400">
-                    {p.brandName}
-                  </p>
-                  <Link
-                    to={`/product/${p.id}`}
-                    className="text-sm font-semibold text-surface-900 hover:text-brand-600 transition-colors line-clamp-2"
-                  >
-                    {p.name}
-                  </Link>
-                  <p className="text-xs text-surface-500">
-                    {p.form} &middot; {p.packSize}
-                  </p>
-
-                  <div className="mt-auto pt-3">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-base font-bold text-brand-700">
-                        {formatCurrency(p.price)}
-                      </span>
-                      {p.mrp > p.price && (
-                        <span className="text-xs text-surface-400">
-                          MRP{" "}
-                          <span className="line-through">
-                            {formatCurrency(p.mrp)}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    onClick={() => handleMoveToCart(p)}
-                    fullWidth
-                    size="sm"
-                  >
-                    <ShoppingCart
-                      size={14}
-                      className="mr-1.5"
-                      aria-hidden="true"
-                    />
-                    Move to Cart
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(p)}
-                    className="flex shrink-0 items-center justify-center rounded-lg border border-surface-200 px-3 py-2 text-surface-500 transition-colors hover:border-danger-300 hover:bg-danger-50 hover:text-danger-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
-                    aria-label={`Remove ${p.name} from wishlist`}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </article>
+                id={p.id}
+                name={p.name}
+                brandName={p.brandName}
+                form={p.form}
+                packSize={p.packSize}
+                price={p.price}
+                originalPrice={p.mrp}
+                discountPercent={p.discountPercent}
+                rating={p.rating}
+                reviewCount={p.reviewCount}
+                requiresPrescription={p.requiresPrescription}
+                stockStatus={p.stockStatus}
+                imageUrl={p.imageUrl}
+                isNew={p.isNew}
+                isBestseller={p.isBestseller}
+                isInWishlist
+                alwaysShowActions
+                onAddToCart={() => handleMoveToCart(p)}
+                onToggleWishlist={() => handleRemove(p)}
+              />
             );
           })}
         </div>

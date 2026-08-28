@@ -7,6 +7,7 @@
  * When `id` is provided, the card links to /product/:id via an overlay.
  */
 
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import { BadgePercent, FileBadge, Heart, ShoppingCart } from "lucide-react";
 import type { StockStatus } from "@/types/catalog";
@@ -35,9 +36,11 @@ interface ProductCardProps {
   onAddToCart?: (productId: string) => void;
   onToggleWishlist?: (productId: string) => void;
   className?: string;
+  /** Keep the add-to-cart / wishlist buttons visible at all screen sizes. */
+  alwaysShowActions?: boolean;
 }
 
-export default function ProductCard({
+export const ProductCard = memo(function ProductCard({
   id,
   name,
   brandName,
@@ -57,14 +60,19 @@ export default function ProductCard({
   onAddToCart,
   onToggleWishlist,
   className,
+  alwaysShowActions = false,
 }: ProductCardProps) {
   const isOutOfStock = stockStatus === "out_of_stock";
+
+  const hoverReveal = alwaysShowActions
+    ? ""
+    : "sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100";
 
   return (
     <article
       className={cn(
         "group relative flex h-full flex-col rounded-xl border border-surface-200 bg-surface-0 p-3 transition-all duration-normal ease-smooth",
-        "hover:border-brand-200 hover:shadow-md sm:p-4",
+        "hover:border-brand-200 hover:shadow-md focus-within:border-brand-200 focus-within:shadow-md sm:p-4",
         className,
       )}
     >
@@ -91,6 +99,7 @@ export default function ProductCard({
           alt={`${name} product image`}
           aspect="square"
           size="md"
+          lazy
         />
         <div className="absolute left-2 top-2 flex flex-col items-start gap-1">
           {discountPercent != null && discountPercent > 0 && (
@@ -110,7 +119,7 @@ export default function ProductCard({
             </span>
           )}
         </div>
-        {requiresPrescription && !isOutOfStock && (
+        {requiresPrescription && (
           <span className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-md bg-info-50 px-1.5 py-0.5 text-[10px] font-semibold text-info-800 ring-1 ring-info-100">
             <FileBadge size={10} aria-hidden="true" />
             Rx Required
@@ -129,7 +138,8 @@ export default function ProductCard({
               onToggleWishlist(id);
             }}
             className={cn(
-              "absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-lg shadow-sm transition-opacity duration-fast sm:opacity-0 sm:focus:opacity-100 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 sm:focus-visible:opacity-100",
+              "absolute right-2 bottom-2 flex h-8 w-8 items-center justify-center rounded-lg shadow-sm transition-opacity duration-fast",
+              hoverReveal,
               isInWishlist
                 ? "bg-danger-50 text-danger-500 hover:bg-danger-100 sm:opacity-100"
                 : "bg-surface-0 text-surface-400 hover:bg-surface-50 hover:text-danger-500",
@@ -147,7 +157,10 @@ export default function ProductCard({
               e.stopPropagation();
               if (id) onAddToCart?.(id);
             }}
-            className="absolute bottom-2 left-2 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm transition-opacity duration-fast sm:opacity-0 sm:focus:opacity-100 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-surface-300 disabled:text-surface-500"
+            className={cn(
+              "absolute bottom-2 left-2 flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm transition-opacity duration-fast hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-surface-300 disabled:text-surface-500",
+              hoverReveal,
+            )}
             aria-label={
               isOutOfStock ? `${name} is out of stock` : `Add ${name} to cart`
             }
@@ -187,10 +200,12 @@ export default function ProductCard({
       </div>
     </article>
   );
-}
+});
 
 /* ── Internal helpers ── */
 
 function formatNumberCompact(value: number): string {
   return new Intl.NumberFormat(undefined, { notation: "compact" }).format(value);
 }
+
+export default ProductCard;

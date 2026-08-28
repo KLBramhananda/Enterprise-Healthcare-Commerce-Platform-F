@@ -7,10 +7,10 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { MockCatalogService } from "@/services";
+import { services } from "@/services/factory";
 import type { CatalogQuery } from "@/types/catalog";
 
-const catalogService = new MockCatalogService();
+const catalogService = services.catalog;
 
 export function useCatalogCategories() {
   return useQuery({

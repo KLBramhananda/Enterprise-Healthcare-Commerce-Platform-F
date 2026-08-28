@@ -7,8 +7,7 @@
 
 import { useBestSellers, useTrending, useNewArrivals } from "@/hooks/catalog";
 import { HorizontalProductScroll, DiscoverySection } from "@/components/ui";
-import { useCart, useWishlist } from "@/hooks/shopping";
-import { notifyAddedToCart, notifyAddedToWishlist, notifyRemovedFromWishlist } from "@/utils/notifications";
+import { useProductActions } from "@/hooks/shopping";
 
 export function DiscoveryRecommendations() {
   return (
@@ -24,15 +23,9 @@ const sectionBackground = "bg-transparent";
 
 function BestSellersSection() {
   const query = useBestSellers(12);
-  const { addItem } = useCart();
-  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
-
-  const handleToggleWishlist = (id: string) => {
-    const p = query.data?.find((x) => x.id === id);
-    if (!p) return;
-    if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); }
-    else { addWishlist(p); notifyAddedToWishlist(p); }
-  };
+  const { handleAddToCart, handleToggleWishlist, isInWishlist } = useProductActions(
+    query.data ?? [],
+  );
 
   return (
     <DiscoverySection
@@ -44,22 +37,16 @@ function BestSellersSection() {
       skeletonCount={4}
       background={sectionBackground}
     >
-      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
+      <HorizontalProductScroll products={query.data ?? []} onAddToCart={handleAddToCart} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
   );
 }
 
 function TrendingSection() {
   const query = useTrending(12);
-  const { addItem } = useCart();
-  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
-
-  const handleToggleWishlist = (id: string) => {
-    const p = query.data?.find((x) => x.id === id);
-    if (!p) return;
-    if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); }
-    else { addWishlist(p); notifyAddedToWishlist(p); }
-  };
+  const { handleAddToCart, handleToggleWishlist, isInWishlist } = useProductActions(
+    query.data ?? [],
+  );
 
   return (
     <DiscoverySection
@@ -71,22 +58,16 @@ function TrendingSection() {
       skeletonCount={4}
       background={sectionBackground}
     >
-      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
+      <HorizontalProductScroll products={query.data ?? []} onAddToCart={handleAddToCart} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
   );
 }
 
 function NewArrivalsSection() {
   const query = useNewArrivals(12);
-  const { addItem } = useCart();
-  const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlist();
-
-  const handleToggleWishlist = (id: string) => {
-    const p = query.data?.find((x) => x.id === id);
-    if (!p) return;
-    if (isInWishlist(id)) { removeWishlist(id); notifyRemovedFromWishlist(p); }
-    else { addWishlist(p); notifyAddedToWishlist(p); }
-  };
+  const { handleAddToCart, handleToggleWishlist, isInWishlist } = useProductActions(
+    query.data ?? [],
+  );
 
   return (
     <DiscoverySection
@@ -98,7 +79,7 @@ function NewArrivalsSection() {
       skeletonCount={4}
       background={sectionBackground}
     >
-      <HorizontalProductScroll products={query.data ?? []} onAddToCart={(id) => { const p = query.data?.find((x) => x.id === id); if (p) { addItem(p); notifyAddedToCart(p); } }} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
+      <HorizontalProductScroll products={query.data ?? []} onAddToCart={handleAddToCart} isInWishlist={isInWishlist} onToggleWishlist={handleToggleWishlist} />
     </DiscoverySection>
   );
 }

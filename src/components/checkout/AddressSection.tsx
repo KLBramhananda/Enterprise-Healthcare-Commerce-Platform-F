@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button, Modal, EmptyState, Loading } from "@/components/ui";
 import { useAddresses, useAddAddress, useUpdateAddress, useDeleteAddress, useSetDefaultAddress } from "@/hooks/checkout/useAddress";
+import { useToast } from "@/providers/ToastProvider";
 import AddressCard from "./AddressCard";
 import AddressForm from "./AddressForm";
 import type { Address } from "@/types/checkout";
@@ -19,7 +20,10 @@ interface AddressSectionProps {
   onSelectAddress: (id: string) => void;
 }
 
+const ADDRESS_ERROR_MESSAGE = "Something went wrong while saving the address. Please try again.";
+
 export default function AddressSection({ selectedAddressId, onSelectAddress }: AddressSectionProps) {
+  const { addToast } = useToast();
   const { data: addresses, isLoading } = useAddresses();
   const addAddress = useAddAddress();
   const updateAddress = useUpdateAddress();
@@ -34,7 +38,9 @@ export default function AddressSection({ selectedAddressId, onSelectAddress }: A
       onSuccess: (newAddr) => {
         setFormOpen(false);
         onSelectAddress(newAddr.id);
+        addToast("Address added successfully", "success");
       },
+      onError: () => addToast(ADDRESS_ERROR_MESSAGE, "error"),
     });
   };
 
@@ -42,13 +48,28 @@ export default function AddressSection({ selectedAddressId, onSelectAddress }: A
     if (!editingAddress) return;
     updateAddress.mutate(
       { id: editingAddress.id, data },
-      { onSuccess: () => { setFormOpen(false); setEditingAddress(null); } },
+      {
+        onSuccess: () => {
+          setFormOpen(false);
+          setEditingAddress(null);
+          addToast("Address updated successfully", "success");
+        },
+        onError: () => addToast(ADDRESS_ERROR_MESSAGE, "error"),
+      },
     );
   };
 
   const handleDelete = (id: string) => {
-    deleteAddress.mutate(id);
+    deleteAddress.mutate(id, {
+      onError: () => addToast("Could not delete the address. Please try again.", "error"),
+    });
     if (id === selectedAddressId) onSelectAddress("");
+  };
+
+  const handleSetDefault = (id: string) => {
+    setDefault.mutate(id, {
+      onError: () => addToast("Could not update the default address. Please try again.", "error"),
+    });
   };
 
   const openEditForm = (address: Address) => {
@@ -100,7 +121,7 @@ export default function AddressSection({ selectedAddressId, onSelectAddress }: A
               onSelect={onSelectAddress}
               onEdit={openEditForm}
               onDelete={handleDelete}
-              onSetDefault={(id) => setDefault.mutate(id)}
+              onSetDefault={handleSetDefault}
               showActions
             />
           ))}

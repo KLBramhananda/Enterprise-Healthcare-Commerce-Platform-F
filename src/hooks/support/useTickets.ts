@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MockSupportService } from "@/services/supportMock";
+import { services } from "@/services/factory";
 import type { TicketFilters, TicketFormData, TicketStatus } from "@/types/support";
 
-const supportService = new MockSupportService();
+const supportService = services.support;
 
 export function useTickets(filters?: TicketFilters) {
   return useQuery({

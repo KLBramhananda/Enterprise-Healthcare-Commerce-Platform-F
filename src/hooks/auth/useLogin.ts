@@ -8,10 +8,10 @@
 import { useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
-import { MockAuthService } from "@/services";
+import { services } from "@/services/factory";
 import type { LoginFormData } from "./schemas";
 
-const authService = new MockAuthService();
+const authService = services.auth;
 
 export function useLogin() {
   const [error, setError] = useState<string | null>(null);

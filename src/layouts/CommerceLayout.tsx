@@ -25,9 +25,13 @@ export default function CommerceLayout() {
   return (
     <LayoutProvider>
       <div className="flex min-h-screen flex-col bg-surface-50">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-modal focus:rounded-md focus:bg-surface-900 focus:px-4 focus:py-2 focus:text-sm focus:text-white">
+          Skip to main content
+        </a>
+
         <CommerceHeader />
 
-        <main className="flex-1 isolate">
+        <main id="main-content" className="flex-1 isolate">
           <Outlet />
         </main>
 

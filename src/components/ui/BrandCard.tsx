@@ -26,12 +26,12 @@ export function BrandCard({ brand, className = "" }: BrandCardProps) {
       >
         {brand.name.charAt(0)}
       </div>
-      <p className="text-body font-semibold text-text-primary">{brand.name}</p>
+      <p className="text-body font-semibold text-surface-900">{brand.name}</p>
       {brand.tagline && (
-        <p className="mt-1 text-caption text-text-secondary line-clamp-1">{brand.tagline}</p>
+        <p className="mt-1 text-caption text-surface-500 line-clamp-1">{brand.tagline}</p>
       )}
       {brand.productCount > 0 && (
-        <p className="mt-2 text-micro text-text-muted">
+        <p className="mt-2 text-micro text-surface-400">
           {brand.productCount} product{brand.productCount !== 1 ? "s" : ""}
         </p>
       )}

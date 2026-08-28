@@ -9,11 +9,11 @@
 import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { MockCatalogService } from "@/services";
+import { services } from "@/services/factory";
 import type { DiscoveryQuery, CollectionSlug, DiscoverySortOption } from "@/types/catalog";
 import { CATALOG_PAGE_SIZE } from "@/config/constants";
 
-const catalogService = new MockCatalogService();
+const catalogService = services.catalog;
 const RECENTLY_VIEWED_KEY = "keemeds-recently-viewed";
 const MAX_RECENTLY_VIEWED = 20;
 

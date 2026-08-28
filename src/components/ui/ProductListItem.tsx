@@ -6,6 +6,7 @@
  * When `id` is provided, the card links to /product/:id via an overlay.
  */
 
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import { BadgePercent, FileBadge, Heart, ShoppingCart } from "lucide-react";
 import type { StockStatus } from "@/types/catalog";
@@ -36,7 +37,7 @@ interface ProductListItemProps {
   onToggleWishlist?: (productId: string) => void;
 }
 
-export default function ProductListItem({
+export const ProductListItem = memo(function ProductListItem({
   id,
   name,
   brandName,
@@ -62,8 +63,9 @@ export default function ProductListItem({
   return (
     <article
       className={cn(
-        "relative flex flex-col gap-4 rounded-xl border border-surface-200 bg-surface-0 p-3 transition-all duration-normal ease-smooth sm:flex-row sm:p-4",
+        "group relative flex flex-col gap-4 rounded-xl border border-surface-200 bg-surface-0 p-3 transition-all duration-normal ease-smooth sm:flex-row sm:p-4",
         "hover:border-brand-200 hover:shadow-md",
+        "focus-within:border-brand-200 focus-within:shadow-md",
       )}
       aria-label={name}
     >
@@ -123,7 +125,7 @@ export default function ProductListItem({
               onToggleWishlist(id);
             }}
             className={cn(
-              "absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-lg opacity-0 shadow-sm transition-opacity duration-fast focus:opacity-100 group-hover:opacity-100 focus-visible:opacity-100",
+              "absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-lg shadow-sm transition-opacity duration-fast sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100",
               isInWishlist
                 ? "bg-danger-50 text-danger-500 hover:bg-danger-100"
                 : "bg-surface-0 text-surface-400 hover:bg-surface-50 hover:text-danger-500",
@@ -191,10 +193,12 @@ export default function ProductListItem({
       </div>
     </article>
   );
-}
+});
 
 /* ── Internal helpers ── */
 
 function formatNumberCompact(value: number): string {
   return new Intl.NumberFormat(undefined, { notation: "compact" }).format(value);
 }
+
+export default ProductListItem;

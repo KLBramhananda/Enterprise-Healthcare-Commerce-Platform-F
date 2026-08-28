@@ -7,9 +7,9 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { MockHomepageService } from "@/services";
+import { services } from "@/services/factory";
 
-const homepageService = new MockHomepageService();
+const homepageService = services.homepage;
 
 export function useHomepageContent() {
   return useQuery({

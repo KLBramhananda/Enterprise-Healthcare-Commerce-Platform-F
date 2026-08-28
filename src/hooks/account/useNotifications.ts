@@ -8,11 +8,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MockNotificationService } from "@/services/notificationMock";
+import { services } from "@/services/factory";
 import { useNotificationStore } from "@/store/notificationStore";
 import type { NotificationCategory } from "@/types/account";
 
-const notificationService = new MockNotificationService();
+const notificationService = services.notification;
 const NOTIFICATIONS_QUERY_KEY = ["notifications"];
 
 export function useNotifications(category?: NotificationCategory) {

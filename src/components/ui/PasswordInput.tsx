@@ -17,6 +17,7 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ label, error, className, id, ...props }, ref) => {
     const [visible, setVisible] = useState(false);
     const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    const errorId = inputId ? `${inputId}-error` : undefined;
 
     return (
       <div className="w-full">
@@ -33,6 +34,8 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             ref={ref}
             id={inputId}
             type={visible ? "text" : "password"}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
             className={cn(
               "w-full rounded-lg border border-surface-300 bg-surface-0 px-3 py-2 pr-10 text-sm text-surface-900 placeholder-surface-400",
               "transition-colors duration-fast ease-smooth",
@@ -53,7 +56,11 @@ const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             {visible ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
-        {error && <p className="mt-1 text-xs text-danger-600">{error}</p>}
+        {error && (
+          <p id={errorId} role="alert" className="mt-1 text-xs text-danger-600">
+            {error}
+          </p>
+        )}
       </div>
     );
   },

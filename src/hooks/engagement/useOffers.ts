@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MockEngagementService } from "@/services";
+import { services } from "@/services/factory";
 import type { OfferStatus } from "@/types/engagement";
 
-const engagementService = new MockEngagementService();
+const engagementService = services.engagement;
 const ENGAGEMENT_QK = "engagement";
 
 export function useOffers(status?: OfferStatus) {

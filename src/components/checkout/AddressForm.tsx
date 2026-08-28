@@ -79,7 +79,7 @@ export default function AddressForm({ address, onSubmit, onCancel, isLoading }: 
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" loading={isLoading}>
           {address ? "Update Address" : "Save Address"}
         </Button>
       </div>

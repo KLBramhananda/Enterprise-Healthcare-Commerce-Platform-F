@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { useCallback } from "react";
-import { MockSupportService } from "@/services/supportMock";
+import { services } from "@/services/factory";
 
-const supportService = new MockSupportService();
+const supportService = services.support;
 
 export function useHelpSearch(query: string) {
   return useQuery({

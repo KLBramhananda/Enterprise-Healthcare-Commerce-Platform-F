@@ -1,11 +1,13 @@
-import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Send } from "lucide-react";
 import { Container, Button, Input, Textarea, Select } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks";
 import { useToast } from "@/providers/ToastProvider";
 import { useCreateTicket } from "@/hooks/support";
+import { ticketSchema } from "@/hooks/support/schemas";
 import type { TicketPriority, TicketCategory } from "@/types/support";
 
 const CATEGORY_OPTIONS: { value: TicketCategory; label: string }[] = [
@@ -26,6 +28,14 @@ const PRIORITY_OPTIONS: { value: TicketPriority; label: string }[] = [
   { value: "urgent", label: "Urgent" },
 ];
 
+interface CreateTicketFormData {
+  subject: string;
+  description: string;
+  category: TicketCategory;
+  priority: TicketPriority;
+  orderId?: string;
+}
+
 export default function CreateTicketPage() {
   usePageTitle("Raise a Ticket");
   const navigate = useNavigate();
@@ -34,17 +44,24 @@ export default function CreateTicketPage() {
   const createTicket = useCreateTicket();
   const { addToast } = useToast();
 
-  const [form, setForm] = useState({
-    subject: "",
-    description: "",
-    category: "order_issue" as TicketCategory,
-    priority: "medium" as TicketPriority,
-    orderId: prefillOrderId,
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CreateTicketFormData>({
+    resolver: zodResolver(ticketSchema),
+    mode: "onBlur",
+    defaultValues: {
+      subject: "",
+      description: "",
+      category: "order_issue",
+      priority: "medium",
+      orderId: prefillOrderId,
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createTicket.mutate(form, {
+  const onSubmit = (data: CreateTicketFormData) => {
+    createTicket.mutate(data, {
       onSuccess: (ticket) => {
         addToast(`Your ticket ${ticket.id} has been created.`, "success");
         navigate(`/help/tickets/${ticket.id}`);
@@ -76,31 +93,26 @@ export default function CreateTicketPage() {
           <p className="mt-1 text-sm text-surface-500">Describe your issue and we'll get back to you.</p>
         </header>
 
-        <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 max-w-2xl space-y-5">
           <div>
-            <label htmlFor="subject" className="mb-1.5 block text-sm font-medium text-surface-700">Subject</label>
-            <Input id="subject" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="Brief description of your issue" required />
+            <Input id="subject" label="Subject" placeholder="Brief description of your issue" error={errors.subject?.message} {...register("subject")} />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="category" className="mb-1.5 block text-sm font-medium text-surface-700">Category</label>
-              <Select id="category" options={CATEGORY_OPTIONS} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TicketCategory })} />
+              <Select id="category" label="Category" options={CATEGORY_OPTIONS} error={errors.category?.message} {...register("category")} />
             </div>
             <div>
-              <label htmlFor="priority" className="mb-1.5 block text-sm font-medium text-surface-700">Priority</label>
-              <Select id="priority" options={PRIORITY_OPTIONS} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as TicketPriority })} />
+              <Select id="priority" label="Priority" options={PRIORITY_OPTIONS} error={errors.priority?.message} {...register("priority")} />
             </div>
           </div>
           <div>
-            <label htmlFor="orderId" className="mb-1.5 block text-sm font-medium text-surface-700">Related Order ID <span className="text-surface-400">(optional)</span></label>
-            <Input id="orderId" value={form.orderId} onChange={(e) => setForm({ ...form, orderId: e.target.value })} placeholder="e.g. ORD-20240101" />
+            <Input id="orderId" label="Related Order ID (optional)" placeholder="e.g. ORD-20240101" error={errors.orderId?.message} {...register("orderId")} />
           </div>
           <div>
-            <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-surface-700">Description</label>
-            <Textarea id="description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={5} placeholder="Describe your issue in detail..." required />
+            <Textarea id="description" label="Description" rows={5} placeholder="Describe your issue in detail..." error={errors.description?.message} {...register("description")} />
           </div>
           <div className="flex justify-end">
-            <Button type="submit" disabled={createTicket.isPending}><Send size={16} className="mr-1.5 inline" />{createTicket.isPending ? "Submitting..." : "Submit Ticket"}</Button>
+            <Button type="submit" loading={createTicket.isPending}><Send size={16} className="mr-1.5 inline" />Submit Ticket</Button>
           </div>
         </form>
       </Container>

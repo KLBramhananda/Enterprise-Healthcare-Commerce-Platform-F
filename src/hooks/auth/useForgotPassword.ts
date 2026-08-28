@@ -5,10 +5,10 @@
  */
 
 import { useState, useCallback } from "react";
-import { MockAuthService } from "@/services";
+import { services } from "@/services/factory";
 import type { ForgotPasswordFormData } from "./schemas";
 
-const authService = new MockAuthService();
+const authService = services.auth;
 
 export function useForgotPassword() {
   const [error, setError] = useState<string | null>(null);

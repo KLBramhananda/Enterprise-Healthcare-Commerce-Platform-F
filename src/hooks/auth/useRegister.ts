@@ -7,10 +7,10 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
-import { MockAuthService } from "@/services";
+import { services } from "@/services/factory";
 import type { RegisterFormData } from "./schemas";
 
-const authService = new MockAuthService();
+const authService = services.auth;
 
 export function useRegister() {
   const [error, setError] = useState<string | null>(null);

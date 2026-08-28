@@ -9,13 +9,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { MockCatalogService } from "@/services";
+import { services } from "@/services/factory";
 import type { SearchQuery, CatalogSortOption, CatalogFilters } from "@/types/catalog";
 import { emptyCatalogFilters } from "@/types/catalog";
 import { useDebounce } from "@/hooks/common/useDebounce";
 import { CATALOG_PAGE_SIZE } from "@/config/constants";
 
-const catalogService = new MockCatalogService();
+const catalogService = services.catalog;
 const RECENT_SEARCHES_KEY = "keemeds-recent-searches";
 const MAX_RECENT_SEARCHES = 10;
 
