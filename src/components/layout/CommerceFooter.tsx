@@ -267,7 +267,7 @@ export default function CommerceFooter() {
               <span className="text-surface-700" aria-hidden="true">
                 &middot;
               </span>
-              <span>Brahmananda K L</span>
+              <span>Bramhananda K L</span>
             </p>
           </div>
           <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
