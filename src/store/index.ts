@@ -7,3 +7,4 @@ export { useAccountStore } from "./accountStore";
 export { useNotificationStore } from "./notificationStore";
 export { useSupportStore } from "./supportStore";
 export { useLanguageStore } from "./languageStore";
+export { useLocationStore } from "./locationStore";

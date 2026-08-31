@@ -25,3 +25,9 @@ export type { IEngagementService } from "./engagementService";
 export { MockEngagementService } from "./engagementMock";
 export type { ISupportService } from "./supportService";
 export { MockSupportService } from "./supportMock";
+export type { IHealthCheckService, HealthStatus } from "./healthCheck";
+export {
+  healthCheckService,
+  MockHealthCheckService,
+  ErpNextHealthCheckService,
+} from "./healthCheck";

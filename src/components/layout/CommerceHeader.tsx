@@ -31,7 +31,9 @@ import {
 import { commerceCategories, type NavigationItem } from "@/config/navigation";
 import { APP_NAME } from "@/config/constants";
 import { getLanguageOption } from "@/config/languages";
+import { findLocationById } from "@/config/locations";
 import { useLanguageStore } from "@/store/languageStore";
+import { useLocationStore } from "@/store/locationStore";
 import { cn } from "@/utils/cn";
 import { cartDrawerEvents } from "@/utils/cartDrawerEvents";
 import { Container } from "@/components/ui";
@@ -46,6 +48,7 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationMenu from "./NotificationMenu";
 import AnnouncementTicker from "./AnnouncementTicker";
 import LanguageSelector from "./LanguageSelector";
+import LocationSelector from "./LocationSelector";
 
 export default function CommerceHeader() {
   const mainNavRef = useRef<HTMLElement>(null);
@@ -55,16 +58,20 @@ export default function CommerceHeader() {
   const profileButtonRef = useRef<HTMLButtonElement>(null);
   const notificationButtonRef = useRef<HTMLButtonElement>(null);
   const languageButtonRef = useRef<HTMLButtonElement>(null);
+  const locationButtonRef = useRef<HTMLButtonElement>(null);
 
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
 
   const { isAuthenticated, user } = useAuth();
   const locale = useLanguageStore((s) => s.locale);
   const currentLanguage = getLanguageOption(locale);
+  const locationId = useLocationStore((s) => s.locationId);
+  const currentLocation = findLocationById(locationId);
   const { totalItems } = useCart();
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const pathname = useLocation().pathname;
@@ -107,6 +114,7 @@ export default function CommerceHeader() {
     setProfileOpen(false);
     setNotificationOpen(false);
     setLanguageOpen(false);
+    setLocationOpen(false);
   }
 
   // Close overlays on Escape (top-level handler for buttons)
@@ -119,11 +127,13 @@ export default function CommerceHeader() {
         active === profileButtonRef.current ||
         active === notificationButtonRef.current ||
         active === languageButtonRef.current ||
-        active === menuToggleRef.current
+        active === menuToggleRef.current ||
+        active === locationButtonRef.current
       ) {
         setProfileOpen(false);
         setNotificationOpen(false);
         setLanguageOpen(false);
+        setLocationOpen(false);
       }
     };
     document.addEventListener("keydown", handleEscape);
@@ -175,20 +185,45 @@ export default function CommerceHeader() {
               {/* Location Selector (desktop) */}
               <button
                 type="button"
+                ref={locationButtonRef}
+                onClick={() => {
+                  setLocationOpen((prev) => !prev);
+                  setProfileOpen(false);
+                  setNotificationOpen(false);
+                  setLanguageOpen(false);
+                }}
+                aria-expanded={locationOpen}
+                aria-haspopup="listbox"
                 aria-label="Select delivery location"
-                className="hidden items-center gap-1.5 rounded-lg border border-surface-200 px-3 py-2 text-sm transition-colors duration-fast hover:border-brand-300 hover:bg-brand-50 md:flex"
+                className={cn(
+                  "hidden items-center gap-1.5 rounded-lg border border-surface-200 px-3 py-2 text-sm transition-colors duration-fast md:flex",
+                  locationOpen
+                    ? "border-brand-300 bg-brand-50"
+                    : "hover:border-brand-300 hover:bg-brand-50",
+                )}
               >
                 <MapPin size={14} className="text-brand-600" />
                 <div className="text-left">
                   <p className="text-[11px] font-medium leading-tight text-surface-500">
                     Deliver to
                   </p>
-                  <p className="text-xs font-semibold leading-tight text-surface-800">
-                    Select location
+                  <p className="max-w-[10rem] truncate text-xs font-semibold leading-tight text-surface-800">
+                    {currentLocation?.name ?? "Select location"}
                   </p>
                 </div>
-                <ChevronDown size={12} className="text-surface-400" />
+                <ChevronDown
+                  size={12}
+                  className={cn(
+                    "text-surface-400 transition-transform duration-fast",
+                    locationOpen && "rotate-180",
+                  )}
+                />
               </button>
+              <LocationSelector
+                isOpen={locationOpen}
+                onClose={() => setLocationOpen(false)}
+                anchorRef={locationButtonRef}
+              />
 
               {/* Search Bar */}
               <HeaderSearch />
@@ -203,6 +238,7 @@ export default function CommerceHeader() {
                     setLanguageOpen((prev) => !prev);
                     setProfileOpen(false);
                     setNotificationOpen(false);
+                    setLocationOpen(false);
                   }}
                   aria-expanded={languageOpen}
                   aria-haspopup="listbox"
@@ -247,6 +283,8 @@ export default function CommerceHeader() {
                   onClick={() => {
                     setProfileOpen((prev) => !prev);
                     setNotificationOpen(false);
+                    setLanguageOpen(false);
+                    setLocationOpen(false);
                   }}
                   aria-expanded={profileOpen}
                   aria-haspopup="true"
@@ -285,6 +323,8 @@ export default function CommerceHeader() {
                   onClick={() => {
                     setNotificationOpen((prev) => !prev);
                     setProfileOpen(false);
+                    setLanguageOpen(false);
+                    setLocationOpen(false);
                   }}
                   aria-expanded={notificationOpen}
                   aria-haspopup="true"
