@@ -277,3 +277,15 @@
 
 
 }
+
+/*
+ * Safe-area utilities for notched / home-indicator devices (iOS/Android).
+ *
+ * pb-safe — bottom padding that respects the home-indicator area while
+ * keeping a sensible minimum even on devices without a notch (where
+ * env() resolves to 0). Used by fixed bottom action bars so their content
+ * is never hidden behind the device's home indicator / gesture bar.
+ */
+@utility pb-safe {
+  padding-bottom: max(var(--spacing-4), env(safe-area-inset-bottom, 0px));
+}

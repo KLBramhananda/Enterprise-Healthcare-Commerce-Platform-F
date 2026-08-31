@@ -37,6 +37,17 @@ export default defineConfig(({ mode }) => {
           target: proxyTarget,
           changeOrigin: true,
           secure: false,
+          // Expose Set-Cookie headers for ERPNext session cookies
+          cookieDomainRewrite: {
+            "*": "",
+          },
+          headers: {
+            // CORS compatibility for local development against ERPNext
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Frappe-CSRF-Token",
+            "Access-Control-Allow-Credentials": "true",
+          },
         },
       },
     },

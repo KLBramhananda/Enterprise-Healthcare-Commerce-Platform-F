@@ -101,7 +101,7 @@ const SearchSuggestionsDropdown = forwardRef<
 
       {/* Suggestion groups */}
       {hasSuggestions && (
-        <div className="max-h-80 overflow-y-auto" role="group" aria-label="Suggestions">
+        <div className="overflow-y-auto" role="group" aria-label="Suggestions">
           {renderSuggestionGroups(suggestions, onSelect)}
         </div>
       )}

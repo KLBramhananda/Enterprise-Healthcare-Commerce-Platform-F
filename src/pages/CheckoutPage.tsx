@@ -328,7 +328,7 @@ export default function CheckoutPage() {
         );
 
   return (
-    <div className="bg-surface-50 pb-12">
+    <div className="bg-surface-50 pb-24 lg:pb-12">
       <Container>
         <Breadcrumb
           items={[
@@ -493,8 +493,8 @@ export default function CheckoutPage() {
         </div>
 
         {/* ── Mobile Action Bar ── */}
-        <div className="fixed bottom-0 left-0 right-0 z-sticky border-t border-surface-200 bg-surface-0 p-4 shadow-lg lg:hidden">
-          <div className="flex items-center gap-3">
+        <div className="fixed bottom-0 left-0 right-0 z-sticky border-t border-surface-200 bg-surface-0 shadow-lg pb-safe lg:hidden">
+          <div className="flex items-center gap-3 px-4 pt-3">
             <Button
               variant="ghost"
               size="lg"

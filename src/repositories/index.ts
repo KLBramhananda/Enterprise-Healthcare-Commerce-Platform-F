@@ -6,17 +6,18 @@
  * the factory so the service layer can resolve either mock or real.
  */
 
-import { USE_MOCK_API } from "@/config/env";
+import { USE_MOCK_API, USE_ERP_API } from "@/config/env";
 import type { RepositoryRegistry } from "./types";
 import { MockCatalogRepository, MockAuthRepository } from "./mock";
+import { ErpNextAuthRepository } from "./erpnext/erpnextAuthRepository";
 
 /**
  * Resolve repository instances based on feature flags.
  *
- * Future ERPNext integration:
- *   - Import ErpNext*Repository classes
- *   - Conditionally instantiate based on USE_ERP_API flag
- *   - The returned registry satisfies the same RepositoryRegistry interface
+ * Priority:
+ *   1. USE_MOCK_API=true  → all mock repositories (default)
+ *   2. USE_ERP_API=true   → ERPNext repositories where implemented,
+ *                            mock for domains not yet connected
  */
 function createRepositories(): RepositoryRegistry {
   if (USE_MOCK_API) {
@@ -30,14 +31,18 @@ function createRepositories(): RepositoryRegistry {
     };
   }
 
-  // Future: return ErpNext repositories here
-  // return {
-  //   catalog: new ErpNextCatalogRepository(),
-  //   auth: new ErpNextAuthRepository(),
-  //   ...
-  // };
+  if (USE_ERP_API) {
+    return {
+      catalog: new MockCatalogRepository(),
+      auth: new ErpNextAuthRepository(),
+      cart: { name: "MockCartRepository" } as RepositoryRegistry["cart"],
+      orders: { name: "MockOrderRepository" } as RepositoryRegistry["orders"],
+      addresses: { name: "MockAddressRepository" } as RepositoryRegistry["addresses"],
+      notifications: { name: "MockNotificationRepository" } as RepositoryRegistry["notifications"],
+    };
+  }
 
-  // Fallback to mocks until ERPNext repos are implemented
+  // Fallback to mocks
   return {
     catalog: new MockCatalogRepository(),
     auth: new MockAuthRepository(),

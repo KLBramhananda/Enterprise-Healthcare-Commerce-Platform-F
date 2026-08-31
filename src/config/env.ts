@@ -75,6 +75,21 @@ export const PROXY_TARGET = readString("VITE_PROXY_TARGET", "http://localhost:80
 /** Dev-server port (Vite config only). */
 export const DEV_PORT = readNumber("VITE_DEV_PORT", 5173);
 
+/**
+ * Direct ERPNext backend URL for production/staging builds served without the
+ * Vite dev proxy. In development, the Vite proxy handles `/api` forwarding so
+ * this can remain empty. Set to an absolute URL (e.g. `https://erp.example.com`)
+ * when deploying standalone.
+ */
+export const ERPNEXT_BACKEND_URL = readString("VITE_ERPNEXT_BACKEND_URL", "");
+
+/**
+ * When true, enables CORS-compatible request headers for local development
+ * against a remote ERPNext instance. The Vite dev proxy already handles CORS
+ * in development; this flag is for production builds or custom dev setups.
+ */
+export const CORS_COMPAT_MODE = readBoolean("VITE_CORS_COMPAT_MODE", false);
+
 /* ── Assets ── */
 
 /**

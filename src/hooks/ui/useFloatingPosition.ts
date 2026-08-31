@@ -42,6 +42,14 @@ export interface FloatingPositionOptions {
   flip?: boolean;
   /** Minimum distance from viewport edges when clamping (px). */
   margin?: number;
+  /**
+   * Position the floating layer as a full-width sheet anchored to the bottom
+   * of the trigger (e.g. a mobile top sheet that opens directly below the
+   * header). The panel spans the available viewport width and is pinned
+   * below the anchor; it never flips above. Off by default, so desktop
+   * floating layers behave exactly as before.
+   */
+  sheet?: boolean;
 }
 
 export interface FloatingCoords {
@@ -71,9 +79,25 @@ function computePosition(opts: {
   margin: number;
   matchTriggerWidth: boolean;
   flip: boolean;
+  sheet: boolean;
   viewportW: number;
   viewportH: number;
 }): { coords: FloatingCoords; placement: FloatingPlacement } {
+  // Full-width sheet mode: pinned directly below the anchor, spanning the
+  // viewport width. Never flips, never clamps horizontally (it defines the
+  // full width), and is always anchored to the bottom of the trigger.
+  if (opts.sheet) {
+    const top = opts.anchor.top + opts.anchor.height + opts.offset;
+    return {
+      coords: {
+        top: Math.max(opts.margin, top),
+        left: 0,
+        width: opts.viewportW,
+      },
+      placement: opts.placement,
+    };
+  }
+
   let placement = opts.placement;
 
   if (opts.flip) {
@@ -151,6 +175,7 @@ export function useFloatingPosition({
   matchTriggerWidth = false,
   flip = true,
   margin = 8,
+  sheet = false,
 }: FloatingPositionOptions & {
   open: boolean;
   anchorRef: RefObject<HTMLElement | null>;
@@ -168,6 +193,12 @@ export function useFloatingPosition({
     const contentW = floatingEl.offsetWidth || floatingEl.getBoundingClientRect().width;
     const contentH = floatingEl.offsetHeight || floatingEl.getBoundingClientRect().height;
 
+    // Use the visual viewport height when available (accounts for mobile
+    // soft-keyboard) so the floating panel is never positioned behind it.
+    const vv = typeof visualViewport !== "undefined" ? visualViewport : null;
+    const viewportW = vv ? vv.width : window.innerWidth;
+    const viewportH = vv ? vv.height : window.innerHeight;
+
     const { coords: next, placement: resolved } = computePosition({
       anchor: {
         top: anchorRect.top,
@@ -182,13 +213,14 @@ export function useFloatingPosition({
       margin,
       matchTriggerWidth,
       flip,
-      viewportW: window.innerWidth,
-      viewportH: window.innerHeight,
+      sheet,
+      viewportW,
+      viewportH,
     });
 
     setCoords(next);
     setResolvedPlacement(resolved);
-  }, [anchorRef, placement, offset, margin, matchTriggerWidth, flip]);
+  }, [anchorRef, placement, offset, margin, matchTriggerWidth, flip, sheet]);
 
   // Reposition as soon as the content mounts (after layout, before paint) so
   // there is never a flash at the origin.
@@ -218,6 +250,11 @@ export function useFloatingPosition({
     window.addEventListener("scroll", trigger, { capture: true, passive: true });
     window.addEventListener("resize", trigger);
 
+    // On mobile, the visual viewport resizes when the soft keyboard opens/closes.
+    // Reposition so the floating panel stays within the visible area.
+    const vv = typeof visualViewport !== "undefined" ? visualViewport : null;
+    if (vv) vv.addEventListener("resize", trigger);
+
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(trigger);
@@ -230,6 +267,7 @@ export function useFloatingPosition({
       cancelAnimationFrame(frame);
       window.removeEventListener("scroll", trigger, { capture: true } as EventListenerOptions);
       window.removeEventListener("resize", trigger);
+      if (vv) vv.removeEventListener("resize", trigger);
       resizeObserver?.disconnect();
     };
   }, [open, reposition, anchorRef]);

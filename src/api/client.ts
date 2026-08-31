@@ -7,16 +7,18 @@
  *
  * Responsibilities:
  *   - Base URL & timeout      → from environment config
- *   - Auth token injection    → Authorization header from the persisted auth store
+ *   - Auth token injection    → Authorization header (token mode) or cookie (session mode)
+ *   - CSRF token injection    → X-Frappe-CSRF-Token header for state-changing requests
  *   - Token expiration check  → attempts refresh before failing on 401
  *   - Retry with backoff      → automatic retries for timeout/server errors
  *   - Request cancellation    → AbortController support via `cancelToken`
  *   - Error normalization     → all errors become `ApiError` instances
  *   - Dev-only logging        → request/response logging when enabled
  *
- * Note: the current services are all mock implementations and never touch the
- * network. This client is the integration surface that ERPNext services will
- * use when mocks are swapped out.
+ * Authentication modes:
+ *   - Token mode (mock): Bearer token injected from the auth store
+ *   - Session mode (ERPNext): Cookie-based auth (sid), no token injection
+ *     needed; CSRF tokens are injected for state-changing requests
  */
 
 import axios, { type AxiosRequestConfig, type CancelTokenSource } from "axios";
@@ -26,6 +28,7 @@ import { API_CONFIG, isPublicRoute } from "@/config/api";
 import { ApiError, fromAxiosError } from "./errors";
 import { attachLogger } from "./logging";
 import { ensureValidToken } from "@/auth";
+import { getCsrfToken, applyCsrfHeader, clearCsrfToken } from "@/auth/csrfManager";
 
 /* ── Axios instance ── */
 
@@ -39,20 +42,37 @@ const rawClient = axios.create({
   },
 });
 
-/* ── Auth interceptor ── */
+/* ── Request interceptor: auth + CSRF ── */
 
 rawClient.interceptors.request.use(async (config) => {
   const url = config.url ?? "";
+  const method = (config.method ?? "get").toLowerCase();
+  const isStateChanging =
+    method === "post" || method === "put" || method === "patch" || method === "delete";
 
   // Skip token logic for public endpoints
   if (!isPublicRoute(url)) {
-    // Ensure token is fresh before sending
-    await ensureValidToken();
+    const { authMode, isAuthenticated } = useAuthStore.getState();
 
-    const { tokens } = useAuthStore.getState();
-    if (tokens?.accessToken) {
-      config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+    if (authMode === "session") {
+      // Session mode (ERPNext): rely on cookies, skip Bearer token injection.
+      // CSRF token is required for state-changing requests.
+      if (isStateChanging && isAuthenticated) {
+        const csrfToken = await getCsrfToken();
+        applyCsrfHeader(config, csrfToken);
+      }
+    } else {
+      // Token mode (mock): inject Bearer token
+      await ensureValidToken();
+      const { tokens } = useAuthStore.getState();
+      if (tokens?.accessToken) {
+        config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+      }
     }
+  } else if (isStateChanging) {
+    // Public endpoints with state-changing method still need CSRF (e.g. login)
+    const csrfToken = await getCsrfToken();
+    applyCsrfHeader(config, csrfToken);
   }
 
   return config;
@@ -66,10 +86,21 @@ rawClient.interceptors.response.use(
     const status: number | undefined = error?.response?.status;
 
     if (status === 401 || status === 403) {
+      const { authMode } = useAuthStore.getState();
+
+      // In session mode, a 401/403 means the session has expired.
+      // Discard the CSRF token since it may be stale.
+      if (authMode === "session") {
+        clearCsrfToken();
+      }
+
       useAuthStore.getState().clearAuth();
+
       const path = window.location.pathname;
       if (!path.startsWith("/auth/login")) {
-        window.location.assign("/auth/login");
+        window.location.assign(
+          `/auth/login?returnTo=${encodeURIComponent(path)}`,
+        );
       }
     }
 
