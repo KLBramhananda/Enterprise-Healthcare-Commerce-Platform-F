@@ -116,6 +116,34 @@ export const QUERY_STALE_TIME = readNumber("VITE_QUERY_STALE_TIME", 1000 * 60 * 
 /** Default retry count for failed React Query requests. */
 export const QUERY_RETRY_COUNT = readNumber("VITE_QUERY_RETRY_COUNT", 1);
 
+/* ── API integration mode ── */
+
+/**
+ * When true, the app talks to ERPNext via the real HTTP client.
+ * When false (default), all service calls are handled by mock implementations
+ * without touching the network.
+ */
+export const USE_ERP_API = readBoolean("VITE_USE_ERP_API", false);
+
+/**
+ * When true, service factory resolves to mock implementations (the default).
+ * Set to false only when ERPNext services are implemented and USE_ERP_API is true.
+ */
+export const USE_MOCK_API = readBoolean("VITE_USE_MOCK_API", true);
+
+/**
+ * Enables structured console logging for every API request (method, URL,
+ * duration, status). Automatically disabled in production regardless of
+ * the env value.
+ */
+export const API_LOGGING_ENABLED = readBoolean("VITE_ENABLE_API_LOGGING", false);
+
+/**
+ * Enables developer tools overlay and debug helpers.
+ * Never active in production.
+ */
+export const ENABLE_DEV_TOOLS = readBoolean("VITE_ENABLE_DEV_TOOLS", !isProduction);
+
 /* ── Feature flags ── */
 
 export interface FeatureFlags {
