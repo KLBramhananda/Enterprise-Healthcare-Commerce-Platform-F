@@ -63,6 +63,11 @@ interface PopoverProps {
   flip?: boolean;
   /** Offset the popover from the viewport edges when clamped (px). */
   margin?: number;
+  /**
+   * Render as a full-width sheet anchored below the trigger (mobile top
+   * sheet use-case). See `FloatingPositionOptions.sheet`.
+   */
+  sheet?: boolean;
   maxHeight?: string;
   role?: PopoverRole;
   /** Accessible label/heading for dialog / listbox / menu (sets aria-label). */
@@ -106,6 +111,7 @@ export default function Popover({
   matchTriggerWidth = false,
   flip = true,
   margin = 8,
+  sheet = false,
   maxHeight,
   role = "menu",
   ariaLabel,
@@ -137,6 +143,7 @@ export default function Popover({
     matchTriggerWidth,
     flip,
     margin,
+    sheet,
   });
 
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
@@ -145,20 +152,49 @@ export default function Popover({
     internalTriggerRef.current = node;
   }, []);
 
-  // ── Outside click ──
+  // ── Outside click (mouse + touch for mobile) ──
   useEffect(() => {
     if (!open || !closeOnOutsideClick) return;
-    const onMouseDown = (e: MouseEvent) => {
-      const target = e.target as Node;
+
+    const isOutside = (target: Node | null) => {
+      if (!target) return true;
       // Never steal interactions from modals/dialogs (e.g. a mobile Drawer
       // hosted in the same component). The dialog manages its own close.
-      if (target instanceof Element && target.closest("[role='dialog']")) return;
+      if (target instanceof Element && target.closest("[role='dialog']")) return false;
       const insideAnchor = anchor.current?.contains(target) ?? false;
       const insideFloat = floatingRef.current?.contains(target) ?? false;
-      if (!insideAnchor && !insideFloat) close();
+      return !insideAnchor && !insideFloat;
     };
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (isOutside(e.target as Node)) close();
+    };
+
+    // Mobile: touchstart is more reliable than mousedown for outside-click on
+    // iOS/Android browsers where mousedown may not fire before focus shifts.
+    let touchTarget: Node | null = null;
+    const onTouchStart = (e: TouchEvent) => {
+      touchTarget = e.target as Node;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      // Prefer the changedTouch for accuracy; fall back to touchTarget.
+      const target =
+        (e.changedTouches[0] && document.elementFromPoint(
+          e.changedTouches[0].clientX,
+          e.changedTouches[0].clientY,
+        )) ?? touchTarget;
+      if (isOutside(target)) close();
+      touchTarget = null;
+    };
+
     document.addEventListener("mousedown", onMouseDown);
-    return () => document.removeEventListener("mousedown", onMouseDown);
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
   }, [open, closeOnOutsideClick, close, anchor, floatingRef]);
 
   // ── Escape ──
@@ -279,7 +315,7 @@ export default function Popover({
       top: coords?.top ?? 0,
       left: coords?.left ?? 0,
       width: coords?.width,
-      maxHeight,
+      maxHeight: maxHeight ?? undefined,
       visibility: coords ? "visible" : "hidden",
       pointerEvents: coords ? "auto" : "none",
     },
@@ -309,7 +345,10 @@ export default function Popover({
       onKeyDown={floatingProps.onKeyDown}
       style={floatingProps.style}
       className={cn(
-        "z-popover overflow-hidden rounded-xl border border-surface-200 bg-surface-0 shadow-lg",
+        "z-popover rounded-xl border border-surface-200 bg-surface-0 shadow-lg",
+        maxHeight ? "overflow-y-auto" : "overflow-hidden",
+        sheet &&
+          "w-full max-w-none rounded-none rounded-b-2xl border-x-0 border-t-0 shadow-xl",
         className,
       )}
     >

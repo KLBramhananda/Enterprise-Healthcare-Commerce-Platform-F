@@ -2,13 +2,18 @@
  * Token Manager
  *
  * Handles auth token lifecycle: storage, expiration detection,
- * and placeholders for refresh-token flow. Does NOT implement ERPNext
- * authentication — it works with the existing mock auth store.
+ * and token refresh flow. Supports both token-based (mock) and
+ * session-based (ERPNext) authentication modes.
  *
- * Future ERPNext integration:
- *   1. Implement `refreshAccessToken()` to call the ERPNext token endpoint.
- *   2. Set `TOKEN_EXPIRY_BUFFER_MS` to the appropriate buffer before expiry.
- *   3. The interceptor will automatically refresh before requests fail.
+ * Token-based mode (mock):
+ *   - JWT access tokens with expiry checking
+ *   - Refresh token flow for renewal
+ *
+ * Session-based mode (ERPNext):
+ *   - Cookie-based sessions (sid cookie sent by browser)
+ *   - No JWT tokens — "session" marker stored in tokens.accessToken
+ *   - Token checks are skipped; session validity is verified
+ *     via the ERPNext current-user endpoint instead
  */
 
 import { useAuthStore } from "@/store/authStore";
@@ -20,6 +25,13 @@ const TOKEN_EXPIRY_BUFFER_MS = 60_000;
 const REFRESH_TIMEOUT_MS = 10_000;
 
 let refreshPromise: Promise<boolean> | null = null;
+
+/* ── Session mode detection ── */
+
+/** Check if the store is in ERPNext session-based auth mode. */
+function isSessionMode(): boolean {
+  return useAuthStore.getState().authMode === "session";
+}
 
 /* ── Token inspection ── */
 
@@ -59,22 +71,15 @@ export function getTokenExpiry(token: string): number | null {
   return payload.exp * 1000;
 }
 
-/* ── Refresh flow (placeholder) ── */
+/* ── Refresh flow ── */
 
 /**
  * Attempt to refresh the access token using the stored refresh token.
- *
- * **Placeholder implementation** — returns false when no refresh token is
- * available or the refresh endpoint is not configured. When ERPNext auth is
- * implemented, replace the body of this function with:
- *
- *   const { refreshToken } = useAuthStore.getState().tokens ?? {};
- *   if (!refreshToken) return false;
- *   const response = await apiClient.post(API_ROUTES.AUTH.REFRESH_TOKEN, { refresh_token: refreshToken });
- *   useAuthStore.getState().setAuth(user, newTokens);
- *   return true;
+ * In session-based mode, always returns false (sessions use cookies).
  */
 export async function refreshAccessToken(): Promise<boolean> {
+  if (isSessionMode()) return false;
+
   const { tokens } = useAuthStore.getState();
   if (!tokens?.refreshToken) return false;
 
@@ -84,7 +89,6 @@ export async function refreshAccessToken(): Promise<boolean> {
   refreshPromise = (async () => {
     try {
       // Placeholder: In a real implementation this would call the refresh endpoint.
-      // For now, return false to let the caller handle the failure gracefully.
       return false;
     } catch {
       useAuthStore.getState().clearAuth();
@@ -96,7 +100,9 @@ export async function refreshAccessToken(): Promise<boolean> {
 
   return Promise.race([
     refreshPromise,
-    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), REFRESH_TIMEOUT_MS)),
+    new Promise<boolean>((resolve) =>
+      setTimeout(() => resolve(false), REFRESH_TIMEOUT_MS),
+    ),
   ]);
 }
 
@@ -108,8 +114,14 @@ export function getAccessToken(): string | null {
   return tokens?.accessToken ?? null;
 }
 
-/** Check whether the current session has valid (non-expired) tokens. */
+/**
+ * Check whether the current session has valid (non-expired) tokens.
+ * In session mode, returns true if authenticated (session cookie handles validity).
+ */
 export function hasValidTokens(): boolean {
+  if (isSessionMode()) {
+    return useAuthStore.getState().isAuthenticated;
+  }
   const token = getAccessToken();
   if (!token) return false;
   return !isTokenExpired(token);
@@ -117,10 +129,13 @@ export function hasValidTokens(): boolean {
 
 /**
  * Ensure the access token is valid, refreshing if needed.
- * Returns true if a valid token is available (existing or refreshed).
+ * In session mode, returns true if authenticated.
  * Returns false if the user needs to re-authenticate.
  */
 export async function ensureValidToken(): Promise<boolean> {
+  if (isSessionMode()) {
+    return useAuthStore.getState().isAuthenticated;
+  }
   const token = getAccessToken();
   if (!token) return false;
   if (!isTokenExpired(token)) return true;

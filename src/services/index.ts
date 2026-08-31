@@ -7,6 +7,7 @@
 
 export type { IAuthService, ServiceError } from "./authService";
 export { MockAuthService } from "./authMock";
+export { ErpNextAuthService } from "./authErp";
 export type { IHomepageService } from "./homepageService";
 export { MockHomepageService } from "./homepageMock";
 export type { ICatalogService } from "./catalogService";
@@ -27,7 +28,6 @@ export type { ISupportService } from "./supportService";
 export { MockSupportService } from "./supportMock";
 export type { IHealthCheckService, HealthStatus } from "./healthCheck";
 export {
-  healthCheckService,
   MockHealthCheckService,
   ErpNextHealthCheckService,
 } from "./healthCheck";

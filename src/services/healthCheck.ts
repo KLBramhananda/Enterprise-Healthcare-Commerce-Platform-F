@@ -1,15 +1,15 @@
 /**
  * HealthCheck Service
  *
- * Interface-only implementation for ERPNext server health monitoring.
- * This is a placeholder — no actual ERPNext calls are made in Phase 17A.
+ * Interface and implementations for ERPNext server health monitoring.
  *
- * When ERPNext is connected, implement `ErpNextHealthCheckService` that:
- *   1. Calls the ping/check endpoint
- *   2. Measures response latency
- *   3. Verifies database connectivity
- *   4. Returns structured health status
+ * MockHealthCheckService: Always returns healthy. Used when USE_MOCK_API is true.
+ * ErpNextHealthCheckService: Calls ERPNext's ping and current-user endpoints
+ * to verify connectivity, authentication, and database reachability.
  */
+
+import { apiClient } from "@/api/client";
+import { API_ROUTES } from "@/config/api";
 
 export interface HealthStatus {
   /** Whether the server is reachable. */
@@ -58,27 +58,80 @@ export class MockHealthCheckService implements IHealthCheckService {
 }
 
 /**
- * Placeholder for ERPNext health check.
- * Replace the body when connecting to the real backend.
+ * ERPNext health check implementation.
+ * Verifies connectivity by calling the ping endpoint and the
+ * current-user endpoint to confirm both network reachability
+ * and active session authentication.
  */
 export class ErpNextHealthCheckService implements IHealthCheckService {
   readonly name = "ErpNextHealthCheckService";
 
   async ping(): Promise<HealthStatus> {
-    // Placeholder — will call API_ROUTES.HEALTH.PING via apiClient
-    return {
-      reachable: false,
-      latencyMs: null,
-      version: null,
-      message: "ERPNext health check not yet connected",
-      timestamp: new Date().toISOString(),
-    };
+    const start = performance.now();
+    try {
+      await apiClient.get(API_ROUTES.HEALTH.PING);
+      const latencyMs = Math.round(performance.now() - start);
+      return {
+        reachable: true,
+        latencyMs,
+        version: null,
+        message: "ERPNext server is reachable",
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error: unknown) {
+      const latencyMs = Math.round(performance.now() - start);
+      const message =
+        error instanceof Error ? error.message : "Connection failed";
+      return {
+        reachable: false,
+        latencyMs,
+        version: null,
+        message,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 
   async check(): Promise<HealthStatus> {
-    return this.ping();
+    const start = performance.now();
+    try {
+      const [pingRes, userRes] = await Promise.allSettled([
+        apiClient.get(API_ROUTES.HEALTH.PING),
+        apiClient.get("frappe.auth.get_logged_user"),
+      ]);
+      const latencyMs = Math.round(performance.now() - start);
+
+      if (pingRes.status === "rejected") {
+        return {
+          reachable: false,
+          latencyMs,
+          version: null,
+          message: `Ping failed: ${pingRes.reason instanceof Error ? pingRes.reason.message : "unknown"}`,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      const authenticated = userRes.status === "fulfilled";
+      return {
+        reachable: true,
+        latencyMs,
+        version: null,
+        message: authenticated
+          ? "ERPNext healthy — authenticated"
+          : "ERPNext reachable — session expired or unauthenticated",
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error: unknown) {
+      const latencyMs = Math.round(performance.now() - start);
+      const message =
+        error instanceof Error ? error.message : "Health check failed";
+      return {
+        reachable: false,
+        latencyMs,
+        version: null,
+        message,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 }
-
-/** Default health check instance (mock until ERPNext is connected). */
-export const healthCheckService: IHealthCheckService = new MockHealthCheckService();

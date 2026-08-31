@@ -156,13 +156,13 @@ export default function SearchResultsPage() {
           {/* Results */}
           <section className="min-w-0 flex-1" aria-label="Search results">
             {/* Toolbar */}
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-surface-200 bg-surface-0 p-3 shadow-xs sm:p-4">
+            <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-surface-200 bg-surface-0 p-3 shadow-xs sm:gap-3 sm:p-4">
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen((open) => !open)}
                 aria-expanded={mobileFiltersOpen}
                 aria-controls="search-filter-sidebar"
-                className="inline-flex items-center gap-2 rounded-lg border border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 lg:hidden"
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 lg:hidden"
               >
                 <SlidersHorizontal size={15} aria-hidden="true" />
                 Filters
@@ -194,13 +194,13 @@ export default function SearchResultsPage() {
                 )}
               </p>
 
-              <div className="ml-auto flex items-center gap-3">
+              <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
                 <Select
                   aria-label="Sort results by"
                   value={sortBy}
                   onChange={(e) => setParam("sort", e.target.value)}
                   options={CATALOG_SORT_OPTIONS.map((o) => ({ ...o }))}
-                  className="w-44"
+                  className="w-auto max-w-[7rem] sm:max-w-none sm:w-44"
                 />
                 <ViewToggle value={view} onChange={setView} />
               </div>
