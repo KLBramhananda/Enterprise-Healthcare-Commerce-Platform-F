@@ -14,3 +14,5 @@ export { commerceCategories } from "./navigation";
 export type { NavigationItem } from "./navigation";
 export { LANGUAGES, DEFAULT_LANGUAGE, getLanguageOption } from "./languages";
 export type { LanguageOption } from "./languages";
+export { POPULAR_CITIES, searchLocations, findLocationById } from "./locations";
+export type { Location } from "./locations";
