@@ -8,7 +8,6 @@
  * Responsibilities:
  *   - Base URL & timeout      → from environment config
  *   - Auth token injection    → Authorization header (token mode) or cookie (session mode)
- *   - CSRF token injection    → X-Frappe-CSRF-Token header for state-changing requests
  *   - Token expiration check  → attempts refresh before failing on 401
  *   - Retry with backoff      → automatic retries for timeout/server errors
  *   - Request cancellation    → AbortController support via `cancelToken`
@@ -18,7 +17,7 @@
  * Authentication modes:
  *   - Token mode (mock): Bearer token injected from the auth store
  *   - Session mode (ERPNext): Cookie-based auth (sid), no token injection
- *     needed; CSRF tokens are injected for state-changing requests
+ *     needed. State-changing requests rely purely on the session cookie.
  */
 
 import axios, { type AxiosRequestConfig, type CancelTokenSource } from "axios";
@@ -28,7 +27,6 @@ import { API_CONFIG, isPublicRoute } from "@/config/api";
 import { ApiError, fromAxiosError } from "./errors";
 import { attachLogger } from "./logging";
 import { ensureValidToken } from "@/auth";
-import { getCsrfToken, applyCsrfHeader, clearCsrfToken } from "@/auth/csrfManager";
 
 /* ── Axios instance ── */
 
@@ -42,37 +40,25 @@ const rawClient = axios.create({
   },
 });
 
-/* ── Request interceptor: auth + CSRF ── */
+/* ── Request interceptor: auth ── */
 
 rawClient.interceptors.request.use(async (config) => {
   const url = config.url ?? "";
-  const method = (config.method ?? "get").toLowerCase();
-  const isStateChanging =
-    method === "post" || method === "put" || method === "patch" || method === "delete";
 
-  // Skip token logic for public endpoints
+  // Skip token logic for public endpoints (login/register/etc.)
   if (!isPublicRoute(url)) {
-    const { authMode, isAuthenticated } = useAuthStore.getState();
+    const { authMode } = useAuthStore.getState();
 
-    if (authMode === "session") {
-      // Session mode (ERPNext): rely on cookies, skip Bearer token injection.
-      // CSRF token is required for state-changing requests.
-      if (isStateChanging && isAuthenticated) {
-        const csrfToken = await getCsrfToken();
-        applyCsrfHeader(config, csrfToken);
-      }
-    } else {
-      // Token mode (mock): inject Bearer token
+    // In token mode (mock), inject a Bearer token. In session mode (ERPNext),
+    // authentication relies purely on the session cookie (`sid`), so no
+    // Authorization header and no CSRF header are sent.
+    if (authMode !== "session") {
       await ensureValidToken();
       const { tokens } = useAuthStore.getState();
       if (tokens?.accessToken) {
         config.headers.Authorization = `Bearer ${tokens.accessToken}`;
       }
     }
-  } else if (isStateChanging) {
-    // Public endpoints with state-changing method still need CSRF (e.g. login)
-    const csrfToken = await getCsrfToken();
-    applyCsrfHeader(config, csrfToken);
   }
 
   return config;
@@ -86,20 +72,12 @@ rawClient.interceptors.response.use(
     const status: number | undefined = error?.response?.status;
 
     if (status === 401 || status === 403) {
-      const { authMode } = useAuthStore.getState();
-
       // Let the public auth endpoints (login/register/forgot/etc.) surface
       // their own errors inline in the forms instead of hijacking the flow
       // with a redirect — a failed login (401) or a rejected register must
       // not navigate away or wipe the user's input.
       if (isPublicRoute(error?.config?.url ?? "")) {
         return Promise.reject(error);
-      }
-
-      // In session mode, a 401/403 means the session has expired.
-      // Discard the CSRF token since it may be stale.
-      if (authMode === "session") {
-        clearCsrfToken();
       }
 
       useAuthStore.getState().clearAuth();

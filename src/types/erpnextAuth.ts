@@ -31,7 +31,15 @@ export interface ErpAuthUser {
   customer_id?: string;
 }
 
-/** `message` envelope of a register / me response. */
+/**
+ * Success payload of a KeeMeds Commerce auth endpoint — the value returned
+ * by the whitelisted method (`utils/api_response.success_response`).
+ *
+ * Frappe wraps every whitelisted method's return value under a top-level
+ * `message` key on the HTTP response body, so the actual body received by the
+ * client is `{ "message": { success, message, data } }` (e.g. login returns
+ * `{"message":{"success":true,"message":"Login successful.","data":null}}`).
+ */
 export interface ErpAuthMessage<T = unknown> {
   success: boolean;
   message: string;
@@ -46,7 +54,7 @@ export interface ErpLoginPayload {
   password: string;
 }
 
-/** Outer shape of a login response (adds home_page / full_name). */
+/** HTTP response body of the login endpoint. */
 export interface ErpLoginResponse {
   message: ErpAuthMessage<null>;
   home_page?: string;
@@ -55,7 +63,7 @@ export interface ErpLoginResponse {
 
 /* ── Logout response ── */
 
-/** Outer shape of a logout response. */
+/** HTTP response body of the logout endpoint. */
 export interface ErpLogoutResponse {
   message: ErpAuthMessage<null>;
   home_page: string;

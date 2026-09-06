@@ -50,15 +50,22 @@ export const useAuthStore = create<AuthState>()(
       authMode: "token" as AuthMode,
       sessionVerified: false,
 
-      setAuth: (user, tokens, mode = "token") =>
-        set({
+      setAuth: (user, tokens, mode) => {
+        // Session-based services (ERPNext) use `accessToken === "session"` as a
+        // marker. Infer the mode from the tokens when the caller doesn't pass
+        // one explicitly, so token vs session modes stay correctly
+        // distinguished (token mode → mock JWT, session mode → ERPNext).
+        const resolvedMode: AuthMode =
+          mode ?? (tokens?.accessToken === "session" ? "session" : "token");
+        return set({
           user,
           tokens,
           isAuthenticated: true,
           isLoading: false,
-          authMode: mode,
-          sessionVerified: mode === "token",
-        }),
+          authMode: resolvedMode,
+          sessionVerified: resolvedMode === "token",
+        });
+      },
 
       clearAuth: () =>
         set({

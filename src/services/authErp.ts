@@ -173,7 +173,7 @@ export class ErpNextAuthService implements IAuthService {
         { email: payload.email, password: payload.password },
       );
 
-      const message = response.data?.message as ErpAuthMessage<ErpAuthUser | null> | undefined;
+      const message = response.data?.message as ErpAuthMessage<null> | undefined;
       if (message?.success) {
         // Fetch the full profile via /me (standard after a session login).
         // Fall back to a minimal user from the login response if that call
@@ -213,10 +213,9 @@ export class ErpNextAuthService implements IAuthService {
         password: payload.password,
       };
 
-      const response = await apiClient.post<{ message: ErpAuthMessage<ErpAuthUser> }>(
-        ERP_AUTH_ROUTES.REGISTER,
-        registerPayload,
-      );
+      const response = await apiClient.post<{
+        message: ErpAuthMessage<ErpAuthUser>;
+      }>(ERP_AUTH_ROUTES.REGISTER, registerPayload);
 
       const message = response.data?.message as ErpAuthMessage<ErpAuthUser> | undefined;
       if (message?.success && message.data) {
@@ -264,9 +263,9 @@ export class ErpNextAuthService implements IAuthService {
 
   async getCurrentUser(): Promise<User> {
     try {
-      const response = await apiClient.get<{ message: ErpAuthMessage<ErpAuthUser> }>(
-        ERP_AUTH_ROUTES.ME,
-      );
+      const response = await apiClient.get<{
+        message: ErpAuthMessage<ErpAuthUser>;
+      }>(ERP_AUTH_ROUTES.ME);
       const message = response.data?.message as ErpAuthMessage<ErpAuthUser> | undefined;
       if (message?.success && message.data) {
         return toUser(message.data);

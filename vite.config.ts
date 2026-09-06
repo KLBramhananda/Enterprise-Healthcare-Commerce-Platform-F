@@ -20,8 +20,20 @@ export default defineConfig(({ mode }) => {
   /** Dev server port (defaults to 5173). */
   const devPort = Number.parseInt(env.VITE_DEV_PORT || "5173", 10);
 
+  /**
+   * App name used in the HTML <title> and the bundle. Vite's HTML env
+   * replacement warns when `%VITE_APP_NAME%` is unset, so inject an
+   * `import.meta.env` fallback here whenever no `.env` file defines it.
+   * A user-set `VITE_APP_NAME` still takes precedence.
+   */
+  const appName = env.VITE_APP_NAME || "KeeMeds";
+
   return {
     plugins: [react(), tailwindcss()],
+
+    define: env.VITE_APP_NAME
+      ? undefined
+      : { "import.meta.env.VITE_APP_NAME": JSON.stringify(appName) },
 
     resolve: {
       alias: {
