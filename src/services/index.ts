@@ -12,6 +12,8 @@ export type { IHomepageService } from "./homepageService";
 export { MockHomepageService } from "./homepageMock";
 export type { ICatalogService } from "./catalogService";
 export { MockCatalogService } from "./catalogMock";
+export { ErpNextCatalogService } from "./catalogErpNext";
+export { toErpNextItemGroup, toErpNextCategorySlug } from "./erpNextCategoryMap";
 export type { IAddressService } from "./addressService";
 export { MockAddressService } from "./addressMock";
 export type { ICheckoutService } from "./checkoutService";

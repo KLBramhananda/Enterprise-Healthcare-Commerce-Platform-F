@@ -146,6 +146,28 @@ export const USE_ERP_API = readBoolean("VITE_USE_ERP_API", false);
  */
 export const USE_MOCK_API = readBoolean("VITE_USE_MOCK_API", true);
 
+/* ── Data Source Strategy ── */
+
+/** Supported data source modes. */
+export type DataSource = "STATIC" | "LIVE_API";
+
+/**
+ * Centralized data source configuration.
+ * Switch between STATIC (mock) and LIVE_API (ERPNext) by changing
+ * the VITE_DATA_SOURCE environment variable.
+ *
+ * - "STATIC"   → all catalog data served from in-memory mock (default)
+ * - "LIVE_API"  → product listing/detail from ERPNext; discovery features from mock
+ *
+ * This replaces the legacy USE_MOCK_API / USE_ERP_API boolean flags for catalog
+ * routing. The factory reads this value to select the active ICatalogService
+ * implementation.
+ */
+export const DATA_SOURCE: DataSource = ((): DataSource => {
+  const raw = readString("VITE_DATA_SOURCE", "STATIC").toUpperCase();
+  return raw === "LIVE_API" ? "LIVE_API" : "STATIC";
+})();
+
 /**
  * Enables structured console logging for every API request (method, URL,
  * duration, status). Automatically disabled in production regardless of

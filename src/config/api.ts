@@ -61,6 +61,12 @@ export const API_ROUTES = {
     BRAND_FACETS: "keemeds_commerce.api.catalog.brand_facets",
   },
 
+  /* ── Products (ERPNext live product API) ── */
+  PRODUCTS: {
+    LIST: "keemeds_commerce.api.products.list_products",
+    GET: "keemeds_commerce.api.products.get_product",
+  },
+
   /* ── Brands / Collections ── */
   DISCOVERY: {
     BRANDS: "keemeds_commerce.api.discovery.brands",

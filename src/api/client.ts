@@ -88,6 +88,14 @@ rawClient.interceptors.response.use(
     if (status === 401 || status === 403) {
       const { authMode } = useAuthStore.getState();
 
+      // Let the public auth endpoints (login/register/forgot/etc.) surface
+      // their own errors inline in the forms instead of hijacking the flow
+      // with a redirect — a failed login (401) or a rejected register must
+      // not navigate away or wipe the user's input.
+      if (isPublicRoute(error?.config?.url ?? "")) {
+        return Promise.reject(error);
+      }
+
       // In session mode, a 401/403 means the session has expired.
       // Discard the CSRF token since it may be stale.
       if (authMode === "session") {
