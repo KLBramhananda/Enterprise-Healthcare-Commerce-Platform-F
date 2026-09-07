@@ -13,6 +13,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
+  AlertCircle,
   ClipboardCheck,
   CreditCard,
   FileText,
@@ -80,6 +81,8 @@ export default function CheckoutPage() {
     setPrescriptionUploadLater,
     createOrder,
     finalizeCodOrder,
+    isSummaryLoading,
+    summaryError,
   } = useCheckoutSession();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -284,9 +287,11 @@ export default function CheckoutPage() {
   const actionLabel = isReviewStep
     ? isPendingOrder
       ? "Processing..."
-      : isCod
-        ? "Place Order"
-        : `Pay ${formatCurrency(grandTotal)}`
+      : isSummaryLoading
+        ? "Syncing totals..."
+        : isCod
+          ? "Place Order"
+          : `Pay ${formatCurrency(grandTotal)}`
     : currentStepId === "coupon"
       ? "Apply & Continue"
       : "Continue";
@@ -365,6 +370,13 @@ export default function CheckoutPage() {
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_380px]">
           {/* ── Main Content ── */}
           <div className="space-y-6">
+            {summaryError && (
+              <div className="flex items-start gap-3 rounded-xl border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <p>We couldn't sync your order totals from the pharmacy. Please try again or refresh.</p>
+              </div>
+            )}
+
             <section className="rounded-xl border border-surface-200 bg-surface-0 p-5 sm:p-6">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div

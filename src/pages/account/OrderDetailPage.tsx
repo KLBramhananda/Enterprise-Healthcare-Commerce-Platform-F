@@ -315,7 +315,7 @@ export default function OrderDetailPage() {
                         Invoice {order.invoiceId || "(pending)"}
                       </p>
                       <p className="text-xs text-surface-400">
-                        Download a printable copy (mock)
+                        Download a printable copy
                       </p>
                     </div>
                   </div>

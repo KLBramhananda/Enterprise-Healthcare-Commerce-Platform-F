@@ -15,12 +15,14 @@ import type {
   PaymentMethodType,
   OrderPaymentInfo,
   Invoice,
+  CheckoutSummary,
+  CheckoutOrderResult,
 } from "@/types/checkout";
 import type { Product } from "@/types/catalog";
 import {
-  CHECKOUT_OFFERS,
   DELIVERY_OPTIONS,
   isFreeDeliveryEligible,
+  resolveOffer,
 } from "@/config/checkout";
 import type { ICheckoutService } from "./checkoutService";
 
@@ -61,31 +63,7 @@ export class MockCheckoutService implements ICheckoutService {
 
   async validatePromoCode(code: string, subtotal: number): Promise<AppliedPromo | null> {
     await delay(250);
-    const offer = CHECKOUT_OFFERS.find((o) => o.code.toUpperCase() === code.toUpperCase());
-    if (!offer) return null;
-    if (offer.minOrder !== undefined && subtotal < offer.minOrder) return null;
-
-    let discountPercent = offer.discountPercent ?? 0;
-    let discountAmount: number;
-
-    if (offer.discountType === "flat") {
-      discountPercent = 0;
-      discountAmount = Math.min(offer.flatAmount ?? 0, subtotal);
-    } else if (offer.discountType === "free_delivery") {
-      discountPercent = 0;
-      discountAmount = 0;
-    } else {
-      discountAmount =
-        Math.round(subtotal * (discountPercent / 100) * 100) / 100;
-    }
-
-    return {
-      code: offer.code.toUpperCase(),
-      discountPercent,
-      discountAmount,
-      minOrder: offer.minOrder,
-      discountType: offer.discountType,
-    };
+    return resolveOffer(code, subtotal);
   }
 
   async getPrescriptionRequiredProducts(items: CartItem[]): Promise<Product[]> {
@@ -212,5 +190,31 @@ export class MockCheckoutService implements ICheckoutService {
       paymentMethod: order.payment?.method ?? order.paymentMethod,
       transactionId: order.payment?.transactionId,
     };
+  }
+
+  /**
+   * The ERP-backed summary/validate/create-order flow only runs under
+   * LIVE_API. STATIC keeps the local wizard (placeOrder + local totals), so
+   * these methods are intentionally unsupported here.
+   */
+  private unsupported(): never {
+    throw new Error(
+      "ERP checkout endpoints are only available in LIVE_API mode (STATIC uses the local checkout wizard).",
+    );
+  }
+
+  async getCheckoutSummary(): Promise<CheckoutSummary> {
+    await delay(50);
+    return this.unsupported();
+  }
+
+  async validateCheckout(): Promise<CheckoutSummary> {
+    await delay(50);
+    return this.unsupported();
+  }
+
+  async createCheckoutOrder(): Promise<CheckoutOrderResult> {
+    await delay(50);
+    return this.unsupported();
   }
 }

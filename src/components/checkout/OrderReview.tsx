@@ -250,9 +250,11 @@ export default function OrderReview({
               <span className="font-medium text-success-600">-{formatCurrency(savings)}</span>
             </div>
           )}
-          {discount > 0 && appliedPromo && (
+          {discount > 0 && (
             <div className="flex justify-between">
-              <span className="text-surface-500">Promo ({appliedPromo.code})</span>
+              <span className="text-surface-500">
+                {appliedPromo ? `Promo (${appliedPromo.code})` : "Discount"}
+              </span>
               <span className="font-medium text-success-600">-{formatCurrency(discount)}</span>
             </div>
           )}

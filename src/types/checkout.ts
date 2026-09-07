@@ -125,13 +125,20 @@ export type PaymentFailureReason =
   | "insufficient_funds"
   | "invalid_details"
   | "network_error"
-  | "timeout";
+  | "timeout"
+  | "gateway_unavailable";
 
 export interface PaymentProcessingInput {
   orderId: string;
   method: PaymentMethodType;
   instrument: PaymentInstrument;
   amount: number;
+  /**
+   * Client-supplied idempotency token (one per order) so a page refresh or a
+   * duplicate trigger re-runs the SAME gateway intent instead of charging
+   * twice. Persisted in the checkout session and reused across retries.
+   */
+  idempotencyKey?: string;
 }
 
 export interface PaymentSuccessResult {
@@ -153,6 +160,20 @@ export type PaymentResult = PaymentSuccessResult | PaymentFailureResult;
 
 export type OrderPaymentStatus = "pending" | "paid";
 
+/**
+ * A single persisted payment attempt for an order. `id` doubles as the
+ * idempotency key passed to the payment service, so refreshing/running the
+ * payment again maps to one gateway intent (replay protection). Cleared once
+ * the order is finalized (success or confirmed COD).
+ */
+export interface PaymentAttempt {
+  id: string;
+  orderId: string;
+  method: PaymentMethodType;
+  amount: number;
+  createdAt: string;
+}
+
 export interface OrderPaymentInfo {
   method: PaymentMethodType;
   status: OrderPaymentStatus;
@@ -172,6 +193,7 @@ export interface CheckoutSession {
   appliedPromo: AppliedPromo | null;
   paymentMethod: PaymentMethodType | null;
   paymentInstrument: PaymentInstrument | null;
+  paymentAttempt: PaymentAttempt | null;
 }
 
 /* ── Order ── */
@@ -253,6 +275,50 @@ export interface OrderSummary {
   discount: number;
   tax: number;
   grandTotal: number;
+}
+
+/* ── Live Checkout Summary (ERP checkout.summary / checkout.validate) ── */
+
+/**
+ * A single authoritative purchase line returned by the ERP checkout summary.
+ * Consumers enrich each row into a full `Product` (via the cart mirror) before
+ * rendering; the row alone is enough to build a fallback product.
+ */
+export interface CheckoutLineItem {
+  itemCode: string;
+  name: string;
+  brand: string;
+  image: string;
+  quantity: number;
+  sellingPrice: number;
+  subtotal: number;
+  stockStatus: "in_stock" | "out_of_stock";
+}
+
+/**
+ * Validated order preview served by the ERP checkout endpoints. The backend is
+ * the single source of truth for every total; local/mock math is never used in
+ * LIVE_API mode.
+ */
+export interface CheckoutSummary {
+  currency: string;
+  items: CheckoutLineItem[];
+  subtotal: number;
+  discount: number;
+  tax: number;
+  shippingCharge: number;
+  grandTotal: number;
+  shippingAddress: Address | null;
+  billingAddress: Address | null;
+}
+
+/** Draft Sales Order created by the ERP `checkout.create_order` endpoint. */
+export interface CheckoutOrderResult {
+  salesOrder: string;
+  status: string;
+  docstatus: number;
+  grandTotal: number;
+  currency: string;
 }
 
 /* ── Validation ── */

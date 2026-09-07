@@ -2,9 +2,11 @@
  * PaymentProcessingPage
  *
  * Rendered at /checkout/payment/:orderId after the wizard creates an order
- * for an online payment method. Runs the mock gateway (stages at
- * PaymentProcessingScreen), confirms the order on success, and shows retry
+ * for an online payment method. Runs the configured payment provider (stages
+ * at PaymentProcessingScreen), confirms the order on success, and shows retry
  * or change-method actions on failure. The cart is only cleared on success.
+ * The attempt is idempotent: one persisted key per order, so a refresh re-runs
+ * the same gateway intent and can never double-charge or replay the order.
  */
 
 import { useEffect, useRef } from "react";
@@ -35,18 +37,27 @@ export default function PaymentProcessingPage() {
   const { addToast } = useToast();
 
   const session = useCheckoutStore((s) => s.session);
+  const setPaymentAttempt = useCheckoutStore((s) => s.setPaymentAttempt);
+  const storedOrder = useCheckoutStore((s) =>
+    orderId ? s.orders.find((o) => o.id === orderId) ?? null : null,
+  );
   const { data: stages = [] } = usePaymentStages();
 
-  const { data: order, isLoading, isError } = useQuery({
+  // LIVE_API persists the created order in the checkout store at checkout
+  // time, so the payment page reads from there (refresh-safe). Only when no
+  // persisted order exists (STATIC mode) do we fall back to the service query.
+  const { data: order = storedOrder, isLoading, isError } = useQuery({
     queryKey: ["order", orderId],
     queryFn: () => checkoutService.getOrder(orderId as string),
-    enabled: Boolean(orderId),
+    enabled: Boolean(orderId) && !storedOrder,
   });
 
   const paymentRun = usePaymentRun();
   const finalize = useFinalizePayment(navigate);
-  const autoStartedRef = useRef(false);
+  const autoStartedRef = useRef<string | null>(null);
   const finalizedRef = useRef(false);
+
+  const attempt = session.paymentAttempt;
 
   useEffect(() => {
     if (!order || !orderId) return;
@@ -61,21 +72,39 @@ export default function PaymentProcessingPage() {
       return;
     }
 
+    // Persist ONE idempotency key for this order. A refresh or a duplicate
+    // trigger re-runs the SAME gateway intent (replay / duplicate-charge
+    // protection) instead of silently charging again.
+    if (!attempt || attempt.orderId !== order.id) {
+      setPaymentAttempt({
+        id:
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `pay-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        orderId: order.id,
+        method: order.paymentMethod,
+        amount: order.grandTotal,
+        createdAt: new Date().toISOString(),
+      });
+      return; // effect re-runs once the attempt is persisted
+    }
+
     if (!isPaymentInstrumentValid(order.paymentMethod, session.paymentInstrument)) {
       return;
     }
 
-    if (autoStartedRef.current) return;
-    autoStartedRef.current = true;
+    if (autoStartedRef.current === attempt.id) return;
+    autoStartedRef.current = attempt.id;
 
     paymentRun.run({
       orderId: order.id,
       method: order.paymentMethod,
       instrument: session.paymentInstrument!,
       amount: order.grandTotal,
+      idempotencyKey: attempt.id,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order, orderId]);
+  }, [order, orderId, attempt]);
 
   const screenState: PaymentScreenState =
     paymentRun.state === "idle" ? "processing" : paymentRun.state;
@@ -211,9 +240,16 @@ export default function PaymentProcessingPage() {
                   method: order.paymentMethod,
                   instrument: session.paymentInstrument,
                   amount: order.grandTotal,
+                  idempotencyKey: attempt?.id,
                 });
               }}
               onChangeMethod={() => navigate("/checkout?step=payment")}
+              onCancel={() => {
+                paymentRun.cancel();
+                setPaymentAttempt(null);
+                addToast("Payment cancelled. Your cart is safe.", "info");
+                navigate("/checkout?step=payment");
+              }}
             />
           )}
         </div>

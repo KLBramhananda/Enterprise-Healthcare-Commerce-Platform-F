@@ -218,3 +218,37 @@ export function isFreeDeliveryEligible(
   const min = promo.minOrder ?? 0;
   return subtotal >= min;
 }
+
+/**
+ * Resolve a promo code against the demo coupon catalog using the same rule the
+ * mock service used to apply. Pure and shared so UI, mock and ERP services
+ * agree on what a code is "worth". The ERP backend applies its own configured
+ * flat discount to the order totals; this helper only drives the coupon UI.
+ */
+export function resolveOffer(code: string, subtotal: number): AppliedPromo | null {
+  const offer = CHECKOUT_OFFERS.find((o) => o.code.toUpperCase() === code.toUpperCase());
+  if (!offer) return null;
+  if (offer.minOrder !== undefined && subtotal < offer.minOrder) return null;
+
+  let discountPercent = offer.discountPercent ?? 0;
+  let discountAmount: number;
+
+  if (offer.discountType === "flat") {
+    discountPercent = 0;
+    discountAmount = Math.min(offer.flatAmount ?? 0, subtotal);
+  } else if (offer.discountType === "free_delivery") {
+    discountPercent = 0;
+    discountAmount = 0;
+  } else {
+    discountAmount =
+      Math.round(subtotal * (discountPercent / 100) * 100) / 100;
+  }
+
+  return {
+    code: offer.code.toUpperCase(),
+    discountPercent,
+    discountAmount,
+    minOrder: offer.minOrder,
+    discountType: offer.discountType,
+  };
+}

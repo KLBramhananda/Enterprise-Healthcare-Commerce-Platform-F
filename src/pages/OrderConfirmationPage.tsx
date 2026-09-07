@@ -8,7 +8,7 @@
  */
 
 import { motion } from "framer-motion";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import {
   BadgeCheck,
   CalendarClock,
@@ -37,6 +37,18 @@ export default function OrderConfirmationPage() {
 
   const orders = useCheckoutStore((s) => s.orders);
   const order = orders.find((o) => o.id === orderId);
+
+  // The confirmation page is ONLY shown after a successful online payment or a
+  // confirmed COD order. A pending online payment redirects back to the
+  // payment page to resume the same (idempotent) gateway intent instead of
+  // revealing a fake success state.
+  if (
+    order &&
+    order.payment?.status === "pending" &&
+    order.paymentMethod !== "cod"
+  ) {
+    return <Navigate to={`/checkout/payment/${order.id}`} replace />;
+  }
 
   return (
     <div className="bg-surface-50 pb-12">

@@ -27,6 +27,7 @@ import { DATA_SOURCE } from "@/config/env";
 import { useAuthStore } from "@/store/authStore";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlistStore } from "@/store/wishlistStore";
+import { useCheckoutStore } from "@/store/checkoutStore";
 import { services } from "@/services/factory";
 import { CART_QUERY_KEY } from "@/services/cartService";
 import { WISHLIST_QUERY_KEY } from "@/services/wishlistService";
@@ -72,8 +73,13 @@ export function ShoppingSyncProvider({ children }: { children: ReactNode }) {
       // Logged out / session expired → clear local cart + wishlist caches.
       useCartStore.getState().hydrate([]);
       useWishlistStore.getState().hydrate([]);
+      // Reset the in-progress checkout session (selected address, promo,
+      // payment method…) so it never leaks into the next sign-in. Placed
+      // orders are intentionally kept in the persisted store.
+      useCheckoutStore.getState().resetSession();
       queryClient.removeQueries({ queryKey: CART_QUERY_KEY });
       queryClient.removeQueries({ queryKey: WISHLIST_QUERY_KEY });
+      queryClient.removeQueries({ queryKey: ["checkout-summary"] });
     } else if (!prevAuth.current && isAuthenticated) {
       // Logged in → (re)fetch both from the server.
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });

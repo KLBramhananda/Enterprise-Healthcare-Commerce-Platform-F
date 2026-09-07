@@ -106,12 +106,11 @@ export const API_ROUTES = {
     REMOVE: "keemeds_commerce.api.wishlist.remove_item",
   },
 
-  /* ── Checkout ── */
+  /* ── Checkout (keemeds_commerce.api.checkout — implemented backend) ── */
   CHECKOUT: {
-    CREATE: "keemeds_commerce.api.checkout.create",
-    GET_SESSION: (orderId: string) => `keemeds_commerce.api.checkout.session?order_id=${encodeURIComponent(orderId)}`,
-    APPLY_PROMO: "keemeds_commerce.api.checkout.apply_promo",
-    REMOVE_PROMO: "keemeds_commerce.api.checkout.remove_promo",
+    SUMMARY: "keemeds_commerce.api.checkout.summary",
+    VALIDATE: "keemeds_commerce.api.checkout.validate",
+    CREATE_ORDER: "keemeds_commerce.api.checkout.create_order",
   },
 
   /* ── Payment ── */

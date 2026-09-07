@@ -1,19 +1,24 @@
 /**
- * Mock Payment Service
+ * Payment Gateway Providers
  *
- * Frontend-only simulation of a payment gateway for demos / local dev.
- * Implements the IPaymentService contract with a deterministic
- * "test instrument" convention (no real money, no external SDK):
+ * Concrete IPaymentGatewayProvider implementations selected by the service
+ * factory:
  *
- *   - UPI VPA     `anything@fail`   → Declined (stage: authorizing)
- *   - UPI VPA     `anything@funds`  → Insufficient funds
- *   - Card ending `0002`            → Declined (stage: authorizing)
- *   - Card ending `0003`            → Insufficient funds
- *   - Card ending `0000`            → Invalid details (stage: verifying)
- *   - Card expiry `00/00`           → Invalid details (stage: verifying)
- *   - Net banking / wallet / EMI id `fail` → Declined at first contact
+ *   - SandboxPaymentProvider: frontend simulation of a gateway used by STATIC
+ *     mode only (real aggregator stand-in; no real money, no external SDK).
+ *     Deterministic "test instrument" convention:
+ *       - UPI VPA     `anything@fail`   → Declined (stage: authorizing)
+ *       - UPI VPA     `anything@funds`  → Insufficient funds
+ *       - Card ending `0002`            → Declined (stage: authorizing)
+ *       - Card ending `0003`            → Insufficient funds
+ *       - Card ending `0000`            → Invalid details (stage: verifying)
+ *       - Card expiry `00/00`           → Invalid details (stage: verifying)
+ *       - Net banking / wallet / EMI id `fail` → Declined at first contact
+ *     Any other instrument succeeds and returns a synthetic transaction id.
  *
- * Any other instrument succeeds and returns a synthetic transaction id.
+ *   - GatewayUnavailableProvider: honest placeholder used by LIVE_API until a
+ *     real aggregator is integrated. Never simulates a charge — online
+ *     payments fail closed with `gateway_unavailable`; COD is unaffected.
  */
 
 import type {
@@ -24,7 +29,7 @@ import type {
   PaymentStage,
   PaymentStageId,
 } from "@/types/checkout";
-import type { IPaymentService } from "./paymentService";
+import type { IPaymentGatewayProvider } from "./paymentGateway";
 
 const PAYMENT_METHODS: PaymentMethod[] = [
   { type: "cod", label: "Cash on Delivery", description: "Pay when your order arrives" },
@@ -150,7 +155,8 @@ function detectFailure(input: PaymentProcessingInput): PaymentFailureResult | nu
   return null;
 }
 
-export class MockPaymentService implements IPaymentService {
+/** STATIC-mode simulator. Keep behavior identical to the legacy mock gateway. */
+export class SandboxPaymentProvider implements IPaymentGatewayProvider {
   async getPaymentMethods(): Promise<PaymentMethod[]> {
     await delay(120);
     return [...PAYMENT_METHODS];
@@ -185,4 +191,27 @@ export class MockPaymentService implements IPaymentService {
   }
 }
 
-export type { IPaymentService } from "./paymentService";
+/**
+ * LIVE_API placeholder. No real aggregator is integrated yet, so online
+ * payments fail closed with a clear, routable reason instead of faking a
+ * success. COD (no gateway involved) is not affected by this provider.
+ */
+export class GatewayUnavailableProvider implements IPaymentGatewayProvider {
+  async getPaymentMethods(): Promise<PaymentMethod[]> {
+    return [...PAYMENT_METHODS];
+  }
+
+  async getStages(): Promise<PaymentStage[]> {
+    return [...STAGES];
+  }
+
+  async processPayment(): Promise<PaymentResult> {
+    return {
+      status: "failed",
+      stage: "connecting",
+      reason: "gateway_unavailable",
+      message:
+        "Online payments aren't set up for this deployment yet. Please pick Cash on Delivery or try again later.",
+    };
+  }
+}

@@ -69,6 +69,9 @@ export const API_BASE_URL = readString("VITE_API_BASE_URL", "/api/method");
 /** Underlying request timeout in milliseconds. */
 export const API_TIMEOUT = readNumber("VITE_API_TIMEOUT", 30000);
 
+/** Payment orchestration timeout in milliseconds (charge attempt + redirect). */
+export const PAYMENT_TIMEOUT_MS = readNumber("VITE_PAYMENT_TIMEOUT_MS", 60000);
+
 /** Dev-server proxy target for `/api` requests (Vite config only). */
 export const PROXY_TARGET = readString("VITE_PROXY_TARGET", "http://localhost:8000");
 

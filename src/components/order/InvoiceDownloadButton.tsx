@@ -1,8 +1,8 @@
 /**
  * InvoiceDownloadButton
  *
- * Fetches the mock invoice for an order and triggers a printable HTML
- * download. Disabled until the invoice document is ready.
+ * Builds the printable invoice from the persisted order record and triggers
+ * an HTML download. Disabled until the order's invoice is ready.
  */
 
 import { Download } from "lucide-react";

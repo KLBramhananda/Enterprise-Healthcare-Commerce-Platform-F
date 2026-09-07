@@ -20,7 +20,7 @@
  * services for backward compatibility.
  */
 
-import { DATA_SOURCE, USE_MOCK_API, USE_ERP_API } from "@/config/env";
+import { DATA_SOURCE, USE_MOCK_API, USE_ERP_API, PAYMENT_TIMEOUT_MS } from "@/config/env";
 import { MockAccountService } from "./accountMock";
 import { MockAddressService } from "./addressMock";
 import { ErpNextAddressService } from "./addressErpNext";
@@ -29,7 +29,9 @@ import { ErpNextAuthService } from "./authErp";
 import { MockCatalogService } from "./catalogMock";
 import { ErpNextCatalogService } from "./catalogErpNext";
 import { MockCheckoutService } from "./checkoutMock";
-import { MockPaymentService } from "./paymentMock";
+import { ErpNextCheckoutService } from "./checkoutErpNext";
+import { PaymentService } from "./paymentService";
+import { GatewayUnavailableProvider, SandboxPaymentProvider } from "./paymentProviders";
 import { MockEngagementService } from "./engagementMock";
 import { MockHomepageService } from "./homepageMock";
 import { MockNotificationService } from "./notificationMock";
@@ -47,12 +49,28 @@ import {
  * ERP-backed and only ever invoked by the shopping sync layer / stores when
  * DATA_SOURCE === "LIVE_API" (STATIC keeps purely local Zustand persistence).
  */
+/**
+ * Payment orchestrator wired to the data-source-appropriate gateway provider.
+ *   - LIVE_API → GatewayUnavailableProvider (no real aggregator integrated
+ *     yet; online payments fail closed, COD unaffected). Swap in a real
+ *     provider here when the gateway is integrated.
+ *   - STATIC   → SandboxPaymentProvider (local simulator, demo only).
+ */
+function createPaymentService(): PaymentService {
+  return new PaymentService(
+    DATA_SOURCE === "LIVE_API"
+      ? new GatewayUnavailableProvider()
+      : new SandboxPaymentProvider(),
+    PAYMENT_TIMEOUT_MS,
+  );
+}
+
 function baseServices() {
   return {
     account: new MockAccountService(),
     address: new MockAddressService(),
     checkout: new MockCheckoutService(),
-    payment: new MockPaymentService(),
+    payment: createPaymentService(),
     engagement: new MockEngagementService(),
     homepage: new MockHomepageService(),
     notification: new MockNotificationService(),
@@ -72,6 +90,7 @@ function createServices() {
       auth: new ErpNextAuthService(),
       catalog: new ErpNextCatalogService(),
       address: new ErpNextAddressService(),
+      checkout: new ErpNextCheckoutService(),
       healthCheck: new MockHealthCheckService(),
     };
   }

@@ -1,12 +1,12 @@
 /**
- * Invoice utilities (mock)
+ * Invoice utilities
  *
  * Builds a printable HTML invoice from the Invoice document and triggers a
  * browser download. Purely frontend — a real ERPNext integration would
  * stream the PDF from the server instead.
  */
 
-import type { Invoice } from "@/types/checkout";
+import type { Invoice, Order } from "@/types/checkout";
 import { formatCurrency } from "./formatters";
 
 function escapeHtml(value: string | number | undefined | null): string {
@@ -15,6 +15,46 @@ function escapeHtml(value: string | number | undefined | null): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/**
+ * Derive the printable invoice document straight from a persisted Order. The
+ * order already carries the ERP-backed totals, items, addresses and payment
+ * info, so the invoice is deterministic and independent of any mock history or
+ * in-memory service cache (it stays available after a browser refresh).
+ */
+export function buildInvoiceFromOrder(order: Order): Invoice {
+  const taxRate =
+    order.subtotal - order.discount > 0
+      ? Math.round((order.tax / (order.subtotal - order.discount)) * 100)
+      : 0;
+
+  return {
+    id: order.invoiceId || `INV-${order.id}`,
+    orderId: order.id,
+    issuedAt: order.payment?.paidAt ?? order.placedAt,
+    seller: {
+      name: "KeeMeds Commerce Pvt. Ltd.",
+      address: "24 Wellness Avenue, Sector 62, Bengaluru, Karnataka 560102, India",
+      gstin: "29ABSCK1234F1Z2",
+      contact: "support@keemeds.in",
+    },
+    billingAddress: order.address,
+    items: order.items.map((item) => ({
+      name: item.product.name,
+      quantity: item.quantity,
+      unitPrice: item.product.price,
+      amount: Math.round(item.product.price * item.quantity * 100) / 100,
+    })),
+    subtotal: order.subtotal,
+    discount: order.discount,
+    deliveryCharge: order.deliveryCharge,
+    tax: order.tax,
+    taxRate,
+    grandTotal: order.grandTotal,
+    paymentMethod: order.payment?.method ?? order.paymentMethod,
+    transactionId: order.payment?.transactionId,
+  };
 }
 
 export function buildInvoiceHtml(invoice: Invoice): string {
@@ -110,7 +150,7 @@ export function buildInvoiceHtml(invoice: Invoice): string {
       <tr><td>Grand Total</td><td class="num">${escapeHtml(formatCurrency(invoice.grandTotal))}</td></tr>
     </table>
 
-    <footer>This is a computer-generated mock invoice for demonstration purposes. Verify all details before use.</footer>
+    <footer>This is a computer-generated invoice. Verify all details before use.</footer>
   </div>
 </body>
 </html>`;
