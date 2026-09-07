@@ -150,7 +150,7 @@ export function useFinalizePayment(
           instrumentSummary: payment.instrumentSummary,
         });
         addOrder(updated);
-        clearCart();
+        clearCart().catch(() => undefined);
         resetSession();
         navigate(`/orders/${updated.id}/confirmation`);
         return { ok: true, orderId: updated.id };

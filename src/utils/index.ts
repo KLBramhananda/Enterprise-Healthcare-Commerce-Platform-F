@@ -1,5 +1,5 @@
 export { cn } from "./cn";
-export { formatDate, formatCurrency, formatNumber } from "./formatters";
+export { formatDate, formatCurrency, formatNumber, CURRENCY_SYMBOL } from "./formatters";
 export { cartDrawerEvents } from "./cartDrawerEvents";
 export { initNotifications } from "./notifications";
 export {

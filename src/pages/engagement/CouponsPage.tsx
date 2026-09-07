@@ -14,7 +14,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks";
 import { useCoupons, useSaveCoupon, useValidateCoupon } from "@/hooks";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { formatCurrency, formatDate, CURRENCY_SYMBOL } from "@/utils/formatters";
 import type { CouponStatus, Coupon } from "@/types/engagement";
 
 const TAB_DEFINITIONS: { id: CouponStatus; label: string }[] = [
@@ -43,7 +43,7 @@ function formatCouponValue(type: Coupon["type"], value: number): string {
 }
 
 function formatCouponSubtitle(type: Coupon["type"]): string {
-  return type === "percentage" ? "% off" : "$ off";
+  return type === "percentage" ? "% off" : `${CURRENCY_SYMBOL} off`;
 }
 
 function isExpiringSoon(expiresOn: string): boolean {

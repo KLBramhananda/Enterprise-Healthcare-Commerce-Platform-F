@@ -11,6 +11,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Button, EmptyState, QuantitySelector, ProductImage } from "@/components/ui";
 import { useCart } from "@/hooks/shopping";
 import { formatCurrency } from "@/utils/formatters";
+import { notifyActionError } from "@/utils/notifications";
 
 interface MiniCartDrawerProps {
   isOpen: boolean;
@@ -80,11 +81,11 @@ export default function MiniCartDrawer({ isOpen, onClose }: MiniCartDrawerProps)
                   <div className="mt-2 flex items-center gap-2">
                     <QuantitySelector
                       value={item.quantity}
-                      onChange={(qty) => updateQuantity(item.product.id, qty)}
+                      onChange={(qty) => updateQuantity(item.product.id, qty).catch(notifyActionError)}
                     />
                     <button
                       type="button"
-                      onClick={() => removeItem(item.product.id)}
+                      onClick={() => removeItem(item.product.id).catch(notifyActionError)}
                       className="rounded p-1 text-surface-400 transition-colors hover:bg-surface-100 hover:text-danger-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
                       aria-label={`Remove ${item.product.name} from cart`}
                     >

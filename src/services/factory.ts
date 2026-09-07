@@ -9,7 +9,8 @@
  *   Service implementations are selected via the centralized VITE_DATA_SOURCE
  *   environment variable:
  *     - VITE_DATA_SOURCE=STATIC   → Mock services (default, no network)
- *     - VITE_DATA_SOURCE=LIVE_API → ErpNext services (catalog + auth from ERPNext)
+ *     - VITE_DATA_SOURCE=LIVE_API → ErpNext services (catalog, auth, and
+ *                                   addresses backed by ERPNext)
  *
  *   Switching modes only requires changing VITE_DATA_SOURCE — no component
  *   changes. The static mock (including MockAuthService) remains fully
@@ -22,6 +23,7 @@
 import { DATA_SOURCE, USE_MOCK_API, USE_ERP_API } from "@/config/env";
 import { MockAccountService } from "./accountMock";
 import { MockAddressService } from "./addressMock";
+import { ErpNextAddressService } from "./addressErpNext";
 import { MockAuthService } from "./authMock";
 import { ErpNextAuthService } from "./authErp";
 import { MockCatalogService } from "./catalogMock";
@@ -32,12 +34,19 @@ import { MockEngagementService } from "./engagementMock";
 import { MockHomepageService } from "./homepageMock";
 import { MockNotificationService } from "./notificationMock";
 import { MockSupportService } from "./supportMock";
+import { ErpNextCartService } from "./cartErpNext";
+import { ErpNextWishlistService } from "./wishlistErpNext";
 import {
   MockHealthCheckService,
   ErpNextHealthCheckService,
 } from "./healthCheck";
 
-/** Build a service map sharing the same non-catalog instances in every branch. */
+/**
+ * Build a service map sharing the same non-catalog instances in every branch.
+ * Cart/wishlist are included in every branch for typing simplicity; they are
+ * ERP-backed and only ever invoked by the shopping sync layer / stores when
+ * DATA_SOURCE === "LIVE_API" (STATIC keeps purely local Zustand persistence).
+ */
 function baseServices() {
   return {
     account: new MockAccountService(),
@@ -48,6 +57,8 @@ function baseServices() {
     homepage: new MockHomepageService(),
     notification: new MockNotificationService(),
     support: new MockSupportService(),
+    cart: new ErpNextCartService(),
+    wishlist: new ErpNextWishlistService(),
   };
 }
 
@@ -60,6 +71,7 @@ function createServices() {
       ...baseServices(),
       auth: new ErpNextAuthService(),
       catalog: new ErpNextCatalogService(),
+      address: new ErpNextAddressService(),
       healthCheck: new MockHealthCheckService(),
     };
   }

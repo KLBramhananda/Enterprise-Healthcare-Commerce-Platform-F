@@ -109,7 +109,7 @@ export function useCheckoutSession() {
           instrumentSummary: "Cash on Delivery",
         });
         addOrder(updated);
-        clearCart();
+        clearCart().catch(() => undefined);
         resetSession();
         return updated;
       } catch {

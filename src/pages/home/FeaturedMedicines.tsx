@@ -2,20 +2,22 @@
  * FeaturedMedicines
  *
  * Featured medicines grid with discount and prescription badges.
- * Content is sourced from the homepage service layer.
- * Uses Container, SectionHeader, ProductCard, SkeletonCard from the design system.
+ * Content is sourced live from the catalog service (ERPNext in LIVE_API
+ * mode). Uses Container, SectionHeader, ProductCard, SkeletonCard from the
+ * design system.
  */
 
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Container, SectionHeader, ProductCard, Grid, SkeletonCard } from "@/components/ui";
-import { useHomepageContent } from "@/hooks/homepage";
+import { useFeaturedMedicines } from "@/hooks/catalog";
 import { useProductActions } from "@/hooks/shopping";
-import type { Product } from "@/types/catalog";
+
+const FEATURED_MEDICINES_COUNT = 8;
 
 export default function FeaturedMedicines() {
-  const { data, isLoading } = useHomepageContent();
-  const featured = (data?.featuredMedicines ?? []) as Product[];
+  const query = useFeaturedMedicines(FEATURED_MEDICINES_COUNT);
+  const featured = query.data ?? [];
   const { handleAddToCart, handleToggleWishlist, isInWishlist } = useProductActions(featured);
 
   return (
@@ -41,9 +43,9 @@ export default function FeaturedMedicines() {
           responsive={{ sm: { cols: 3, gap: "md" }, lg: { cols: 4 } }}
           className="md:gap-x-5 md:gap-y-6"
         >
-          {isLoading
-            ? Array.from({ length: 8 }, (_, i) => <SkeletonCard key={`skel-${i}`} />)
-            : data?.featuredMedicines.map((medicine) => (
+          {query.isLoading
+            ? Array.from({ length: FEATURED_MEDICINES_COUNT }, (_, i) => <SkeletonCard key={`skel-${i}`} />)
+            : featured.map((medicine) => (
                 <ProductCard key={medicine.id} {...medicine} isInWishlist={isInWishlist(medicine.id)} onAddToCart={handleAddToCart} onToggleWishlist={handleToggleWishlist} />
               ))}
         </Grid>

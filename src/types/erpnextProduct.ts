@@ -34,16 +34,17 @@ export interface ErpListProductsParams {
   page_size?: number;
   /** Free text search across name/brand/manufacturer. */
   search?: string;
-  /** Filter by brand name(s) (comma-separated). */
+  /** Filter by a single exact brand name. The backend matches brands verbatim. */
   brand?: string;
-  /** Filter by manufacturer name(s) (comma-separated). */
+  /** Filter by a single exact manufacturer name. */
   manufacturer?: string;
-  /** Filter by item group slug(s) (comma-separated). */
+  /** Filter by a single exact Item Group name. List products live under one
+   *  Item Group per category, so item_group is always a single exact value. */
   item_group?: string;
   /** Only include products that are in stock. */
   in_stock?: boolean;
-  /** Sort key. */
-  sort_by?: ErpProductSort;
+  /** Sort key. The backend parameter is `sort` (NOT `sort_by`). */
+  sort?: ErpProductSort;
 }
 
 /* ── Product images ── */

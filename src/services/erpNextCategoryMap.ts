@@ -10,20 +10,25 @@
  *   `item_group` query parameter would filter against non-existent Item
  *   Groups and return no products.
  *
- * Phase 11.2 alignment (navigation categories vs ERPNext Item Groups):
- *   - medicines      → NO item_group filter (display the entire medicine catalog)
- *   - ayurveda       → item_group=Ayurvedic
- *   - homeopathy     → item_group=Homeopathy (only when data exists)
- *   - wellness       → NO filter (temporary fallback)
- *   - personal-care  → NO filter (temporary fallback)
- *   - nutrition      → NO filter (temporary fallback)
- *   - health-devices → NO filter (temporary fallback)
- *   - lab-tests      → placeholder behavior (no filter)
+ * Phase 13A contract (catalog filter synchronization):
+ *   Every navigable category resolves to exactly ONE ERPNext Item Group — the
+ *   backend exposes one Item Group per category. A category that has no
+ *   Item Group on the backend resolves to `undefined`, which the service
+ *   layer MUST treat as an EMPTY result set, NEVER as "request the whole
+ *   catalog". No unknown category may fall back to all products.
+ *
+ *   - medicines / allopathic → item_group=Allopathic
+ *   - generic / otc           → item_group=Generic
+ *   - ayurveda / ayurvedic    → item_group=Ayurvedic
+ *   - homeopathy / homeopathic→ item_group=Homeopathy
+ *   - wellness, personal-care, nutrition, health-devices, lab-tests
+ *                            → no ERPNext Item Group exists → empty result
  *
  * Contract:
  *   - `itemGroupForCategory` returns the exact ERPNext Item Group to filter
- *     by, or `undefined` when NO `item_group` filter should be sent (the
- *     whole catalog for that section is returned, e.g. medicines).
+ *     by, or `undefined` when the category has NO representation on the
+ *     backend. Callers that receive `undefined` must return an empty result
+ *     set; they must NEVER omit `item_group` to fetch the whole catalog.
  *   - `toErpNextItemGroup` is the shorthand used when only the Item Group
  *     string (if any) is needed.
  *   - `toErpNextCategorySlug` translates ERPNext Item Group names back to
@@ -40,32 +45,33 @@
  * Frontend category slug → ERPNext Item Group (and canonical Item Group
  * name aliases). Keys are normalized (trimmed, lower-case). Values are the
  * exact Item Group names used by the KeeMeds Commerce backend. A value of
- * `null` means "do not filter" for that category.
+ * `undefined` means "no ERPNext Item Group exists for this category" — the
+ * catalog service must return an EMPTY result set for such categories, never
+ * request the whole catalog.
  *
- * Note: `medicines` deliberately maps to `null` so the complete imported
- * medicine catalog (across all Item Groups) is shown, not only "Allopathic".
+ * Note: `medicines` maps to the "Allopathic" Item Group — the backend exposes
+ * one Item Group per category, so "medicines" only ever shows Allopathic
+ * products. Generic/OTC products live under their own "Generic" category.
  */
-const SLUG_TO_ITEM_GROUP: Readonly<Record<string, string | null>> = {
-  // Categories that show the full medicine/OTC catalog with no Item Group filter.
-  medicines: null,
-  otc: null,
-  generic: null,
-
+const SLUG_TO_ITEM_GROUP: Readonly<Record<string, string | undefined>> = {
   // Categories mapped to a real ERPNext Item Group.
-  ayurveda: "Ayurvedic",
-  homeopathy: "Homeopathy",
-
-  // Temporary fallbacks — no ERPNext filter until dedicated data exists.
-  wellness: null,
-  "personal-care": null,
-  nutrition: null,
-  "health-devices": null,
-  "lab-tests": null,
-
-  // Canonical Item Group name aliases (any casing) → canonical form
+  medicines: "Allopathic",
   allopathic: "Allopathic",
+  generic: "Generic",
+  otc: "Generic",
+  ayurveda: "Ayurvedic",
   ayurvedic: "Ayurvedic",
+  homeopathy: "Homeopathy",
   homeopathic: "Homeopathy",
+
+  // No ERPNext Item Group exists on the backend for these categories. The
+  // service layer MUST return an empty result set for them — never fall back
+  // to requesting the whole catalog.
+  wellness: undefined,
+  "personal-care": undefined,
+  nutrition: undefined,
+  "health-devices": undefined,
+  "lab-tests": undefined,
 };
 
 /**
@@ -73,38 +79,35 @@ const SLUG_TO_ITEM_GROUP: Readonly<Record<string, string | null>> = {
  *
  * This reverse mapping is intentionally independent of the outbound
  * SLUG_TO_ITEM_GROUP table: a real ERPNext Item Group must map to the
- * navigation category that best represents it in the UI, even for categories
- * that are "no filter" outbound (e.g. medicines).
+ * navigation category that best represents it in the UI.
  *
  * These are the canonical, valid ERPNext Item Group names produced by the
  * KeeMeds Commerce backend. Keys are normalized (lower-case).
  */
 const ITEM_GROUP_TO_NAV_SLUG: Readonly<Record<string, string>> = Object.freeze({
   allopathic: "medicines",
-  ayurvedic: "ayurveda",
-  homeopathy: "homeopathy",
   otc: "medicines",
   generic: "medicines",
+  ayurvedic: "ayurveda",
+  homeopathy: "homeopathy",
 });
 
 /**
- * Resolve a category slug to the ERPNext Item Group that should be used to
- * filter the catalog, or `undefined` when NO `item_group` filter should be
- * sent (the whole catalog for the section is returned).
+ * Resolve a category slug to the exact ERPNext Item Group that should be used
+ * to filter the catalog, or `undefined` when the category has NO Item Group on
+ * the backend.
  *
- * This is the primary resolver for outbound catalog requests: callers omit
- * the `item_group` parameter when the result is `undefined`, guaranteeing an
- * invalid Item Group is never sent to ERPNext.
+ * This is the primary resolver for outbound catalog requests. Callers MUST
+ * treat `undefined` as an empty result set — they must NEVER omit the
+ * `item_group` parameter and display products from other groups.
  */
 export function itemGroupForCategory(categorySlug?: string): string | undefined {
   if (!categorySlug) return undefined;
-  const group = SLUG_TO_ITEM_GROUP[categorySlug.trim().toLowerCase()];
-  return group ?? undefined;
+  return SLUG_TO_ITEM_GROUP[categorySlug.trim().toLowerCase()];
 }
 
 /**
- * Resolve a category slug to a valid ERPNext Item Group, or `undefined` when
- * no valid Item Group exists or no filter should be applied.
+ * `itemGroupForCategory`'s shorthand alias.
  */
 export function toErpNextItemGroup(categorySlug?: string): string | undefined {
   return itemGroupForCategory(categorySlug);

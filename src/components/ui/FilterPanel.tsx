@@ -10,25 +10,31 @@ import type { ReactNode } from "react";
 import type {
   BrandFacet,
   CatalogFilters,
+  ManufacturerFacet,
   PrescriptionFilter,
   PriceRangeId,
 } from "@/types/catalog";
 import { hasActiveFilters } from "@/types/catalog";
 import { cn } from "@/utils/cn";
+import { formatCurrency } from "@/utils/formatters";
 import CheckboxOption from "./CheckboxOption";
 
 interface FilterPanelProps {
   filters: CatalogFilters;
   onChange: (filters: CatalogFilters) => void;
   brands: BrandFacet[];
+  manufacturers?: ManufacturerFacet[];
   className?: string;
 }
 
+const formatRangePrice = (value: number): string =>
+  formatCurrency(value, { maximumFractionDigits: 0 });
+
 const PRICE_RANGE_OPTIONS: { id: PriceRangeId; label: string }[] = [
-  { id: "under_5", label: "Under $5" },
-  { id: "5_to_10", label: "$5 – $10" },
-  { id: "10_to_25", label: "$10 – $25" },
-  { id: "above_25", label: "$25 & above" },
+  { id: "under_5", label: `Under ${formatRangePrice(5)}` },
+  { id: "5_to_10", label: `${formatRangePrice(5)} – ${formatRangePrice(10)}` },
+  { id: "10_to_25", label: `${formatRangePrice(10)} – ${formatRangePrice(25)}` },
+  { id: "above_25", label: `${formatRangePrice(25)} & above` },
 ];
 
 const DISCOUNT_OPTIONS: { value: number; label: string }[] = [
@@ -44,7 +50,7 @@ const PRESCRIPTION_OPTIONS: { value: PrescriptionFilter; label: string }[] = [
   { value: "rx_only", label: "Prescription required" },
 ];
 
-export default function FilterPanel({ filters, onChange, brands, className }: FilterPanelProps) {
+export default function FilterPanel({ filters, onChange, brands, manufacturers, className }: FilterPanelProps) {
   const active = hasActiveFilters(filters);
 
   const toggleArrayValue = <T,>(list: T[], value: T): T[] =>
@@ -58,7 +64,7 @@ export default function FilterPanel({ filters, onChange, brands, className }: Fi
         {active && (
           <button
             type="button"
-            onClick={() => onChange({ ...filters, brands: [], priceRanges: [], minDiscountPercent: 0, prescription: "any", inStockOnly: false })}
+            onClick={() => onChange({ ...filters, brands: [], manufacturers: [], priceRanges: [], minDiscountPercent: 0, prescription: "any", inStockOnly: false })}
             className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 transition-colors duration-fast hover:text-brand-700"
           >
             <RotateCcw size={12} aria-hidden="true" />
@@ -139,6 +145,28 @@ export default function FilterPanel({ filters, onChange, brands, className }: Fi
           ))}
         </div>
       </FilterSection>
+
+      {manufacturers && manufacturers.length > 0 && (
+        <FilterSection title="Manufacturer">
+          <div className="-mx-2 max-h-56 space-y-0.5 overflow-y-auto px-2">
+            {manufacturers.map((manufacturer) => (
+              <CheckboxOption
+                key={manufacturer.name}
+                id={`manufacturer-${manufacturer.name.toLowerCase().replace(/\s+/g, "-")}`}
+                label={manufacturer.name}
+                count={manufacturer.count}
+                checked={filters.manufacturers.includes(manufacturer.name)}
+                onChange={() =>
+                  onChange({
+                    ...filters,
+                    manufacturers: toggleArrayValue(filters.manufacturers, manufacturer.name),
+                  })
+                }
+              />
+            ))}
+          </div>
+        </FilterSection>
+      )}
     </div>
   );
 }

@@ -24,6 +24,8 @@ import {
 import type { CatalogView } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import {
+  useCatalogBrands,
+  useCatalogManufacturers,
   useSearchState,
   useSearchResults,
   useHealthConcerns,
@@ -45,6 +47,8 @@ export default function SearchResultsPage() {
 
   const searchQuery = useSearchResults(query);
   const concernsQuery = useHealthConcerns();
+  const brandsQuery = useCatalogBrands();
+  const manufacturersQuery = useCatalogManufacturers();
 
   const [view, setView] = useState<CatalogView>("grid");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -70,6 +74,8 @@ export default function SearchResultsPage() {
     (next: typeof filters) => {
       if (next.brands.length > 0) setParam("brands", next.brands.join(","));
       else setParam("brands", null);
+      if (next.manufacturers.length > 0) setParam("manufacturers", next.manufacturers.join(","));
+      else setParam("manufacturers", null);
       if (next.prescription !== "any") setParam("rx", next.prescription);
       else setParam("rx", null);
       if (next.inStockOnly) setParam("inStock", "1");
@@ -148,7 +154,8 @@ export default function SearchResultsPage() {
               <FilterPanel
                 filters={filters}
                 onChange={handleFilterChange}
-                brands={[]}
+                brands={brandsQuery.data ?? []}
+                manufacturers={manufacturersQuery.data ?? []}
               />
             </div>
           </aside>

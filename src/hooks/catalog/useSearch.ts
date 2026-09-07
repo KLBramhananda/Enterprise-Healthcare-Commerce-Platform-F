@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { services } from "@/services/factory";
-import type { SearchQuery, CatalogSortOption, CatalogFilters } from "@/types/catalog";
+import type { SearchQuery, CatalogSortOption, CatalogFilters, PriceRangeId } from "@/types/catalog";
 import { emptyCatalogFilters } from "@/types/catalog";
 import { useDebounce } from "@/hooks/common/useDebounce";
 import { CATALOG_PAGE_SIZE } from "@/config/constants";
@@ -42,12 +42,20 @@ export function useSearchState() {
 
   const filters: CatalogFilters = useMemo(() => {
     const brands = searchParams.get("brands");
+    const manufacturers = searchParams.get("manufacturers");
+    const priceRanges = searchParams.get("priceRanges");
     const prescription = searchParams.get("rx") as CatalogFilters["prescription"] | null;
     const inStockOnly = searchParams.get("inStock") === "1";
     const minDiscount = Number(searchParams.get("discount")) || 0;
     return {
       ...emptyCatalogFilters(),
       brands: brands ? brands.split(",") : [],
+      manufacturers: manufacturers ? manufacturers.split(",") : [],
+      priceRanges: priceRanges
+        ? priceRanges.split(",").filter((id): id is PriceRangeId =>
+            id === "under_5" || id === "5_to_10" || id === "10_to_25" || id === "above_25",
+          )
+        : [],
       prescription: prescription ?? "any",
       inStockOnly,
       minDiscountPercent: minDiscount,

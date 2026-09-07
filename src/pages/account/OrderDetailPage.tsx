@@ -26,6 +26,7 @@ import { useCart } from "@/hooks/shopping";
 import { useAddresses } from "@/hooks/checkout/useAddress";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { notifyActionError } from "@/utils/notifications";
 import { DELIVERY_SPEED_LABELS, PAYMENT_METHOD_LABELS } from "@/config/checkout";
 import { InvoiceDownloadButton, OrderTrackingTimeline } from "@/components/order";
 import { ORDER_STATUS_LABELS } from "@/utils/orderTracking";
@@ -120,7 +121,7 @@ export default function OrderDetailPage() {
   const handleReorder = () => {
     order.items.forEach((item) => {
       for (let i = 0; i < item.quantity; i++) {
-        addItem(item.product);
+        addItem(item.product).catch(notifyActionError);
       }
     });
   };

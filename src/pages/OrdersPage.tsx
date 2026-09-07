@@ -7,6 +7,7 @@ import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useOrderHistory } from "@/hooks/checkout/useCheckout";
 import { useCart } from "@/hooks/shopping";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { notifyActionError } from "@/utils/notifications";
 import { ORDER_STATUS_LABELS } from "@/utils/orderTracking";
 import type { OrderStatus, Order, Product } from "@/types";
 
@@ -39,9 +40,9 @@ function getItemSummary(items: Order["items"]): string {
   return `${items[0].product.name}, ${items[1].product.name} and ${items.length - 2} more`;
 }
 
-function handleReorder(order: Order, addItem: (product: Product, quantity?: number) => void) {
+function handleReorder(order: Order, addItem: (product: Product, quantity?: number) => Promise<void>) {
   order.items.forEach((item) => {
-    addItem(item.product, item.quantity);
+    addItem(item.product, item.quantity).catch(notifyActionError);
   });
 }
 

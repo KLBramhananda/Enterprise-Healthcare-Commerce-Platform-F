@@ -21,12 +21,11 @@ export function useWishlist() {
   const getItem = useWishlistStore((s) => s.getItem);
 
   const moveToCart = useCallback(
-    (productId: string) => {
+    async (productId: string) => {
       const item = getItem(productId);
-      if (item) {
-        useCartStore.getState().addItem(item.product);
-        removeItem(productId);
-      }
+      if (!item) return;
+      await useCartStore.getState().addItem(item.product);
+      await removeItem(productId);
     },
     [getItem, removeItem],
   );

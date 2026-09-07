@@ -3,6 +3,7 @@ import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks";
 import { useReturnRequests, useRefundHistory } from "@/hooks/support";
 import { Package, CreditCard } from "lucide-react";
+import { formatCurrency } from "@/utils/formatters";
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -78,7 +79,7 @@ export default function ReturnsRefundsPage() {
                     <CardBody>
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-sm font-semibold text-surface-900">₹{r.amount.toFixed(2)}</p>
+                          <p className="text-sm font-semibold text-surface-900">{formatCurrency(r.amount)}</p>
                           <p className="mt-0.5 text-xs text-surface-400">{r.method} • {formatDate(r.completedAt ?? r.createdAt)}</p>
                         </div>
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${REFUND_STATUS_STYLES[r.status] ?? ""}`}>

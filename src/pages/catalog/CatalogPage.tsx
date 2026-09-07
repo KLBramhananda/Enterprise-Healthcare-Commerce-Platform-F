@@ -25,7 +25,7 @@ import {
 } from "@/components/ui";
 import type { CatalogView } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
-import { useCatalogBrands, useCatalogCategory, useProducts } from "@/hooks/catalog";
+import { useCatalogBrands, useCatalogCategory, useCatalogManufacturers, useProducts } from "@/hooks/catalog";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { emptyCatalogFilters, hasActiveFilters } from "@/types/catalog";
 import type { CatalogFilters, CatalogSortOption } from "@/types/catalog";
@@ -47,6 +47,7 @@ export default function CatalogPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const brandsQuery = useCatalogBrands(slug);
+  const manufacturersQuery = useCatalogManufacturers(slug);
 
   const productsQuery = useProducts({
     categorySlug: slug,
@@ -138,6 +139,7 @@ export default function CatalogPage() {
                 filters={filters}
                 onChange={handleFilterChange}
                 brands={brandsQuery.data ?? []}
+                manufacturers={manufacturersQuery.data ?? []}
               />
             </div>
           </aside>

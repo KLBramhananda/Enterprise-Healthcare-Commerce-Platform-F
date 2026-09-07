@@ -76,6 +76,7 @@ import {
   notifyAddedAllToCart,
   notifyAddedToWishlist,
   notifyRemovedFromWishlist,
+  notifyActionError,
 } from "@/utils/notifications";
 import { cn } from "@/utils/cn";
 import type { Product, ProductDetails } from "@/types/catalog";
@@ -115,29 +116,36 @@ export default function ProductDetailsPage() {
     }
   }, [id, detailsQuery.isSuccess, trackView]);
 
-  const handleProductAddToCart = (productId: string) => {
-    const p =
-      relatedQuery.data?.find((x) => x.id === productId) ??
-      similarQuery.data?.find((x) => x.id === productId) ??
-      recentProductsQuery.data?.find((x) => x.id === productId);
-    if (p) {
-      addItem(p);
-      notifyAddedToCart(p);
-    }
-  };
-
-  const handleProductWishlistToggle = (productId: string) => {
+  const handleProductAddToCart = async (productId: string) => {
     const p =
       relatedQuery.data?.find((x) => x.id === productId) ??
       similarQuery.data?.find((x) => x.id === productId) ??
       recentProductsQuery.data?.find((x) => x.id === productId);
     if (!p) return;
-    if (isInWishlist(productId)) {
-      removeWishlist(productId);
-      notifyRemovedFromWishlist(p);
-    } else {
-      addWishlist(p);
-      notifyAddedToWishlist(p);
+    try {
+      await addItem(p);
+      notifyAddedToCart(p);
+    } catch (error) {
+      notifyActionError(error);
+    }
+  };
+
+  const handleProductWishlistToggle = async (productId: string) => {
+    const p =
+      relatedQuery.data?.find((x) => x.id === productId) ??
+      similarQuery.data?.find((x) => x.id === productId) ??
+      recentProductsQuery.data?.find((x) => x.id === productId);
+    if (!p) return;
+    try {
+      if (isInWishlist(productId)) {
+        await removeWishlist(productId);
+        notifyRemovedFromWishlist(p);
+      } else {
+        await addWishlist(p);
+        notifyAddedToWishlist(p);
+      }
+    } catch (error) {
+      notifyActionError(error);
     }
   };
 
@@ -284,7 +292,7 @@ function useProductQuantity(product: ProductDetails) {
   const quantity = isInCart ? cartQuantity : localQty;
   const setQuantity = (next: number) => {
     if (isInCart) {
-      updateQuantity(product.id, Math.max(1, next));
+      updateQuantity(product.id, Math.max(1, next)).catch(notifyActionError);
     } else {
       setLocalQty(Math.max(1, next));
     }
@@ -304,24 +312,36 @@ function ProductSummary({ details }: { details: ProductDetails }) {
   const wishlisted = isInWishlist(details.id);
   const savings = Math.max(0, details.mrp - details.price);
 
-  const handleAddToCart = () => {
-    addItem(details, quantity);
-    notifyAddedToCart(details, quantity);
+  const handleAddToCart = async () => {
+    try {
+      await addItem(details, quantity);
+      notifyAddedToCart(details, quantity);
+    } catch (error) {
+      notifyActionError(error);
+    }
   };
 
-  const handleBuyNow = () => {
-    addItem(details, quantity);
-    notifyAddedToCart(details, quantity);
-    navigate("/checkout");
+  const handleBuyNow = async () => {
+    try {
+      await addItem(details, quantity);
+      notifyAddedToCart(details, quantity);
+      navigate("/checkout");
+    } catch (error) {
+      notifyActionError(error);
+    }
   };
 
-  const handleWishlist = () => {
-    if (wishlisted) {
-      removeWishlist(details.id);
-      notifyRemovedFromWishlist(details);
-    } else {
-      addWishlist(details);
-      notifyAddedToWishlist(details);
+  const handleWishlist = async () => {
+    try {
+      if (wishlisted) {
+        await removeWishlist(details.id);
+        notifyRemovedFromWishlist(details);
+      } else {
+        await addWishlist(details);
+        notifyAddedToWishlist(details);
+      }
+    } catch (error) {
+      notifyActionError(error);
     }
   };
 
@@ -979,10 +999,16 @@ function FrequentlyBoughtTogetherSection({
   const combinedPrice = source.price + selectedItems.reduce((sum, i) => sum + i.price, 0);
   const combinedMrp = source.mrp + selectedItems.reduce((sum, i) => sum + i.mrp, 0);
 
-  const handleAddAll = () => {
-    addItem(source);
-    selectedItems.forEach((item) => addItem(item));
-    notifyAddedAllToCart(selectedItems.length + 1);
+  const handleAddAll = async () => {
+    try {
+      await addItem(source);
+      for (const item of selectedItems) {
+        await addItem(item);
+      }
+      notifyAddedAllToCart(selectedItems.length + 1);
+    } catch (error) {
+      notifyActionError(error);
+    }
   };
 
   return (
@@ -1084,10 +1110,14 @@ function StickyPurchaseBar({ details }: { details: ProductDetails }) {
           className="hidden sm:inline-flex"
         />
         <Button
-          onClick={() => {
-            addItem(details, quantity);
-            notifyAddedToCart(details, quantity);
-            navigate("/checkout");
+          onClick={async () => {
+            try {
+              await addItem(details, quantity);
+              notifyAddedToCart(details, quantity);
+              navigate("/checkout");
+            } catch (error) {
+              notifyActionError(error);
+            }
           }}
           disabled={isOutOfStock}
           size="md"

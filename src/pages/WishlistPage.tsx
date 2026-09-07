@@ -10,6 +10,7 @@ import {
   notifyMovedToCart,
   notifyRemovedFromWishlist,
   notifyAddedAllToCart,
+  notifyActionError,
 } from "@/utils/notifications";
 
 type SortKey = "recent" | "price_asc" | "price_desc" | "name";
@@ -53,22 +54,34 @@ export default function WishlistPage() {
     }
   }, [items, sortBy]);
 
-  const handleMoveToCart = (product: import("@/types/catalog").Product) => {
-    moveToCart(product.id);
-    notifyMovedToCart(product);
+  const handleMoveToCart = async (product: import("@/types/catalog").Product) => {
+    try {
+      await moveToCart(product.id);
+      notifyMovedToCart(product);
+    } catch (error) {
+      notifyActionError(error);
+    }
   };
 
-  const handleRemove = (product: import("@/types/catalog").Product) => {
-    removeItem(product.id);
-    notifyRemovedFromWishlist(product);
+  const handleRemove = async (product: import("@/types/catalog").Product) => {
+    try {
+      await removeItem(product.id);
+      notifyRemovedFromWishlist(product);
+    } catch (error) {
+      notifyActionError(error);
+    }
   };
 
-  const handleMoveAllToCart = () => {
-    items.forEach((item) => {
-      addToCart(item.product);
-    });
-    clearWishlist();
-    notifyAddedAllToCart(count);
+  const handleMoveAllToCart = async () => {
+    try {
+      for (const item of items) {
+        await addToCart(item.product);
+      }
+      await clearWishlist();
+      notifyAddedAllToCart(count);
+    } catch (error) {
+      notifyActionError(error);
+    }
   };
 
   const handleShareWishlist = () => {

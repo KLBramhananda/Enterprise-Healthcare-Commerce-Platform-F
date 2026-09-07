@@ -95,6 +95,18 @@ export function useHealthConcernProducts(slug: string | undefined, query?: Disco
 
 /* ── Recommendation Sections ── */
 
+/** Featured medicines (live catalog data, scoped to the medicines category). */
+export function useFeaturedMedicines(limit = 8) {
+  return useQuery({
+    queryKey: ["discovery", "featured-medicines", limit],
+    queryFn: () =>
+      catalogService
+        .getProducts({ categorySlug: "medicines", sortBy: "popularity", pageSize: limit })
+        .then((result) => result.items),
+    staleTime: 300_000,
+  });
+}
+
 export function useBestSellers(limit = 12) {
   return useQuery({
     queryKey: ["discovery", "best-sellers", limit],

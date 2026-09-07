@@ -7,9 +7,10 @@
 
 import { Truck, Shield, HeadphonesIcon, BadgePercent } from "lucide-react";
 import { Container, Grid, IconTile } from "@/components/ui";
+import { formatCurrency } from "@/utils/formatters";
 
 const promos = [
-  { icon: Truck, title: "Free Delivery", description: "On orders above $50", color: "brand" as const },
+  { icon: Truck, title: "Free Delivery", description: `On orders above ${formatCurrency(50, { maximumFractionDigits: 0 })}`, color: "brand" as const },
   { icon: Shield, title: "100% Authentic", description: "Verified products only", color: "green" as const },
   { icon: HeadphonesIcon, title: "Expert Support", description: "Licensed pharmacist advice", color: "blue" as const },
   { icon: BadgePercent, title: "Best Prices", description: "Up to 50% off on medicines", color: "amber" as const },

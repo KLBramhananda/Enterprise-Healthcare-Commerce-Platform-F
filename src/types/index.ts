@@ -26,7 +26,6 @@ export type {
   HeroSlideCta,
   HeroSlideTheme,
   HomepageCategory,
-  Medicine,
   Brand,
   HealthConcern,
   LabTest,

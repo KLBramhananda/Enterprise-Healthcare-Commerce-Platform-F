@@ -100,8 +100,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   },
   {
     id: "notif-010",
-    title: "Refer & Earn $10",
-    message: "Invite friends to KeeMeds and earn $10 credit for each successful referral.",
+    title: "Refer & Earn ₹10",
+    message: "Invite friends to KeeMeds and earn ₹10 credit for each successful referral.",
     category: "promotion",
     read: true,
     createdAt: daysAgo(6),
@@ -109,7 +109,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "notif-011",
     title: "Payment Received",
-    message: "Payment of $45.99 received for order ORD-1001 via UPI.",
+    message: "Payment of ₹45.99 received for order ORD-1001 via UPI.",
     category: "order",
     read: false,
     createdAt: daysAgo(7),

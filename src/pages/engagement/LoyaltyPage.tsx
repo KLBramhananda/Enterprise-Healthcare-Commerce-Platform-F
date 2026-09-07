@@ -14,7 +14,7 @@ import { Container, Card, CardBody, Badge, Button, Modal, Input, LinearProgress 
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useLoyaltyAccount, useLoyaltyHistory, useLoyaltyTiers, useRedeemPoints } from "@/hooks/engagement/useLoyalty";
-import { formatDate } from "@/utils/formatters";
+import { formatDate, formatCurrency } from "@/utils/formatters";
 import type { LoyaltyTransactionType } from "@/types/engagement";
 
 const TX_CONFIG: Record<
@@ -361,7 +361,8 @@ export default function LoyaltyPage() {
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-surface-500">
-                Enter the number of points you want to redeem. Each point is worth $0.01.
+                Enter the number of points you want to redeem. Each point is worth {" "}
+                {formatCurrency(0.01)}.
               </p>
               <Input
                 label="Points to redeem"
@@ -379,7 +380,7 @@ export default function LoyaltyPage() {
                 <p className="text-sm text-surface-600">
                   Estimated value:{" "}
                   <span className="font-bold text-brand-700">
-                    ${redeemValue.toFixed(2)}
+                    {formatCurrency(redeemValue)}
                   </span>
                 </p>
               )}

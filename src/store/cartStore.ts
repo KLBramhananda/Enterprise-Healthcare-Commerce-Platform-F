@@ -4,13 +4,26 @@
  * Zustand store for shopping cart state with localStorage persistence.
  * Guest-friendly: no auth required. Auth gating happens in UI layer.
  * Stores full Product objects to avoid extra fetches for rendering.
+ *
+ * Under LIVE_API the store is a temporary client-side mirror of the ERPNext
+ * cart (server is the source of truth): every mutation dispatches to the cart
+ * service and re-hydrates from the authoritative response, and the sync
+ * provider mirrors server snapshots fetched via React Query. Under STATIC the
+ * store behaves exactly as before (purely local, no network).
  */
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product } from "@/types/catalog";
+import { DATA_SOURCE } from "@/config/env";
+import { services } from "@/services/factory";
+import { CART_QUERY_KEY } from "@/services/cartService";
+import { queryClient } from "@/lib/queryClient";
 
 const MAX_QUANTITY = 99;
+
+/** Whether cart mutations should dispatch to the live ERPNext backend. */
+const LIVE_SYNC_ENABLED = DATA_SOURCE === "LIVE_API";
 
 export interface CartItem {
   product: Product;
@@ -21,10 +34,12 @@ export interface CartItem {
 interface CartState {
   items: CartItem[];
 
-  addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
+  addItem: (product: Product, quantity?: number) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  /** Replace the mirror from an authoritative server snapshot. */
+  hydrate: (items: CartItem[]) => void;
 
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -34,12 +49,23 @@ interface CartState {
   isInCart: (productId: string) => boolean;
 }
 
+/** Apply an authoritative cart snapshot to the mirror + React Query cache. */
+function applySnapshot(set: (fn: Partial<CartState>) => void, items: CartItem[]) {
+  set({ items });
+  queryClient.setQueryData(CART_QUERY_KEY, items);
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
 
       addItem: (product, quantity = 1) => {
+        if (LIVE_SYNC_ENABLED) {
+          return services.cart
+            .addItem(product.id, quantity)
+            .then((snapshot) => applySnapshot(set, snapshot));
+        }
         set((state) => {
           const existing = state.items.find((i) => i.product.id === product.id);
           if (existing) {
@@ -58,18 +84,35 @@ export const useCartStore = create<CartState>()(
             ],
           };
         });
+        return Promise.resolve();
       },
 
       removeItem: (productId) => {
+        if (LIVE_SYNC_ENABLED) {
+          return services.cart
+            .removeItem(productId)
+            .then((snapshot) => applySnapshot(set, snapshot));
+        }
         set((state) => ({
           items: state.items.filter((i) => i.product.id !== productId),
         }));
+        return Promise.resolve();
       },
 
       updateQuantity: (productId, quantity) => {
+        if (LIVE_SYNC_ENABLED) {
+          if (quantity <= 0) {
+            return services.cart
+              .removeItem(productId)
+              .then((snapshot) => applySnapshot(set, snapshot));
+          }
+          return services.cart
+            .updateItem(productId, quantity)
+            .then((snapshot) => applySnapshot(set, snapshot));
+        }
         if (quantity <= 0) {
           get().removeItem(productId);
-          return;
+          return Promise.resolve();
         }
         set((state) => ({
           items: state.items.map((i) =>
@@ -78,9 +121,20 @@ export const useCartStore = create<CartState>()(
               : i,
           ),
         }));
+        return Promise.resolve();
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => {
+        if (LIVE_SYNC_ENABLED) {
+          return services.cart
+            .clearCart()
+            .then((snapshot) => applySnapshot(set, snapshot));
+        }
+        set({ items: [] });
+        return Promise.resolve();
+      },
+
+      hydrate: (items) => set({ items }),
 
       getTotalItems: () => {
         return get().items.reduce((sum, i) => sum + i.quantity, 0);

@@ -184,8 +184,8 @@ export const CHECKOUT_OFFERS: CheckoutOffer[] = [
   },
   {
     code: "HEALTH50",
-    title: "Free delivery above $499",
-    detail: "Free delivery on orders above $499.",
+    title: "Free delivery above ₹499",
+    detail: "Free delivery on orders above ₹499.",
     discountType: "free_delivery",
     minOrder: 499,
     badge: "FREE SHIPPING",
@@ -200,12 +200,12 @@ export const CHECKOUT_OFFERS: CheckoutOffer[] = [
   },
   {
     code: "WELCOME100",
-    title: "Flat $100 off above $999",
-    detail: "Flat $100 off on orders above $999.",
+    title: "Flat ₹100 off above ₹999",
+    detail: "Flat ₹100 off on orders above ₹999.",
     discountType: "flat",
     flatAmount: 100,
     minOrder: 999,
-    badge: "$100 OFF",
+    badge: "₹100 OFF",
   },
 ];
 

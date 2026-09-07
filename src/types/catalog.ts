@@ -146,6 +146,7 @@ export type PrescriptionFilter = "any" | "rx_only" | "otc_only";
 
 export interface CatalogFilters {
   brands: string[];
+  manufacturers: string[];
   priceRanges: PriceRangeId[];
   minDiscountPercent: number;
   prescription: PrescriptionFilter;
@@ -155,6 +156,7 @@ export interface CatalogFilters {
 export function emptyCatalogFilters(): CatalogFilters {
   return {
     brands: [],
+    manufacturers: [],
     priceRanges: [],
     minDiscountPercent: 0,
     prescription: "any",
@@ -165,6 +167,7 @@ export function emptyCatalogFilters(): CatalogFilters {
 export function hasActiveFilters(filters: CatalogFilters): boolean {
   return (
     filters.brands.length > 0 ||
+    filters.manufacturers.length > 0 ||
     filters.priceRanges.length > 0 ||
     filters.minDiscountPercent > 0 ||
     filters.prescription !== "any" ||
@@ -172,10 +175,34 @@ export function hasActiveFilters(filters: CatalogFilters): boolean {
   );
 }
 
+/**
+ * Numeric bounds for a price-range filter id. The upper bound is exclusive so
+ * adjacent ranges never overlap ("under_5" contains 4.99, "5_to_10" starts at
+ * 5). An `undefined` max means the range is open-ended.
+ */
+export function priceRangeBounds(rangeId: PriceRangeId): { min: number; max?: number } {
+  switch (rangeId) {
+    case "under_5":
+      return { min: 0, max: 5 };
+    case "5_to_10":
+      return { min: 5, max: 10 };
+    case "10_to_25":
+      return { min: 10, max: 25 };
+    case "above_25":
+      return { min: 25, max: undefined };
+  }
+}
+
 /* ── Query / Result Contract ── */
 
 /** Aggregated brand facet for filter UIs. */
 export interface BrandFacet {
+  name: string;
+  count: number;
+}
+
+/** Aggregated manufacturer facet for filter UIs. */
+export interface ManufacturerFacet {
   name: string;
   count: number;
 }
@@ -218,6 +245,10 @@ export interface SearchQuery {
   filters?: CatalogFilters;
   page?: number;
   pageSize?: number;
+  /** Scopes the search to a single category (forwarded as the category's
+   *  ERPNext Item Group). When searching from inside a category, results are
+   *  restricted to that category instead of the whole catalog. */
+  categorySlug?: string;
 }
 
 export interface SearchResult extends PaginatedResult<Product> {
