@@ -171,6 +171,28 @@ export const DATA_SOURCE: DataSource = ((): DataSource => {
   return raw === "LIVE_API" ? "LIVE_API" : "STATIC";
 })();
 
+/* ── Payment Gateway Provider ── */
+
+/** Supported payment gateway providers (selected independently of the data source). */
+export type PaymentProvider = "SANDBOX" | "RAZORPAY" | "DISABLED";
+
+/**
+ * Payment gateway provider stand-in, decoupled from VITE_DATA_SOURCE so the
+ * app can run against the real ERPNext backend (LIVE_API) while developers
+ * choose which gateway to exercise:
+ *
+ *   - "SANDBOX"  → SandboxPaymentProvider (frontend simulator, demo rules)
+ *   - "RAZORPAY" → RazorpayProvider (placeholder until the SDK is wired)
+ *   - "DISABLED" → GatewayUnavailableProvider (online payments fail closed,
+ *                  COD unaffected)
+ *
+ * Defaults to "SANDBOX" when the environment variable is not provided.
+ */
+export const PAYMENT_PROVIDER: PaymentProvider = ((): PaymentProvider => {
+  const raw = readString("VITE_PAYMENT_PROVIDER", "SANDBOX").toUpperCase();
+  return raw === "RAZORPAY" ? "RAZORPAY" : raw === "DISABLED" ? "DISABLED" : "SANDBOX";
+})();
+
 /**
  * Enables structured console logging for every API request (method, URL,
  * duration, status). Automatically disabled in production regardless of

@@ -51,7 +51,6 @@ export {
   useCheckoutSession,
   useDeliveryOptions,
   useValidatePromo,
-  useOrderHistory,
   usePrescriptionUpload,
   usePaymentMethods,
   usePaymentStages,
@@ -63,6 +62,14 @@ export {
 } from "./checkout";
 export type { AddressFormData, PromoCodeFormData } from "./checkout";
 export type { PaymentRun, PaymentRunState } from "./checkout";
+export {
+  useOrders,
+  useOrderDetail,
+  useOrderTracking,
+  useOrderInvoice,
+  useCancelOrder,
+  useReorderOrder,
+} from "./orders";
 export {
   useNotifications,
   useUnreadNotificationCount,

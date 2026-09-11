@@ -17,6 +17,10 @@
  *     invalidated (auto-load); on logout/session expiry the mirror stores and
  *     both query caches are wiped so no user state leaks across sessions.
  *
+ *  4. Post-payment sync — when a newly PAID order lands in the persisted
+ *     checkout store, every ERP order cache (list/detail/tracking/invoice) is
+ *     invalidated so the confirmed payment is reflected immediately.
+ *
  * Under STATIC this provider is inert (queries disabled, ledger skipped) so
  * the mock stack behaves exactly as before.
  */
@@ -31,6 +35,9 @@ import { useCheckoutStore } from "@/store/checkoutStore";
 import { services } from "@/services/factory";
 import { CART_QUERY_KEY } from "@/services/cartService";
 import { WISHLIST_QUERY_KEY } from "@/services/wishlistService";
+import { ORDER_QUERY_PREFIX_KEYS } from "@/services/orderService";
+import { CHECKOUT_SUMMARY_QUERY_KEY } from "@/hooks/checkout/useCheckout";
+import { invalidateOrderCaches } from "@/utils/orderCache";
 import { queryClient } from "@/lib/queryClient";
 
 /** Whether ERP-backed cart/wishlist sync is active for this build. */
@@ -79,14 +86,46 @@ export function ShoppingSyncProvider({ children }: { children: ReactNode }) {
       useCheckoutStore.getState().resetSession();
       queryClient.removeQueries({ queryKey: CART_QUERY_KEY });
       queryClient.removeQueries({ queryKey: WISHLIST_QUERY_KEY });
-      queryClient.removeQueries({ queryKey: ["checkout-summary"] });
+      queryClient.removeQueries({ queryKey: [CHECKOUT_SUMMARY_QUERY_KEY] });
+      // Wipe the ERP order caches so one user's orders never surface for the
+      // next session.
+      for (const key of ORDER_QUERY_PREFIX_KEYS) {
+        queryClient.removeQueries({ queryKey: key });
+      }
     } else if (!prevAuth.current && isAuthenticated) {
       // Logged in → (re)fetch both from the server.
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+      // Refresh the user's order history so it loads only their orders.
+      queryClient.invalidateQueries({ queryKey: ORDER_QUERY_PREFIX_KEYS[0] });
     }
     prevAuth.current = isAuthenticated;
   }, [isAuthenticated]);
+
+  // Post-payment sync: whenever a newly PAID order lands in the persisted
+  // checkout store (the finalize path, a reorder, or a cross-tab sync), every
+  // ERP order cache is invalidated so the Orders list, Order Detail payment
+  // badge, Tracking timeline, Invoice, Dashboard recent orders and header
+  // count reflect the confirmed state immediately — no browser refresh needed.
+  useEffect(() => {
+    if (!SYNC_ENABLED) return;
+    let prevPaid = new Set(
+      useCheckoutStore
+        .getState()
+        .orders.filter((o) => o.payment?.status === "paid")
+        .map((o) => o.id),
+    );
+    const unsubscribe = useCheckoutStore.subscribe((state) => {
+      const paid = new Set(
+        state.orders.filter((o) => o.payment?.status === "paid").map((o) => o.id),
+      );
+      for (const id of paid) {
+        if (!prevPaid.has(id)) void invalidateOrderCaches(queryClient, id);
+      }
+      prevPaid = paid;
+    });
+    return unsubscribe;
+  }, []);
 
   return <>{children}</>;
 }

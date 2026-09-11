@@ -1,13 +1,15 @@
 /**
  * InvoiceDownloadButton
  *
- * Builds the printable invoice from the persisted order record and triggers
- * an HTML download. Disabled until the order's invoice is ready.
+ * Triggers a printable HTML invoice download. The invoice is resolved through
+ * the ERP order service (keemeds_commerce.api.orders.invoice) with a persisted
+ * checkout-store fallback, so the button works on both the confirmation screen
+ * and the ERP-backed order detail page. Disabled until the invoice is ready.
  */
 
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui";
-import { useInvoice } from "@/hooks/checkout/useInvoice";
+import { useOrderInvoice } from "@/hooks/orders";
 
 export interface InvoiceDownloadButtonProps {
   orderId: string;
@@ -26,7 +28,7 @@ export default function InvoiceDownloadButton({
   label = "Download Invoice",
   className,
 }: InvoiceDownloadButtonProps) {
-  const { data: invoice, isLoading, download } = useInvoice(orderId);
+  const { data: invoice, isLoading, download } = useOrderInvoice(orderId);
 
   return (
     <Button

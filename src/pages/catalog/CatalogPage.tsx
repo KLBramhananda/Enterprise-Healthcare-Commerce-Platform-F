@@ -14,7 +14,7 @@ import {
   Button,
   Container,
   EmptyState,
-  FilterPanel,
+  FilterModal,
   Pagination,
   ProductCard,
   ProductListItem,
@@ -26,6 +26,7 @@ import {
 import type { CatalogView } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { useCatalogBrands, useCatalogCategory, useCatalogManufacturers, useProducts } from "@/hooks/catalog";
+import { useFilterSearchParams, applyFilterParams } from "@/hooks/catalog";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { emptyCatalogFilters, hasActiveFilters } from "@/types/catalog";
 import type { CatalogFilters, CatalogSortOption } from "@/types/catalog";
@@ -42,9 +43,11 @@ export default function CatalogPage() {
 
   const [sortBy, setSortBy] = useState<CatalogSortOption>("popularity");
   const [view, setView] = useState<CatalogView>("grid");
-  const [filters, setFilters] = useState<CatalogFilters>(emptyCatalogFilters);
-  const [page, setPage] = useState(1);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Filters and pagination live in the URL search params so they survive
+  // navigating between catalog and search, browser back/forward, and reloads.
+  const { filters, page, setParam } = useFilterSearchParams();
 
   const brandsQuery = useCatalogBrands(slug);
   const manufacturersQuery = useCatalogManufacturers(slug);
@@ -63,17 +66,15 @@ export default function CatalogPage() {
   );
 
   const handleFilterChange = (next: CatalogFilters) => {
-    setFilters(next);
-    setPage(1);
+    applyFilterParams(setParam, next);
   };
 
   const clearFilters = () => {
-    setFilters(emptyCatalogFilters());
-    setPage(1);
+    applyFilterParams(setParam, emptyCatalogFilters());
   };
 
   const goToPage = (next: number) => {
-    setPage(next);
+    setParam("page", String(next));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -127,43 +128,26 @@ export default function CatalogPage() {
       </Container>
 
       <Container className="mt-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-          {/* Filter Sidebar */}
-          <aside
-            id="catalog-filter-sidebar"
-            className={cn("lg:w-64 lg:shrink-0", mobileFiltersOpen ? "block" : "hidden lg:block")}
-            aria-label="Product filters"
-          >
-            <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 shadow-xs z-base lg:sticky" style={{ top: "var(--layout-sticky-offset)" }}>
-              <FilterPanel
-                filters={filters}
-                onChange={handleFilterChange}
-                brands={brandsQuery.data ?? []}
-                manufacturers={manufacturersQuery.data ?? []}
-              />
-            </div>
-          </aside>
-
-          {/* Results */}
-          <section className="min-w-0 flex-1" aria-label="Products">
-            {/* Toolbar */}
-            <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-surface-200 bg-surface-0 p-3 shadow-xs sm:gap-3 sm:p-4">
-              <button
-                type="button"
-                onClick={() => setMobileFiltersOpen((open) => !open)}
-                aria-expanded={mobileFiltersOpen}
-                aria-controls="catalog-filter-sidebar"
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors duration-fast hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 lg:hidden"
-              >
-                <SlidersHorizontal size={15} aria-hidden="true" />
-                Filters
-                {filtersActive && (
-                  <span
-                    className="h-2 w-2 rounded-full bg-brand-600"
-                    aria-label="Filters active"
-                  />
-                )}
-              </button>
+        {/* Results */}
+        <section aria-label="Products">
+          {/* Toolbar */}
+          <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-surface-200 bg-surface-0 p-3 shadow-xs sm:gap-3 sm:p-4">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              aria-expanded={filtersOpen}
+              aria-haspopup="dialog"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors duration-fast hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            >
+              <SlidersHorizontal size={15} aria-hidden="true" />
+              Filters
+              {filtersActive && (
+                <span
+                  className="h-2 w-2 rounded-full bg-brand-600"
+                  aria-label="Filters active"
+                />
+              )}
+            </button>
 
               <p className="hidden text-sm text-surface-500 sm:block" aria-live="polite">
                 {products ? (
@@ -184,7 +168,7 @@ export default function CatalogPage() {
                   value={sortBy}
                   onChange={(e) => {
                     setSortBy(e.target.value as CatalogSortOption);
-                    setPage(1);
+                    setParam("page", null);
                   }}
                   options={CATALOG_SORT_OPTIONS.map((option) => ({ ...option }))}
                   className="w-auto max-w-[7rem] sm:max-w-none sm:w-44"
@@ -264,11 +248,19 @@ export default function CatalogPage() {
               </>
             )}
           </section>
-        </div>
-      </Container>
-    </div>
-  );
-}
+        </Container>
+
+        <FilterModal
+          isOpen={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          filters={filters}
+          onChange={handleFilterChange}
+          brands={brandsQuery.data ?? []}
+          manufacturers={manufacturersQuery.data ?? []}
+        />
+      </div>
+    );
+  }
 
 /* ── Helpers ── */
 

@@ -141,7 +141,8 @@ export default function OffersSection({ subtotal }: { subtotal: number }) {
       {appliedPromo && (
         <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-success-50 px-3 py-2 text-xs font-medium text-success-700">
           <Check size={13} />
-          {appliedPromo.code} applied — {formatCurrency(appliedPromo.discountAmount)} saved
+          {appliedPromo.code} applied — {formatCurrency(appliedPromo.discountAmount)} off the
+          order total
           {appliedPromo.discountType === "free_delivery" && " (delivery is free)"}
         </p>
       )}

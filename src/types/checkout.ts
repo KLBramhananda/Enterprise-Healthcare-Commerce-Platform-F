@@ -222,17 +222,39 @@ export interface Order {
   deliverySpeed: DeliverySpeed;
   deliveryNote: string;
   prescriptionFiles: PrescriptionFile[];
+  /**
+   * The offer applied at checkout, persisted on the order so it stays visible
+   * on the confirmation screen, order detail and invoice after the checkout
+   * session resets. `discount` is the resulting discount amount applied to the
+   * grand total.
+   */
+  appliedPromo?: AppliedPromo | null;
   subtotal: number;
   savings: number;
   deliveryCharge: number;
   discount: number;
   tax: number;
+  platformFee: number;
   grandTotal: number;
   paymentMethod: PaymentMethodType;
   payment: OrderPaymentInfo;
   status: OrderStatus;
   placedAt: string;
   estimatedDelivery: string;
+}
+
+/**
+ * A single fulfilment milestone in an order's tracking timeline. Structurally
+ * compatible with the UI Timeline event so services can return these directly.
+ */
+export interface OrderTrackingEvent {
+  type: string;
+  label: string;
+  timestamp: string;
+  description?: string;
+  isCurrent?: boolean;
+  isCompleted?: boolean;
+  isCancelled?: boolean;
 }
 
 /* ── Invoice ── */
@@ -258,12 +280,30 @@ export interface Invoice {
   items: InvoiceLineItem[];
   subtotal: number;
   discount: number;
+  /** Applied coupon code for the discount row (mirrors the order's promo). */
+  promoCode?: string;
   deliveryCharge: number;
   tax: number;
   taxRate: number;
+  platformFee: number;
   grandTotal: number;
   paymentMethod: PaymentMethodType;
   transactionId?: string;
+  /** Human-readable invoice number (e.g. "INV-0001"). */
+  invoiceNumber?: string;
+  /** Shipping address for the order (falls back to billingAddress). */
+  shippingAddress?: Address;
+  /** Authoritative ERP payment state ("Paid" | "Pending" …). */
+  paymentStatus?: string;
+  /** The order's placed/creation date. */
+  orderDate?: string;
+  customer?: {
+    name: string;
+    email?: string;
+    phone?: string;
+  };
+  /** Gateway payment/reconciliation reference for the order. */
+  paymentReference?: string;
 }
 
 /* ── Order Summary ── */
@@ -274,6 +314,7 @@ export interface OrderSummary {
   deliveryCharge: number;
   discount: number;
   tax: number;
+  platformFee: number;
   grandTotal: number;
 }
 
@@ -296,9 +337,9 @@ export interface CheckoutLineItem {
 }
 
 /**
- * Validated order preview served by the ERP checkout endpoints. The backend is
- * the single source of truth for every total; local/mock math is never used in
- * LIVE_API mode.
+ * Validated order preview served by the ERP checkout endpoints. Prices are the
+ * authoritative backend figures; `platformFee` is not provided by the backend
+ * and defaults to 0 on the storefront (see `config/checkout`).
  */
 export interface CheckoutSummary {
   currency: string;
@@ -307,6 +348,7 @@ export interface CheckoutSummary {
   discount: number;
   tax: number;
   shippingCharge: number;
+  platformFee: number;
   grandTotal: number;
   shippingAddress: Address | null;
   billingAddress: Address | null;

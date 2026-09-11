@@ -46,6 +46,7 @@ export const API_ROUTES = {
     VERIFY_OTP: "keemeds_commerce.api.auth.verify_otp",
     RESET_PASSWORD: "keemeds_commerce.api.auth.reset_password",
     REFRESH_TOKEN: "keemeds_commerce.api.auth.refresh_token",
+    CSRF_TOKEN: "keemeds_commerce.api.auth.csrf_token",
   },
 
   /* ── Catalog ── */
@@ -113,19 +114,26 @@ export const API_ROUTES = {
     CREATE_ORDER: "keemeds_commerce.api.checkout.create_order",
   },
 
-  /* ── Payment ── */
+  /* ── Payment (keemeds_commerce.api.payment — implemented backend) ── */
   PAYMENT: {
-    INITIATE: "keemeds_commerce.api.payment.initiate",
-    STATUS: (orderId: string) => `keemeds_commerce.api.payment.status?order_id=${encodeURIComponent(orderId)}`,
-    METHODS: "keemeds_commerce.api.payment.methods",
+    CREATE: "keemeds_commerce.api.payment.create_payment",
+    VERIFY: "keemeds_commerce.api.payment.verify_payment",
+    COMPLETE: "keemeds_commerce.api.payment.complete_payment",
+    RETRY: "keemeds_commerce.api.payment.retry_payment",
+    FAIL: "keemeds_commerce.api.payment.fail_payment",
+    STATUS: (orderId: string) => `keemeds_commerce.api.payment.status?sales_order=${encodeURIComponent(orderId)}`,
+    STATUS_BY_SESSION: (session: string) => `keemeds_commerce.api.payment.status?session=${encodeURIComponent(session)}`,
+    HISTORY: (orderId: string) => `keemeds_commerce.api.payment.history?sales_order=${encodeURIComponent(orderId)}`,
+    WEBHOOK: "keemeds_commerce.api.payment.webhook",
   },
 
-  /* ── Orders ── */
+  /* ── Orders (keemeds_commerce.api.orders — production Order APIs) ── */
   ORDERS: {
     LIST: "keemeds_commerce.api.orders.list",
     DETAIL: (orderId: string) => `keemeds_commerce.api.orders.detail?order_id=${encodeURIComponent(orderId)}`,
     INVOICE: (orderId: string) => `keemeds_commerce.api.orders.invoice?order_id=${encodeURIComponent(orderId)}`,
     TRACKING: (orderId: string) => `keemeds_commerce.api.orders.tracking?order_id=${encodeURIComponent(orderId)}`,
+    CANCEL: "keemeds_commerce.api.orders.cancel",
   },
 
   /* ── Addresses (customer address API — implemented in customer.py) ── */

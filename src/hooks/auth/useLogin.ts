@@ -21,7 +21,9 @@ export function useLogin() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const returnPath = (location.state as { returnPath?: string } | null)?.returnPath ?? "/";
+  const stateReturnPath = (location.state as { returnPath?: string } | null)?.returnPath;
+  const queryReturnTo = new URLSearchParams(location.search).get("returnTo");
+  const returnPath = stateReturnPath ?? queryReturnTo ?? "/";
 
   const login = useCallback(
     async (data: LoginFormData) => {

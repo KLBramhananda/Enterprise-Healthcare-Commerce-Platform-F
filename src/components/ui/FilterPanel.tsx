@@ -3,9 +3,15 @@
  *
  * Static catalog facet filters: price range, discount, prescription
  * requirement, availability, and brand. Fully controlled by the parent.
+ *
+ * Every filter group — Price, Discount, Prescription, Availability, Brand,
+ * Manufacturer — renders through the SAME FilterRow primitive so the rows are
+ * pixel-identical (markers may be a checkbox or a radio dot, but the layout,
+ * spacing and label truncation are shared). This keeps behaviour consistent
+ * with the Price filter and removes any alignment drift between groups.
  */
 
-import { RotateCcw } from "lucide-react";
+import { Check, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import type {
   BrandFacet,
@@ -17,7 +23,6 @@ import type {
 import { hasActiveFilters } from "@/types/catalog";
 import { cn } from "@/utils/cn";
 import { formatCurrency } from "@/utils/formatters";
-import CheckboxOption from "./CheckboxOption";
 
 interface FilterPanelProps {
   filters: CatalogFilters;
@@ -25,6 +30,9 @@ interface FilterPanelProps {
   brands: BrandFacet[];
   manufacturers?: ManufacturerFacet[];
   className?: string;
+  /** Hide the "Filters" heading + inline "Clear all" control. Use when the
+   *  panel is embedded inside a dialog that provides its own header/actions. */
+  hideHeader?: boolean;
 }
 
 const formatRangePrice = (value: number): string =>
@@ -50,8 +58,21 @@ const PRESCRIPTION_OPTIONS: { value: PrescriptionFilter; label: string }[] = [
   { value: "rx_only", label: "Prescription required" },
 ];
 
-export default function FilterPanel({ filters, onChange, brands, manufacturers, className }: FilterPanelProps) {
+/** Build a stable, valid element id from an arbitrary facet name. Never throws
+ *  on missing/special characters (a crash here would blank the filter popup). */
+function facetId(prefix: string, name: string | undefined | null): string {
+  const safe = String(name ?? "unknown")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${prefix}-${safe || "option"}`;
+}
+
+export default function FilterPanel({ filters, onChange, brands = [], manufacturers = [], className, hideHeader = false }: FilterPanelProps) {
   const active = hasActiveFilters(filters);
+
+  const brandList = brands ?? [];
+  const manufacturerList = manufacturers ?? [];
 
   const toggleArrayValue = <T,>(list: T[], value: T): T[] =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -59,47 +80,53 @@ export default function FilterPanel({ filters, onChange, brands, manufacturers, 
   return (
     <div className={cn("flex flex-col gap-6", className)} aria-label="Catalog filters">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-surface-900">Filters</h2>
-        {active && (
-          <button
-            type="button"
-            onClick={() => onChange({ ...filters, brands: [], manufacturers: [], priceRanges: [], minDiscountPercent: 0, prescription: "any", inStockOnly: false })}
-            className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 transition-colors duration-fast hover:text-brand-700"
-          >
-            <RotateCcw size={12} aria-hidden="true" />
-            Clear all
-          </button>
-        )}
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-surface-900">Filters</h2>
+          {active && (
+            <button
+              type="button"
+              onClick={() => onChange({ ...filters, brands: [], manufacturers: [], priceRanges: [], minDiscountPercent: 0, prescription: "any", inStockOnly: false })}
+              className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 transition-colors duration-fast hover:text-brand-700"
+            >
+              <RotateCcw size={12} aria-hidden="true" />
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       <FilterSection title="Price">
-        {PRICE_RANGE_OPTIONS.map((option) => (
-          <CheckboxOption
-            key={option.id}
-            id={`price-${option.id}`}
-            label={option.label}
-            checked={filters.priceRanges.includes(option.id)}
-            onChange={() =>
-              onChange({
-                ...filters,
-                priceRanges: toggleArrayValue(filters.priceRanges, option.id),
-              })
-            }
-          />
-        ))}
+        <div className="space-y-0.5">
+          {PRICE_RANGE_OPTIONS.map((option) => (
+            <FilterRow
+              key={option.id}
+              id={`price-${option.id}`}
+              type="checkbox"
+              label={option.label}
+              checked={filters.priceRanges.includes(option.id)}
+              onChange={() =>
+                onChange({
+                  ...filters,
+                  priceRanges: toggleArrayValue(filters.priceRanges, option.id),
+                })
+              }
+            />
+          ))}
+        </div>
       </FilterSection>
 
       <FilterSection title="Discount">
         <div role="radiogroup" aria-label="Minimum discount" className="space-y-0.5">
           {DISCOUNT_OPTIONS.map((option) => (
-            <RadioRow
+            <FilterRow
               key={option.value}
               id={`discount-${option.value}`}
+              type="radio"
               name="min-discount"
               label={option.label}
               checked={filters.minDiscountPercent === option.value}
-              onSelect={() => onChange({ ...filters, minDiscountPercent: option.value })}
+              onChange={() => onChange({ ...filters, minDiscountPercent: option.value })}
             />
           ))}
         </div>
@@ -108,33 +135,36 @@ export default function FilterPanel({ filters, onChange, brands, manufacturers, 
       <FilterSection title="Prescription">
         <div role="radiogroup" aria-label="Prescription requirement" className="space-y-0.5">
           {PRESCRIPTION_OPTIONS.map((option) => (
-            <RadioRow
+            <FilterRow
               key={option.value}
               id={`rx-${option.value}`}
+              type="radio"
               name="prescription"
               label={option.label}
               checked={filters.prescription === option.value}
-              onSelect={() => onChange({ ...filters, prescription: option.value })}
+              onChange={() => onChange({ ...filters, prescription: option.value })}
             />
           ))}
         </div>
       </FilterSection>
 
       <FilterSection title="Availability">
-        <CheckboxOption
+        <FilterRow
           id="in-stock-only"
+          type="checkbox"
           label="Exclude out of stock"
           checked={filters.inStockOnly}
-          onChange={(checked) => onChange({ ...filters, inStockOnly: checked })}
+          onChange={() => onChange({ ...filters, inStockOnly: !filters.inStockOnly })}
         />
       </FilterSection>
 
       <FilterSection title="Brand">
         <div className="-mx-2 max-h-56 space-y-0.5 overflow-y-auto px-2">
-          {brands.map((brand) => (
-            <CheckboxOption
+          {brandList.map((brand) => (
+            <FilterRow
               key={brand.name}
-              id={`brand-${brand.name.toLowerCase().replace(/\s+/g, "-")}`}
+              id={facetId("brand", brand.name)}
+              type="checkbox"
               label={brand.name}
               count={brand.count}
               checked={filters.brands.includes(brand.name)}
@@ -146,13 +176,14 @@ export default function FilterPanel({ filters, onChange, brands, manufacturers, 
         </div>
       </FilterSection>
 
-      {manufacturers && manufacturers.length > 0 && (
+      {manufacturerList.length > 0 && (
         <FilterSection title="Manufacturer">
           <div className="-mx-2 max-h-56 space-y-0.5 overflow-y-auto px-2">
-            {manufacturers.map((manufacturer) => (
-              <CheckboxOption
+            {manufacturerList.map((manufacturer) => (
+              <FilterRow
                 key={manufacturer.name}
-                id={`manufacturer-${manufacturer.name.toLowerCase().replace(/\s+/g, "-")}`}
+                id={facetId("manufacturer", manufacturer.name)}
+                type="checkbox"
                 label={manufacturer.name}
                 count={manufacturer.count}
                 checked={filters.manufacturers.includes(manufacturer.name)}
@@ -184,44 +215,65 @@ function FilterSection({ title, children }: { title: string; children: ReactNode
   );
 }
 
-function RadioRow({
+/** The single filter row primitive shared by EVERY filter group. Layout is
+ *  identical to the Price-filer rows; a radio group just shows a dot instead
+ *  of a check. Shared code path = no alignment drift, no crash-prone ad-hoc
+ *  rows. */
+function FilterRow({
   id,
+  type = "checkbox",
   name,
   label,
   checked,
-  onSelect,
+  count,
+  onChange,
 }: {
   id: string;
-  name: string;
-  label: string;
+  type?: "checkbox" | "radio";
+  name?: string;
+  label: ReactNode;
   checked: boolean;
-  onSelect: () => void;
+  count?: number;
+  onChange: () => void;
 }) {
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors duration-fast hover:bg-surface-100"
+      className={cn(
+        "flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors duration-fast",
+        "hover:bg-surface-100",
+        checked && "text-brand-800",
+      )}
     >
       <input
         id={id}
-        type="radio"
-        name={name}
+        type={type}
+        name={type === "radio" ? name : undefined}
         checked={checked}
-        onChange={onSelect}
+        onChange={onChange}
         className="peer sr-only"
       />
       <span
         aria-hidden="true"
         className={cn(
-          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-all duration-fast",
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-fast",
+          type === "radio" && "rounded-full",
           checked
-            ? "border-brand-600 bg-brand-600"
+            ? "border-brand-600 bg-brand-600 text-white"
             : "border-surface-300 bg-surface-0 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500 peer-focus-visible:ring-offset-2",
         )}
       >
-        {checked && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+        {checked &&
+          (type === "radio" ? (
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+          ) : (
+            <Check size={12} strokeWidth={3} />
+          ))}
       </span>
-      <span className="text-surface-700">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-surface-700">{label}</span>
+      {count != null && (
+        <span className="shrink-0 text-xs text-surface-400">({count})</span>
+      )}
     </label>
   );
 }

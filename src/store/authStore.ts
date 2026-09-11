@@ -34,10 +34,20 @@ interface AuthState {
    * before the session check completes.
    */
   sessionVerified: boolean;
+  /**
+   * When true, the API client's response interceptor skips clearing auth on
+   * 401/403. Set during payment finalization so a transient auth error from
+   * a concurrent request (e.g. cart clear) cannot destroy the session
+   * mid-flow. The payment is already processed on the ERP backend; destroying
+   * the auth state here would log the user out before they see the
+   * confirmation screen.
+   */
+  suppressPaymentAuthClear: boolean;
   setAuth: (user: User, tokens: AuthTokens, mode?: AuthMode) => void;
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
   setSessionVerified: (verified: boolean) => void;
+  setSuppressPaymentAuthClear: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -49,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       authMode: "token" as AuthMode,
       sessionVerified: false,
+      suppressPaymentAuthClear: false,
 
       setAuth: (user, tokens, mode) => {
         // Session-based services (ERPNext) use `accessToken === "session"` as a
@@ -80,6 +91,9 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (isLoading) => set({ isLoading }),
 
       setSessionVerified: (sessionVerified) => set({ sessionVerified }),
+
+      setSuppressPaymentAuthClear: (suppressPaymentAuthClear) =>
+        set({ suppressPaymentAuthClear }),
     }),
     {
       name: "keemeds-auth",

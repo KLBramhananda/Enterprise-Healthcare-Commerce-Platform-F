@@ -20,7 +20,7 @@
  * services for backward compatibility.
  */
 
-import { DATA_SOURCE, USE_MOCK_API, USE_ERP_API, PAYMENT_TIMEOUT_MS } from "@/config/env";
+import { DATA_SOURCE, USE_MOCK_API, USE_ERP_API, PAYMENT_TIMEOUT_MS, PAYMENT_PROVIDER } from "@/config/env";
 import { MockAccountService } from "./accountMock";
 import { MockAddressService } from "./addressMock";
 import { ErpNextAddressService } from "./addressErpNext";
@@ -32,16 +32,28 @@ import { MockCheckoutService } from "./checkoutMock";
 import { ErpNextCheckoutService } from "./checkoutErpNext";
 import { PaymentService } from "./paymentService";
 import { GatewayUnavailableProvider, SandboxPaymentProvider } from "./paymentProviders";
+import { RazorpayProvider } from "./razorpayProvider";
 import { MockEngagementService } from "./engagementMock";
 import { MockHomepageService } from "./homepageMock";
 import { MockNotificationService } from "./notificationMock";
 import { MockSupportService } from "./supportMock";
 import { ErpNextCartService } from "./cartErpNext";
 import { ErpNextWishlistService } from "./wishlistErpNext";
+import { ErpNextPaymentConfirmationService } from "./paymentConfirmation";
+import { MockOrderService } from "./orderMock";
+import { ErpNextOrderService } from "./orderErpNext";
 import {
   MockHealthCheckService,
   ErpNextHealthCheckService,
 } from "./healthCheck";
+
+/**
+ * ERP-backed cart/wishlist instances shared across branches so the order
+ * service and the shopping sync layer operate on the same cart snapshot
+ * source (reorder recreates the ERP cart through this instance).
+ */
+const liveCart = new ErpNextCartService();
+const liveWishlist = new ErpNextWishlistService();
 
 /**
  * Build a service map sharing the same non-catalog instances in every branch.
@@ -50,19 +62,24 @@ import {
  * DATA_SOURCE === "LIVE_API" (STATIC keeps purely local Zustand persistence).
  */
 /**
- * Payment orchestrator wired to the data-source-appropriate gateway provider.
- *   - LIVE_API → GatewayUnavailableProvider (no real aggregator integrated
- *     yet; online payments fail closed, COD unaffected). Swap in a real
- *     provider here when the gateway is integrated.
- *   - STATIC   → SandboxPaymentProvider (local simulator, demo only).
+ * Payment orchestrator wired to the PAYMENT_PROVIDER gateway stand-in.
+ * Selection is INDEPENDENT of the data source: the backend can keep using
+ * ERPNext (LIVE_API) while the payment gateway is exercised separately.
+ *   - SANDBOX  → SandboxPaymentProvider (frontend simulator, demo rules)
+ *   - RAZORPAY → RazorpayProvider (placeholder until the SDK is integrated)
+ *   - DISABLED → GatewayUnavailableProvider (online payments fail closed,
+ *                COD unaffected)
  */
 function createPaymentService(): PaymentService {
-  return new PaymentService(
-    DATA_SOURCE === "LIVE_API"
-      ? new GatewayUnavailableProvider()
-      : new SandboxPaymentProvider(),
-    PAYMENT_TIMEOUT_MS,
-  );
+  switch (PAYMENT_PROVIDER) {
+    case "RAZORPAY":
+      return new PaymentService(new RazorpayProvider(), PAYMENT_TIMEOUT_MS);
+    case "DISABLED":
+      return new PaymentService(new GatewayUnavailableProvider(), PAYMENT_TIMEOUT_MS);
+    case "SANDBOX":
+    default:
+      return new PaymentService(new SandboxPaymentProvider(), PAYMENT_TIMEOUT_MS);
+  }
 }
 
 function baseServices() {
@@ -71,12 +88,14 @@ function baseServices() {
     address: new MockAddressService(),
     checkout: new MockCheckoutService(),
     payment: createPaymentService(),
+    paymentConfirmation: new ErpNextPaymentConfirmationService(),
     engagement: new MockEngagementService(),
     homepage: new MockHomepageService(),
     notification: new MockNotificationService(),
     support: new MockSupportService(),
-    cart: new ErpNextCartService(),
-    wishlist: new ErpNextWishlistService(),
+    cart: liveCart,
+    wishlist: liveWishlist,
+    orders: new MockOrderService(),
   };
 }
 
@@ -91,6 +110,7 @@ function createServices() {
       catalog: new ErpNextCatalogService(),
       address: new ErpNextAddressService(),
       checkout: new ErpNextCheckoutService(),
+      orders: new ErpNextOrderService(liveCart),
       healthCheck: new MockHealthCheckService(),
     };
   }

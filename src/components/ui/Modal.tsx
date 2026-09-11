@@ -58,11 +58,15 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: ReactNode;
+  /** Optional footer bar rendered below the scrollable body. */
+  footer?: ReactNode;
   /** Dialog width. Defaults to `md`. */
   size?: ModalSize;
   className?: string;
   /** Disable closing on backdrop click (default false). */
   closeOnBackdropClick?: boolean;
+  /** Blur the page behind the dialog while it is open. */
+  backdropBlur?: boolean;
 }
 
 const FOCUSABLE_SELECTOR =
@@ -73,9 +77,11 @@ export default function Modal({
   onClose,
   title,
   children,
+  footer,
   size = "md",
   className,
   closeOnBackdropClick = false,
+  backdropBlur = false,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -91,10 +97,17 @@ export default function Modal({
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
+    const scrollY = window.scrollY;
     document.body.style.overflow = "hidden";
     previousFocusRef.current = document.activeElement as HTMLElement | null;
     return () => {
       document.body.style.overflow = prev;
+      // Some browsers (notably iOS Safari) treat `overflow: hidden` on body as
+      // a scroll reset; explicitly restore the exact position so the page
+      // never jumps when the dialog closes.
+      if (window.scrollY !== scrollY) {
+        window.scrollTo(0, scrollY);
+      }
     };
   }, [isOpen]);
 
@@ -169,7 +182,7 @@ export default function Modal({
     <div className="fixed inset-0 z-modal flex items-center justify-center p-3 sm:p-6 md:p-10">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className={cn("absolute inset-0 bg-black/50", backdropBlur && "backdrop-blur-sm")}
         onClick={handleBackdropClick}
         aria-hidden="true"
       />
@@ -207,6 +220,13 @@ export default function Modal({
         <div className="overflow-y-auto overscroll-contain p-5 sm:p-6">
           {children}
         </div>
+
+        {/* Footer — pinned below the scrollable body */}
+        {footer && (
+          <div className="shrink-0 border-t border-surface-200 bg-surface-0 px-5 py-4 sm:px-6">
+            {footer}
+          </div>
+        )}
       </div>
     </div>,
     document.body,

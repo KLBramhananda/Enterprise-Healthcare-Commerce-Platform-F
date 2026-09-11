@@ -126,9 +126,16 @@ export const useCartStore = create<CartState>()(
 
       clearCart: () => {
         if (LIVE_SYNC_ENABLED) {
-          return services.cart
-            .clearCart()
-            .then((snapshot) => applySnapshot(set, snapshot));
+          return services.cart.clearCart().then(
+            (snapshot) => applySnapshot(set, snapshot),
+            () => {
+              // The server cart could not be cleared (network hiccup, CSRF
+              // hold…). Empty the mirror + cache anyway so the UI never shows
+              // stale items after a successful payment; the ERP order caches
+              // are invalidated separately.
+              applySnapshot(set, []);
+            },
+          );
         }
         set({ items: [] });
         return Promise.resolve();

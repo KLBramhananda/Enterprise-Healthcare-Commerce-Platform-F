@@ -23,6 +23,7 @@ import {
   PAYMENT_METHOD_LABELS,
 } from "@/config/checkout";
 import { describeInstrument } from "@/utils/payment";
+
 import type {
   Address,
   AppliedPromo,
@@ -52,6 +53,7 @@ interface OrderReviewProps {
   deliveryCharge: number;
   discount: number;
   tax: number;
+  platformFee: number;
   grandTotal: number;
   onEdit?: (target: ReviewEditTarget) => void;
   agreementChecked: boolean;
@@ -92,6 +94,7 @@ export default function OrderReview({
   deliveryCharge,
   discount,
   tax,
+  platformFee,
   grandTotal,
   onEdit,
   agreementChecked,
@@ -199,7 +202,9 @@ export default function OrderReview({
                 <>
                   <p className="mt-1 text-sm font-medium text-success-700">{appliedPromo.code}</p>
                   <p className="text-sm text-success-600">
-                    {appliedPromo.discountPercent}% off ({formatCurrency(appliedPromo.discountAmount)} saved)
+                    {appliedPromo.discountType === "free_delivery"
+                      ? "Free delivery applied to this order"
+                      : `${formatCurrency(appliedPromo.discountAmount)} off this order`}
                   </p>
                 </>
               ) : (
@@ -250,24 +255,30 @@ export default function OrderReview({
               <span className="font-medium text-success-600">-{formatCurrency(savings)}</span>
             </div>
           )}
-          {discount > 0 && (
-            <div className="flex justify-between">
-              <span className="text-surface-500">
-                {appliedPromo ? `Promo (${appliedPromo.code})` : "Discount"}
-              </span>
-              <span className="font-medium text-success-600">-{formatCurrency(discount)}</span>
-            </div>
-          )}
           <div className="flex justify-between">
             <span className="text-surface-500">Delivery</span>
             <span className="font-medium text-surface-900">
               {deliveryCharge === 0 ? "Free" : formatCurrency(deliveryCharge)}
             </span>
           </div>
+          {discount > 0 && (
+            <div className="flex justify-between">
+              <span className="text-surface-500">
+                {appliedPromo ? `Offer (${appliedPromo.code})` : "Discount"}
+              </span>
+              <span className="font-medium text-success-600">-{formatCurrency(discount)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
-            <span className="text-surface-500">Tax (8%)</span>
+            <span className="text-surface-500">Tax</span>
             <span className="font-medium text-surface-900">{formatCurrency(tax)}</span>
           </div>
+          {platformFee > 0 && (
+            <div className="flex justify-between">
+              <span className="text-surface-500">Platform Fee</span>
+              <span className="font-medium text-surface-900">{formatCurrency(platformFee)}</span>
+            </div>
+          )}
           <div className="flex justify-between border-t border-surface-200 pt-2">
             <span className="text-base font-bold text-surface-900">Grand Total</span>
             <span className="text-base font-bold text-brand-700">{formatCurrency(grandTotal)}</span>

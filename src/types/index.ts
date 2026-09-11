@@ -78,6 +78,7 @@ export type {
   OrderItem,
   Order,
   OrderSummary,
+  OrderTrackingEvent,
   CheckoutLineItem,
   CheckoutSummary,
   CheckoutOrderResult,
@@ -85,6 +86,18 @@ export type {
   Invoice,
   InvoiceLineItem,
 } from "./checkout";
+export type {
+  ErpOrderItemDTO,
+  ErpOrderDTO,
+  ErpOrderListDTO,
+  ErpOrderListPayload,
+  ErpOrderMessage,
+  ErpInvoiceLineDTO,
+  ErpInvoiceDTO,
+  ErpTrackingEventDTO,
+  ErpTrackingDTO,
+  ErpCancelResultDTO,
+} from "./erpnextOrder";
 export type {
   FAQCategory,
   FAQItem,

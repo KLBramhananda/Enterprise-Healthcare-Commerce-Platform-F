@@ -13,7 +13,7 @@ import {
   Button,
   Container,
   EmptyState,
-  FilterPanel,
+  FilterModal,
   Pagination,
   ProductCard,
   ProductListItem,
@@ -29,6 +29,7 @@ import {
   useSearchState,
   useSearchResults,
   useHealthConcerns,
+  applyFilterParams,
 } from "@/hooks/catalog";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { emptyCatalogFilters, hasActiveFilters } from "@/types/catalog";
@@ -51,7 +52,7 @@ export default function SearchResultsPage() {
   const manufacturersQuery = useCatalogManufacturers();
 
   const [view, setView] = useState<CatalogView>("grid");
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const results = searchQuery.data;
   const filtersActive = hasActiveFilters(filters);
@@ -72,18 +73,7 @@ export default function SearchResultsPage() {
 
   const handleFilterChange = useCallback(
     (next: typeof filters) => {
-      if (next.brands.length > 0) setParam("brands", next.brands.join(","));
-      else setParam("brands", null);
-      if (next.manufacturers.length > 0) setParam("manufacturers", next.manufacturers.join(","));
-      else setParam("manufacturers", null);
-      if (next.prescription !== "any") setParam("rx", next.prescription);
-      else setParam("rx", null);
-      if (next.inStockOnly) setParam("inStock", "1");
-      else setParam("inStock", null);
-      if (next.minDiscountPercent > 0) setParam("discount", String(next.minDiscountPercent));
-      else setParam("discount", null);
-      if (next.priceRanges.length > 0) setParam("priceRanges", next.priceRanges.join(","));
-      else setParam("priceRanges", null);
+      applyFilterParams(setParam, next);
     },
     [setParam],
   );
@@ -123,60 +113,23 @@ export default function SearchResultsPage() {
       </Container>
 
       <Container className="mt-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-          {/* Filter Sidebar */}
-          <aside
-            id="search-filter-sidebar"
-            className={cn("lg:w-64 lg:shrink-0", mobileFiltersOpen ? "block" : "hidden lg:block")}
-            aria-label="Search filters"
-          >
-            <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 shadow-xs z-base lg:sticky" style={{ top: "var(--layout-sticky-offset)" }}>
-              {results?.categoryFacets && results.categoryFacets.length > 0 && (
-                <div className="mb-5">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
-                    Categories
-                  </p>
-                  <div className="space-y-1">
-                    {results.categoryFacets.map((cat) => (
-                      <Link
-                        key={cat.slug}
-                        to={`/category/${cat.slug}`}
-                        className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-surface-600 transition-colors hover:bg-surface-50 hover:text-brand-700"
-                      >
-                        <span>{cat.title}</span>
-                        <span className="text-xs text-surface-400">{cat.count}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+        {/* Results */}
+        <section aria-label="Search results">
+          {/* Toolbar */}
+          <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-surface-200 bg-surface-0 p-3 shadow-xs sm:gap-3 sm:p-4">
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(true)}
+              aria-expanded={filtersOpen}
+              aria-haspopup="dialog"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors duration-fast hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            >
+              <SlidersHorizontal size={15} aria-hidden="true" />
+              Filters
+              {filtersActive && (
+                <span className="h-2 w-2 rounded-full bg-brand-600" aria-label="Filters active" />
               )}
-
-              <FilterPanel
-                filters={filters}
-                onChange={handleFilterChange}
-                brands={brandsQuery.data ?? []}
-                manufacturers={manufacturersQuery.data ?? []}
-              />
-            </div>
-          </aside>
-
-          {/* Results */}
-          <section className="min-w-0 flex-1" aria-label="Search results">
-            {/* Toolbar */}
-            <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-surface-200 bg-surface-0 p-3 shadow-xs sm:gap-3 sm:p-4">
-              <button
-                type="button"
-                onClick={() => setMobileFiltersOpen((open) => !open)}
-                aria-expanded={mobileFiltersOpen}
-                aria-controls="search-filter-sidebar"
-                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 lg:hidden"
-              >
-                <SlidersHorizontal size={15} aria-hidden="true" />
-                Filters
-                {filtersActive && (
-                  <span className="h-2 w-2 rounded-full bg-brand-600" aria-label="Filters active" />
-                )}
-              </button>
+            </button>
 
               <p className="hidden text-sm text-surface-500 sm:block" aria-live="polite">
                 {results ? (
@@ -290,11 +243,20 @@ export default function SearchResultsPage() {
               </>
             )}
           </section>
-        </div>
-      </Container>
-    </div>
-  );
-}
+        </Container>
+
+        <FilterModal
+          isOpen={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          filters={filters}
+          onChange={handleFilterChange}
+          brands={brandsQuery.data ?? []}
+          manufacturers={manufacturersQuery.data ?? []}
+          categoryFacets={results?.categoryFacets}
+        />
+      </div>
+    );
+  }
 
 /* ── Search Landing (no query) ── */
 

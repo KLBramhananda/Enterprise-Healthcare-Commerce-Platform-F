@@ -4,9 +4,11 @@
  * Success screen shown after a completed purchase: animated confirmation,
  * order reference, delivery estimate, payment details, ordered items,
  * savings summary, and post-purchase actions (view order / download invoice).
- * Reads the order from the persisted Zustand store so a refresh keeps data.
+ * Reads the order ERP-first (authoritative server state) with the persisted
+ * Zustand store as the offline fallback, so a refresh keeps the data.
  */
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Link, Navigate, useParams } from "react-router-dom";
 import {
@@ -25,6 +27,7 @@ import {
 import { Container, Button } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
+import { useOrderDetail } from "@/hooks/orders/useOrders";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { PAYMENT_METHOD_LABELS } from "@/config/checkout";
@@ -36,16 +39,62 @@ export default function OrderConfirmationPage() {
   usePageTitle("Order Confirmed");
 
   const orders = useCheckoutStore((s) => s.orders);
-  const order = orders.find((o) => o.id === orderId);
+  const storeOrder = orders.find((o) => o.id === orderId) ?? null;
+  const erpQuery = useOrderDetail(orderId);
+
+  // The persisted checkout-store order carries the totals, delivery speed,
+  // applied offer and platform fee the shopper actually saw and paid at
+  // checkout (Grand Total = Item Price + Delivery Charge - Offer Discount +
+  // GST/Tax + Platform Fee, with GST/Tax = 0). The ERP record is authoritative
+  // for lifecycle fields — payment status, tracking id, invoice id — so those
+  // win, but the ERP's own backend-priced figures never override the checkout
+  // amounts (and the ERP order has no applied-offer field, so the offer is
+  // remembered from the store record of the SAME order — never invented).
+  const order = useMemo(() => {
+    const erp = erpQuery.data ?? null;
+    if (erp && storeOrder) {
+      return {
+        ...storeOrder,
+        ...erp,
+        // ERP lifecycle fields win so the badge and the pending-redirect
+        // decision follow the confirmed backend state instead of a possibly
+        // stale store snapshot.
+        status: erp.status,
+        trackingId: erp.trackingId || storeOrder.trackingId,
+        invoiceId: erp.invoiceId || storeOrder.invoiceId,
+        payment: { ...storeOrder.payment, ...erp.payment },
+        // The store record is authoritative for the checkout amounts and the
+        // user's own selections (delivery option, applied offer).
+        subtotal: storeOrder.subtotal,
+        savings: storeOrder.savings,
+        deliveryCharge: storeOrder.deliveryCharge,
+        discount: storeOrder.discount,
+        tax: storeOrder.tax,
+        platformFee: storeOrder.platformFee,
+        grandTotal: storeOrder.grandTotal,
+        deliverySpeed: storeOrder.deliverySpeed,
+        appliedPromo: storeOrder.appliedPromo ?? erp.appliedPromo ?? null,
+      };
+    }
+    if (erp) {
+      return {
+        ...erp,
+        appliedPromo: erp.appliedPromo ?? storeOrder?.appliedPromo ?? null,
+      };
+    }
+    return storeOrder;
+  }, [erpQuery.data, storeOrder]);
 
   // The confirmation page is ONLY shown after a successful online payment or a
   // confirmed COD order. A pending online payment redirects back to the
   // payment page to resume the same (idempotent) gateway intent instead of
-  // revealing a fake success state.
+  // revealing a fake success state. The redirect is held while the ERP detail
+  // is loading so a brief stale store snapshot can't bounce a paid order.
   if (
     order &&
     order.payment?.status === "pending" &&
-    order.paymentMethod !== "cod"
+    order.paymentMethod !== "cod" &&
+    !erpQuery.isLoading
   ) {
     return <Navigate to={`/checkout/payment/${order.id}`} replace />;
   }
@@ -63,24 +112,45 @@ export default function OrderConfirmationPage() {
 
         {!order ? (
           <div className="flex min-h-[50vh] flex-col items-center justify-center py-12 text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 18 }}
-              className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-100"
-            >
-              <Package size={36} className="text-surface-400" />
-            </motion.div>
-            <h1 className="mt-6 text-2xl font-bold text-surface-900">Order Not Found</h1>
-            <p className="mt-2 text-surface-500">
-              We couldn't find this order. It may have been placed in another session.
-            </p>
-            <Link to="/categories" className="mt-8">
-              <Button>
-                <ShoppingBag size={16} className="mr-2" />
-                Continue Shopping
-              </Button>
-            </Link>
+            {erpQuery.isLoading ? (
+              <>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-100"
+                >
+                  <Package size={36} className="animate-pulse text-surface-400" />
+                </motion.div>
+                <h1 className="mt-6 text-2xl font-bold text-surface-900">
+                  Verifying your order&hellip;
+                </h1>
+                <p className="mt-2 text-surface-500">
+                  Fetching the latest status from the server.
+                </p>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  className="flex h-20 w-20 items-center justify-center rounded-full bg-surface-100"
+                >
+                  <Package size={36} className="text-surface-400" />
+                </motion.div>
+                <h1 className="mt-6 text-2xl font-bold text-surface-900">Order Not Found</h1>
+                <p className="mt-2 text-surface-500">
+                  We couldn't find this order. It may have been placed in another session.
+                </p>
+                <Link to="/categories" className="mt-8">
+                  <Button>
+                    <ShoppingBag size={16} className="mr-2" />
+                    Continue Shopping
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -229,22 +299,34 @@ export default function OrderConfirmationPage() {
                         <span className="text-success-600">-{formatCurrency(order.savings)}</span>
                       </div>
                     )}
-                    {order.discount > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-surface-500">Discount</span>
-                        <span className="text-success-600">-{formatCurrency(order.discount)}</span>
-                      </div>
-                    )}
                     <div className="flex justify-between">
                       <span className="text-surface-500">Delivery</span>
                       <span className="font-medium text-surface-900">
                         {order.deliveryCharge === 0 ? "Free" : formatCurrency(order.deliveryCharge)}
                       </span>
                     </div>
+                    {order.discount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-surface-500">
+                          {order.appliedPromo
+                            ? `Offer (${order.appliedPromo.code})`
+                            : "Discount"}
+                        </span>
+                        <span className="text-success-600">-{formatCurrency(order.discount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-surface-500">Tax</span>
                       <span className="font-medium text-surface-900">{formatCurrency(order.tax)}</span>
                     </div>
+                    {order.platformFee > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-surface-500">Platform Fee</span>
+                        <span className="font-medium text-surface-900">
+                          {formatCurrency(order.platformFee)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between border-t border-surface-200 pt-2">
                       <span className="text-base font-bold text-surface-900">Grand Total</span>
                       <span className="text-base font-bold text-brand-700">

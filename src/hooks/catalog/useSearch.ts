@@ -33,37 +33,67 @@ export function useSearchSuggestions(q: string) {
 
 /* ── Full Search Results (URL-synced) ── */
 
-export function useSearchState() {
+const VALID_RX_VALUES: ReadonlySet<string> = new Set(["any", "rx_only", "otc_only"]);
+
+/**
+ * Decode catalog filter state from a URLSearchParams object. Only recognized
+ * values are ever returned — malformed/stale params (e.g. a bookmarked
+ * `rx=foo`) are silently dropped so the UI never shows an inconsistent
+ * "active filter that is actually empty" state.
+ */
+export function filtersFromSearchParams(searchParams: URLSearchParams): CatalogFilters {
+  const brands = searchParams.get("brands");
+  const manufacturers = searchParams.get("manufacturers");
+  const priceRanges = searchParams.get("priceRanges");
+  const rx = searchParams.get("rx");
+  const prescription: CatalogFilters["prescription"] =
+    rx !== null && VALID_RX_VALUES.has(rx) ? (rx as CatalogFilters["prescription"]) : "any";
+  const inStockOnly = searchParams.get("inStock") === "1";
+  const minDiscount = Math.max(0, Number(searchParams.get("discount")) || 0);
+  return {
+    ...emptyCatalogFilters(),
+    brands: brands ? brands.split(",").filter(Boolean) : [],
+    manufacturers: manufacturers ? manufacturers.split(",").filter(Boolean) : [],
+    priceRanges: priceRanges
+      ? priceRanges.split(",").filter(
+          (id): id is PriceRangeId =>
+            id === "under_5" || id === "5_to_10" || id === "10_to_25" || id === "above_25",
+        )
+      : [],
+    prescription,
+    inStockOnly,
+    minDiscountPercent: minDiscount,
+  };
+}
+
+/** Write a single search-param key, dropping falsy/identity values and
+ *  resetting to page 1 whenever anything other than the page itself changes. */
+export type SetFilterParam = (key: string, value: string | null) => void;
+
+/** Push a full catalog filter state into the URL. Used by both the search
+ *  results page and the category catalog page so the popup filter keeps the
+ *  same URL encoding everywhere. */
+export function applyFilterParams(setParam: SetFilterParam, next: CatalogFilters) {
+  setParam("brands", next.brands.length > 0 ? next.brands.join(",") : null);
+  setParam("manufacturers", next.manufacturers.length > 0 ? next.manufacturers.join(",") : null);
+  setParam("rx", next.prescription !== "any" ? next.prescription : null);
+  setParam("inStock", next.inStockOnly ? "1" : null);
+  setParam("discount", next.minDiscountPercent > 0 ? String(next.minDiscountPercent) : null);
+  setParam("priceRanges", next.priceRanges.length > 0 ? next.priceRanges.join(",") : null);
+}
+
+/** URL-backed filter + pagination state shared by searching and category
+ *  browsing. Keeping filters in the URL makes them survive navigation, browser
+ *  back/forward, bookmarks, and page reloads. */
+export function useFilterSearchParams() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const q = searchParams.get("q") ?? "";
-  const sortBy = (searchParams.get("sort") as CatalogSortOption) ?? "popularity";
+  const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
+
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
 
-  const filters: CatalogFilters = useMemo(() => {
-    const brands = searchParams.get("brands");
-    const manufacturers = searchParams.get("manufacturers");
-    const priceRanges = searchParams.get("priceRanges");
-    const prescription = searchParams.get("rx") as CatalogFilters["prescription"] | null;
-    const inStockOnly = searchParams.get("inStock") === "1";
-    const minDiscount = Number(searchParams.get("discount")) || 0;
-    return {
-      ...emptyCatalogFilters(),
-      brands: brands ? brands.split(",") : [],
-      manufacturers: manufacturers ? manufacturers.split(",") : [],
-      priceRanges: priceRanges
-        ? priceRanges.split(",").filter((id): id is PriceRangeId =>
-            id === "under_5" || id === "5_to_10" || id === "10_to_25" || id === "above_25",
-          )
-        : [],
-      prescription: prescription ?? "any",
-      inStockOnly,
-      minDiscountPercent: minDiscount,
-    };
-  }, [searchParams]);
-
-  const setParam = useCallback(
-    (key: string, value: string | null) => {
+  const setParam: SetFilterParam = useCallback(
+    (key, value) => {
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         if (value === null || value === "" || value === "0" || value === "popularity") {
@@ -78,6 +108,15 @@ export function useSearchState() {
     },
     [setSearchParams],
   );
+
+  return { filters, page, setParam, searchParams, setSearchParams };
+}
+
+export function useSearchState() {
+  const { filters, page, setParam, searchParams, setSearchParams } = useFilterSearchParams();
+
+  const q = searchParams.get("q") ?? "";
+  const sortBy = (searchParams.get("sort") as CatalogSortOption) ?? "popularity";
 
   const query: SearchQuery = useMemo(
     () => ({ q, sortBy, filters, page, pageSize: CATALOG_PAGE_SIZE }),

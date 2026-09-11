@@ -21,7 +21,7 @@ import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useAuth } from "@/hooks/auth";
 import { useAccountCompletion } from "@/hooks/account";
-import { useOrderHistory } from "@/hooks/checkout/useCheckout";
+import { useOrders } from "@/hooks/orders";
 import { useAddresses } from "@/hooks/checkout/useAddress";
 import { usePrescriptionUpload } from "@/hooks/checkout/usePrescriptionUpload";
 import { useWishlist } from "@/hooks/shopping";
@@ -47,7 +47,7 @@ export default function AccountDashboardPage() {
 
   const { user } = useAuth();
   const { data: completion } = useAccountCompletion();
-  const { data: orders } = useOrderHistory();
+  const { data: orders } = useOrders();
   const { data: addresses } = useAddresses();
   const { files: prescriptions } = usePrescriptionUpload();
   const { count: wishlistCount } = useWishlist();

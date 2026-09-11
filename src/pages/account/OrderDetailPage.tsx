@@ -4,6 +4,7 @@ import {
   Package,
   ArrowLeft,
   RotateCcw,
+  RefreshCw,
   XCircle,
   Truck,
   MapPin,
@@ -18,18 +19,23 @@ import {
   UserCircle,
   Receipt,
 } from "lucide-react";
-import { Container, Badge, Button, Modal, Select, Textarea } from "@/components/ui";
+import { Container, Badge, Button, Modal, Select, Skeleton, Textarea } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
-import { useOrderHistory } from "@/hooks/checkout/useCheckout";
-import { useCart } from "@/hooks/shopping";
+import {
+  useOrderDetail,
+  useOrderTracking,
+  useCancelOrder,
+  useReorderOrder,
+} from "@/hooks/orders";
 import { useAddresses } from "@/hooks/checkout/useAddress";
+import { useCheckoutStore } from "@/store/checkoutStore";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import { notifyActionError } from "@/utils/notifications";
 import { DELIVERY_SPEED_LABELS, PAYMENT_METHOD_LABELS } from "@/config/checkout";
 import { InvoiceDownloadButton, OrderTrackingTimeline } from "@/components/order";
-import { ORDER_STATUS_LABELS } from "@/utils/orderTracking";
+import { ORDER_STATUS_LABELS, buildOrderTrackingEvents } from "@/utils/orderTracking";
 import type { OrderStatus } from "@/types/checkout";
 
 const STATUS_VARIANTS: Record<OrderStatus, "success" | "warning" | "info" | "danger"> = {
@@ -58,12 +64,74 @@ const RETURN_REASONS = [
   { label: "Other", value: "other" },
 ];
 
+function DetailSkeleton() {
+  return (
+    <div className="bg-surface-50 pb-12">
+      <Container>
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="rounded-xl border border-surface-200 bg-surface-0 p-5">
+                <Skeleton className="h-5 w-40" />
+                <div className="mt-4 space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-6">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="rounded-xl border border-surface-200 bg-surface-0 p-5">
+                <Skeleton className="h-5 w-32" />
+                <div className="mt-4 space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Container>
+    </div>
+  );
+}
+
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
   usePageTitle("Order Detail");
 
-  const { data: orders, isLoading } = useOrderHistory();
-  const { addItem } = useCart();
+  const { data: erpOrder, isLoading, isError, refetch } = useOrderDetail(orderId);
+  // The ERP order record has no coupon field — overlay the applied promo from
+  // the persisted checkout-store record of the same order so the discount row
+  // carries the coupon code exactly as it was applied at checkout. The store
+  // record also carries the checkout-flow totals (selected delivery option
+  // charge, applied offer, GST/Tax = 0, platform fee) which match the Order
+  // Summary, Payment Summary and the downloaded invoice; the ERP lifecycle
+  // fields (status, tracking, payment) stay authoritative.
+  const storeOrder = useCheckoutStore((s) => s.orders.find((o) => o.id === orderId));
+  const order = erpOrder
+    ? {
+        ...erpOrder,
+        ...(storeOrder
+          ? {
+              subtotal: storeOrder.subtotal,
+              savings: storeOrder.savings,
+              deliveryCharge: storeOrder.deliveryCharge,
+              discount: storeOrder.discount,
+              tax: storeOrder.tax,
+              platformFee: storeOrder.platformFee,
+              grandTotal: storeOrder.grandTotal,
+              deliverySpeed: storeOrder.deliverySpeed,
+            }
+          : {}),
+        appliedPromo: erpOrder.appliedPromo ?? storeOrder?.appliedPromo ?? null,
+      }
+    : (storeOrder ?? erpOrder);
+  const { data: trackingEvents } = useOrderTracking(orderId);
+  const cancelOrder = useCancelOrder();
+  const reorder = useReorderOrder();
   const { data: addresses } = useAddresses();
   const { user } = useAuth();
 
@@ -72,23 +140,16 @@ export default function OrderDetailPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [returnReason, setReturnReason] = useState("");
   const [returnDescription, setReturnDescription] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
 
-  const order = orders?.find((o) => o.id === orderId);
   const deliveryAddress = addresses?.find((a) => a.id === order?.address?.id) ?? order?.address;
 
   if (isLoading) {
-    return (
-      <div className="bg-surface-50 pb-12">
-        <Container>
-          <div className="flex items-center justify-center py-20">
-            <p className="text-sm text-surface-500">Loading order details...</p>
-          </div>
-        </Container>
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
-  if (!order) {
+  if (isError || !order) {
     return (
       <div className="bg-surface-50 pb-12">
         <Container>
@@ -105,6 +166,12 @@ export default function OrderDetailPage() {
             <p className="mt-1 text-sm text-surface-500">
               The order you are looking for does not exist.
             </p>
+            {isError && (
+              <Button variant="secondary" size="sm" onClick={() => refetch()} className="mt-4">
+                <RefreshCw size={14} className="mr-2" />
+                Try again
+              </Button>
+            )}
             <Link
               to="/orders"
               className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-700"
@@ -118,17 +185,32 @@ export default function OrderDetailPage() {
     );
   }
 
-  const handleReorder = () => {
-    order.items.forEach((item) => {
-      for (let i = 0; i < item.quantity; i++) {
-        addItem(item.product).catch(notifyActionError);
-      }
-    });
+  const events =
+    trackingEvents && trackingEvents.length > 0 ? trackingEvents : buildOrderTrackingEvents(order);
+
+  const handleReorder = async () => {
+    setIsReordering(true);
+    try {
+      await reorder.mutateAsync(order.id);
+    } catch (error) {
+      notifyActionError(error);
+    } finally {
+      setIsReordering(false);
+    }
   };
 
-  const handleCancelConfirm = () => {
-    setCancelModalOpen(false);
-    setCancelReason("");
+  const handleCancelConfirm = async () => {
+    if (!cancelReason) return;
+    setIsCancelling(true);
+    try {
+      await cancelOrder.mutateAsync({ orderId: order.id, reason: cancelReason });
+      setCancelModalOpen(false);
+      setCancelReason("");
+    } catch (error) {
+      notifyActionError(error);
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handleReturnConfirm = () => {
@@ -352,7 +434,11 @@ export default function OrderDetailPage() {
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-surface-500">Discount</span>
+                    <span className="text-surface-500">
+                      {order.appliedPromo
+                        ? `Offer (${order.appliedPromo.code})`
+                        : "Discount"}
+                    </span>
                     <span className="text-success-600">-{formatCurrency(order.discount)}</span>
                   </div>
                 )}
@@ -360,6 +446,12 @@ export default function OrderDetailPage() {
                   <span className="text-surface-500">Tax</span>
                   <span className="text-surface-900">{formatCurrency(order.tax)}</span>
                 </div>
+                {order.platformFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-surface-500">Platform Fee</span>
+                    <span className="text-surface-900">{formatCurrency(order.platformFee)}</span>
+                  </div>
+                )}
                 <div className="border-t border-surface-200 pt-2.5">
                   <div className="flex justify-between">
                     <span className="text-sm font-semibold text-surface-900">Grand Total</span>
@@ -373,13 +465,13 @@ export default function OrderDetailPage() {
 
             <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
               <h2 className="mb-4 text-base font-semibold text-surface-900">Order Tracking</h2>
-              <OrderTrackingTimeline order={order} />
+              <OrderTrackingTimeline events={events} />
             </div>
 
             <div className="rounded-xl border border-surface-200 bg-surface-0 p-5">
               <h2 className="mb-4 text-base font-semibold text-surface-900">Actions</h2>
               <div className="space-y-3">
-                <Button variant="primary" fullWidth onClick={handleReorder}>
+                <Button variant="primary" fullWidth loading={isReordering} onClick={handleReorder}>
                   <ShoppingCart size={16} className="mr-2" />
                   Reorder
                 </Button>
@@ -440,13 +532,14 @@ export default function OrderDetailPage() {
             placeholder="Select a reason"
           />
           <div className="flex justify-end gap-3">
-            <Button variant="ghost" onClick={() => setCancelModalOpen(false)}>
+            <Button variant="ghost" onClick={() => setCancelModalOpen(false)} disabled={isCancelling}>
               Keep Order
             </Button>
             <Button
               variant="danger"
               onClick={handleCancelConfirm}
-              disabled={!cancelReason}
+              disabled={!cancelReason || isCancelling}
+              loading={isCancelling}
             >
               Confirm Cancellation
             </Button>

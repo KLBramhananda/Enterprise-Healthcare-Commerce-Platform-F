@@ -40,6 +40,11 @@ export function buildInvoiceFromOrder(order: Order): Invoice {
       contact: "support@keemeds.in",
     },
     billingAddress: order.address,
+    shippingAddress: order.address,
+    customer: {
+      name: order.address.fullName,
+      phone: order.address.phone,
+    },
     items: order.items.map((item) => ({
       name: item.product.name,
       quantity: item.quantity,
@@ -48,12 +53,65 @@ export function buildInvoiceFromOrder(order: Order): Invoice {
     })),
     subtotal: order.subtotal,
     discount: order.discount,
+    promoCode: order.appliedPromo?.code,
     deliveryCharge: order.deliveryCharge,
     tax: order.tax,
     taxRate,
+    platformFee: Number(order.platformFee ?? 0),
     grandTotal: order.grandTotal,
     paymentMethod: order.payment?.method ?? order.paymentMethod,
     transactionId: order.payment?.transactionId,
+    paymentReference: order.payment?.transactionId,
+    paymentStatus:
+      order.payment?.status === "paid"
+        ? "Paid"
+        : order.payment?.status === "pending"
+          ? "Pending"
+          : String(order.status),
+    orderDate: order.placedAt,
+  };
+}
+
+/**
+ * Overlay authoritative order-level fields onto an ERP invoice so the printed
+ * document always carries the real shipping address, payment status, order
+ * date, customer and payment reference even when the backend invoice payload
+ * omits them. Always defers to order data for fields the ERP may leave null.
+ */
+export function enrichInvoiceFromOrder(invoice: Invoice, order: Order): Invoice {
+  const customer =
+    invoice.customer ??
+    (order.address
+      ? {
+          name: order.address.fullName,
+          phone: order.address.phone,
+        }
+      : undefined);
+  const paymentStatus =
+    order.payment?.status === "paid"
+      ? "Paid"
+      : order.payment?.status === "pending"
+        ? "Pending"
+        : invoice.paymentStatus ?? String(order.status);
+
+  return {
+    ...invoice,
+    orderId: order.id,
+    invoiceNumber: invoice.invoiceNumber ?? order.invoiceId ?? `INV-${order.id}`,
+    issuedAt: invoice.issuedAt || order.payment?.paidAt || order.placedAt,
+    orderDate: invoice.orderDate ?? order.placedAt,
+    // Always use order payment data — the ERP invoice endpoint may return null
+    // for payment method/transaction ID, defaulting them to "cod".
+    paymentMethod: order.payment?.method ?? invoice.paymentMethod ?? order.paymentMethod,
+    transactionId: order.payment?.transactionId ?? invoice.transactionId,
+    paymentReference: order.payment?.transactionId ?? invoice.paymentReference,
+    paymentStatus,
+    // Carry the applied coupon code onto the printed document even when the ERP
+    // invoice payload has no promo field (defer to the authoritative order).
+    promoCode: order.appliedPromo?.code ?? invoice.promoCode,
+    shippingAddress: invoice.shippingAddress ?? order.address,
+    billingAddress: invoice.billingAddress ?? order.address,
+    customer,
   };
 }
 
@@ -70,12 +128,32 @@ export function buildInvoiceHtml(invoice: Invoice): string {
     )
     .join("");
 
+  const discountLabel = invoice.promoCode
+    ? `Offer (${escapeHtml(invoice.promoCode)})`
+    : "Discount";
   const discountRow = invoice.discount > 0
-    ? `<tr><td class="muted">Discount</td><td class="num">-${escapeHtml(formatCurrency(invoice.discount))}</td></tr>`
-    : "<tr><td class=\"muted\">Discount</td><td class=\"num\">-</td></tr>";
+    ? `<tr><td class="muted">${discountLabel}</td><td class="num">-${escapeHtml(formatCurrency(invoice.discount))}</td></tr>`
+    : "";
+  const platformFeeRow = invoice.platformFee > 0
+    ? `<tr><td>Platform Fee</td><td class="num">${escapeHtml(formatCurrency(invoice.platformFee))}</td></tr>`
+    : "";
 
-  const txRow = invoice.transactionId
-    ? `<tr><td class="muted">Transaction ID</td><td class="num">${escapeHtml(invoice.transactionId)}</td></tr>`
+  const fmtDate = (value?: string): string =>
+    value ? new Date(value).toLocaleDateString() : "—";
+
+  const customerRow = invoice.customer?.email
+    ? `<div class="muted">${escapeHtml(invoice.customer.name)} · ${escapeHtml(invoice.customer.email)}</div>`
+    : "";
+
+  const shipToSection = invoice.shippingAddress
+    ? `
+      <div>
+        <h3>Ship To</h3>
+        ${escapeHtml(invoice.shippingAddress.fullName)}<br/>
+        ${escapeHtml(invoice.shippingAddress.line1)}<br/>
+        ${escapeHtml(invoice.shippingAddress.city)}, ${escapeHtml(invoice.shippingAddress.state)} - ${escapeHtml(invoice.shippingAddress.pincode)}<br/>
+        ${escapeHtml(invoice.shippingAddress.phone)}
+      </div>`
     : "";
 
   return `<!doctype html>
@@ -114,9 +192,10 @@ export function buildInvoiceHtml(invoice: Invoice): string {
         <div class="brand">GSTIN: ${escapeHtml(invoice.seller.gstin ?? "—")}</div>
       </div>
       <div class="meta">
-        <div><strong>Invoice #${escapeHtml(invoice.id)}</strong></div>
+        <div><strong>Invoice #${escapeHtml(invoice.invoiceNumber ?? invoice.id)}</strong></div>
         <div>Order #${escapeHtml(invoice.orderId)}</div>
-        <div>Issued: ${escapeHtml(new Date(invoice.issuedAt).toLocaleString())}</div>
+        <div>Order date: ${escapeHtml(fmtDate(invoice.orderDate))}</div>
+        <div>Issued: ${escapeHtml(fmtDate(invoice.issuedAt))}</div>
       </div>
     </header>
 
@@ -127,11 +206,19 @@ export function buildInvoiceHtml(invoice: Invoice): string {
         ${escapeHtml(invoice.billingAddress.line1)}<br/>
         ${escapeHtml(invoice.billingAddress.city)}, ${escapeHtml(invoice.billingAddress.state)} - ${escapeHtml(invoice.billingAddress.pincode)}<br/>
         ${escapeHtml(invoice.billingAddress.phone)}
+        ${customerRow}
       </div>
+      ${shipToSection}
       <div>
         <h3>Payment</h3>
         Method: ${escapeHtml(invoice.paymentMethod)}<br/>
-        ${txRow}
+        Status: ${escapeHtml(invoice.paymentStatus ?? "—")}<br/>
+        ${invoice.transactionId
+          ? `Transaction ID: ${escapeHtml(invoice.transactionId)}<br/>`
+          : ""}
+        ${invoice.paymentReference && invoice.paymentReference !== invoice.transactionId
+          ? `Payment Ref: ${escapeHtml(invoice.paymentReference)}`
+          : ""}
       </div>
     </div>
 
@@ -144,9 +231,10 @@ export function buildInvoiceHtml(invoice: Invoice): string {
 
     <table class="totals">
       <tr><td>Subtotal</td><td class="num">${escapeHtml(formatCurrency(invoice.subtotal))}</td></tr>
-      ${discountRow}
       <tr><td>Delivery</td><td class="num">${escapeHtml(formatCurrency(invoice.deliveryCharge))}</td></tr>
+      ${discountRow}
       <tr><td>Tax (${invoice.taxRate}%)</td><td class="num">${escapeHtml(formatCurrency(invoice.tax))}</td></tr>
+      ${platformFeeRow}
       <tr><td>Grand Total</td><td class="num">${escapeHtml(formatCurrency(invoice.grandTotal))}</td></tr>
     </table>
 

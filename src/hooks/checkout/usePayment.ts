@@ -17,15 +17,21 @@ import { useCallback, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DATA_SOURCE } from "@/config/env";
 import { services } from "@/services/factory";
+import { paymentConfirmationMessage, type IPaymentConfirmationService } from "@/services/paymentConfirmation";
+import { queryClient } from "@/lib/queryClient";
+import { invalidateOrderCaches } from "@/utils/orderCache";
 import { useCheckoutStore } from "@/store/checkoutStore";
 import { useCartStore } from "@/store/cartStore";
+import { CART_QUERY_KEY } from "@/services/cartService";
 import type {
   Order,
+  PaymentMethodType,
   PaymentProcessingInput,
   PaymentResult,
   PaymentStage,
   PaymentStageId,
 } from "@/types/checkout";
+import type { ErpPaymentSessionDTO } from "@/types/erpnextPayment";
 
 const paymentService = services.payment;
 const checkoutService = services.checkout;
@@ -130,7 +136,18 @@ export function usePaymentRun(): PaymentRun {
           wait(SCREEN_STAGE_DWELL_MS).then(() => ({ kind: "dwell" as const })),
         ]);
 
-        if (settled.kind === "outcome" && settled.result.status === "failed") {
+        // Only transition to "failed" on an early outcome if the payment
+        // was definitively declined (not a transient network/timeout error).
+        // Transient errors are allowed to continue through the remaining
+        // stages so the backend has time to confirm, avoiding a brief false
+        // "Payment Failed" flash before the actual success.
+        if (
+          settled.kind === "outcome" &&
+          settled.result.status === "failed" &&
+          settled.result.reason !== "network_error" &&
+          settled.result.reason !== "timeout" &&
+          settled.result.reason !== "gateway_unavailable"
+        ) {
           if (runIdRef.current !== runId) return settled.result;
           setOutcome(settled.result);
           setState("failed");
@@ -156,10 +173,15 @@ export function usePaymentRun(): PaymentRun {
  * Confirm the order payment once the gateway reports success and hand the
  * final order to the persisted store (used by the payment processing page).
  *
- * LIVE_API has no payment-confirmation backend yet, so the payment update is
- * applied to the persisted order locally (the ERP Draft Sales Order stays
- * untouched until a payment module exists). STATIC keeps the service-backed
- * confirmPayment path.
+ * LIVE_API drives the live KeeMeds Commerce payment-confirmation backend
+ * (create_payment → verify_payment). Gateway "success" alone never finalizes:
+ * the backend must first prove the payment (submit the Sales Order + create/
+ * submit a Payment Entry, mark `payment_status = Paid`), then every ERP order
+ * cache is invalidated and refreshed, and only then may the success screen be
+ * shown. If the backend cannot confirm, the call resolves `{ ok: false }` with
+ * a user-facing reason — the order stays unresolved and no navigation happens.
+ *
+ * STATIC keeps the service-backed confirmPayment path.
  */
 export function useFinalizePayment(
   navigate: (path: string) => void,
@@ -175,49 +197,160 @@ export function useFinalizePayment(
       transactionId: string;
       paidAt: string;
       instrumentSummary?: string;
-    }): Promise<{ ok: boolean; orderId?: string }> => {
-      try {
-        if (LIVE) {
-          const stored = useCheckoutStore
-            .getState()
-            .orders.find((o) => o.id === orderId);
-          const fallback = stored ?? (await checkoutService.getOrder(orderId));
-          if (!fallback) return { ok: false };
-          const updated: Order = {
-            ...fallback,
-            payment: {
-              method: payment.method,
-              status: "paid",
-              transactionId: payment.transactionId,
-              paidAt: payment.paidAt,
-              instrumentSummary: payment.instrumentSummary,
-            },
-            status: "confirmed",
-            invoiceId: `INV-${orderId}`,
-          };
-          addOrder(updated);
+    }): Promise<{ ok: boolean; orderId?: string; reason?: string }> => {
+      if (!LIVE) {
+        try {
+          const updated = await checkoutService.confirmPayment(orderId, {
+            method: payment.method,
+            status: "paid",
+            transactionId: payment.transactionId,
+            paidAt: payment.paidAt,
+            instrumentSummary: payment.instrumentSummary,
+          });
           clearCart().catch(() => undefined);
+          addOrder(updated);
           resetSession();
           navigate(`/orders/${updated.id}/confirmation`);
           return { ok: true, orderId: updated.id };
+        } catch (error) {
+          return {
+            ok: false,
+            reason: paymentConfirmationMessage(error, "We couldn't finalize your order."),
+          };
+        }
+      }
+
+      // LIVE_API: the backend is the single source of truth.
+      try {
+        const stored = useCheckoutStore
+          .getState()
+          .orders.find((o) => o.id === orderId);
+        const fallback = stored ?? (await checkoutService.getOrder(orderId).catch(() => null));
+        if (!fallback) return { ok: false, reason: "We couldn't find this order to finalize its payment." };
+
+        const confirmed = await confirmPaymentOnBackend(orderId, payment.method);
+        if (!confirmed) {
+          return {
+            ok: false,
+            reason:
+              "Your payment succeeded, but the backend could not confirm it. Your order is still safe — please try again or contact support.",
+          };
         }
 
-        const updated = await checkoutService.confirmPayment(orderId, {
-          method: payment.method,
-          status: "paid",
-          transactionId: payment.transactionId,
-          paidAt: payment.paidAt,
-          instrumentSummary: payment.instrumentSummary,
-        });
+        // ERP has now marked the Sales Order paid (submitted + Payment Entry).
+        // Clear the cart server-side and wait for completion so the badge cannot
+        // repopulate from a stale server snapshot during cache invalidation.
+        try {
+          await clearCart();
+        } catch {
+          // Non-blocking: even if the server cart clear fails, the mirror +
+          // React Query cache are force-emptied below so the UI shows 0 items.
+        }
+
+        // Belt-and-suspenders: mirror empty cart into the Zustand store and
+        // React Query cache BEFORE invalidating order caches, so the header
+        // badge shows 0 on the confirmation page regardless of any in-flight
+        // refetch.
+        useCartStore.getState().hydrate([]);
+        queryClient.setQueryData(CART_QUERY_KEY, []);
+
+        // Mirror that state onto the persisted order + reveal success.
+        const updated: Order = {
+          ...fallback,
+          payment: {
+            method: payment.method,
+            status: "paid",
+            transactionId: payment.transactionId,
+            paidAt: payment.paidAt,
+            instrumentSummary: payment.instrumentSummary,
+          },
+          status: "confirmed",
+          invoiceId: `INV-${orderId}`,
+        };
         addOrder(updated);
-        clearCart().catch(() => undefined);
         resetSession();
-        navigate(`/orders/${updated.id}/confirmation`);
-        return { ok: true, orderId: updated.id };
-      } catch {
-        return { ok: false };
+
+        // Reveal the confirmation screen immediately (ERP has confirmed the
+        // payment). Cache refresh runs in the background — it must never delay
+        // the success navigation, otherwise the reset session (no payment
+        // instrument) could flash an incorrect "payment method needed" state on
+        // the payment page in the interim.
+        navigate(`/orders/${orderId}/confirmation`);
+        void invalidateOrderCaches(queryClient, orderId);
+
+        return { ok: true, orderId };
+      } catch (error) {
+        return {
+          ok: false,
+          reason: paymentConfirmationMessage(error, "We couldn't finalize your payment."),
+        };
       }
     },
     [addOrder, clearCart, resetSession, navigate],
   );
+}
+
+/**
+ * Drive the live payment-confirmation backend for a successfully charged order.
+ *
+ * create_payment re/creates the gateway-ready session (returns the signature
+ * the sandbox provider produced server-side and the backend expects back on
+ * verify). verify_payment then completes it: it validates ownership/amount/
+ * signature and, on match, submits the Sales Order, creates/submits the Payment
+ * Entry and marks the order Paid.
+ *
+ * Both calls reconcile against the authoritative payment status when the order
+ * was already paid by a concurrent callback (or a previous finalize), so the
+ * flow is idempotent and never double-charges.
+ */
+async function confirmPaymentOnBackend(
+  orderId: string,
+  method: PaymentMethodType,
+): Promise<boolean> {
+  const confirmation = services.paymentConfirmation;
+  const created = await createPaymentSessionOrReconcile(confirmation, orderId);
+  if (created.alreadyPaid) return true;
+
+  if (created.session) {
+    try {
+      await confirmation.verifyPayment({
+        salesOrder: created.session.sales_order,
+        session: created.session.session,
+        amount: created.session.amount,
+        signature: created.session.signature,
+        method,
+      });
+      return true;
+    } catch (error) {
+      const status = await confirmation.getPaymentStatus({ salesOrder: orderId }).catch(() => null);
+      if (status?.status === "Paid") return true;
+      await confirmation
+        .reportFailure({
+          salesOrder: orderId,
+          reason: "Payment could not be confirmed after a successful gateway charge.",
+        })
+        .catch(() => undefined);
+      throw error;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * create_payment raises when the order is no longer Draft (e.g. a webhook or a
+ * previous finalize already paid it) — reconcile against the authoritative
+ * payment status and report when the order is already Paid.
+ */
+async function createPaymentSessionOrReconcile(
+  confirmation: IPaymentConfirmationService,
+  orderId: string,
+): Promise<{ session?: ErpPaymentSessionDTO; alreadyPaid?: boolean }> {
+  try {
+    return { session: await confirmation.createPaymentSession({ salesOrder: orderId }) };
+  } catch (error) {
+    const status = await confirmation.getPaymentStatus({ salesOrder: orderId }).catch(() => null);
+    if (status?.status === "Paid") return { alreadyPaid: true };
+    throw error;
+  }
 }

@@ -4,13 +4,22 @@
  * Hook that combines checkout store, cart store, and checkout service.
  * Provides validation, order summary, and place order action.
  *
- * LIVE_API mode: every total (subtotal, discount, tax, shipping charge, grand
- * total) comes from the ERP checkout.summary response for the selected
- * address. Placing an order re-validates via checkout.validate and then
- * creates the Draft Sales Order via checkout.create_order (exactly once – the
- * backend replays identical drafts, so retries don't duplicate). The created
- * order is added to the persisted checkout store so success/order screens
- * read the authoritative record.
+ * Every total (subtotal, savings, delivery charge, offer discount, tax,
+ * platform fee and grand total) is derived from the shared
+ * computeCheckoutTotals source in both LIVE_API and STATIC mode, so the Order
+ * Summary, the Review & Pay step, the payment screen, the placed order and the
+ * invoice can never disagree about an amount:
+ *
+ *   Grand Total = Item Price + Delivery Charge - Offer Discount + GST/Tax + Platform Fee
+ *
+ * with GST/Tax kept at 0 for now. The selected delivery speed drives the
+ * delivery charge and the applied offer is always deducted from the total.
+ *
+ * In LIVE_API mode the ERP address summary is still fetched and used to gate
+ * order placement, and the order is placed via checkout.validate →
+ * checkout.create_order (exactly once – the backend replays identical drafts).
+ * The created order is added to the persisted checkout store so success/order
+ * screens read the authoritative record.
  *
  * STATIC mode keeps the original local behavior unchanged.
  */
@@ -23,13 +32,13 @@ import { useAuthStore } from "@/store/authStore";
 import type { CartItem } from "@/store/cartStore";
 import { services } from "@/services/factory";
 import { DATA_SOURCE } from "@/config/env";
-import { DELIVERY_OPTIONS, isFreeDeliveryEligible } from "@/config/checkout";
+import { DELIVERY_OPTIONS } from "@/config/checkout";
+import { computeCheckoutTotals, type CheckoutTotals } from "@/utils/checkoutCalculations";
 import { useAddresses } from "./useAddress";
 import type {
   Address,
   AppliedPromo,
   CheckoutOrderResult,
-  CheckoutSummary,
   DeliverySpeed,
   Order,
   PaymentMethodType,
@@ -60,7 +69,6 @@ function getEstimatedDelivery(days: number): string {
 }
 
 function buildOrder(
-  summary: CheckoutSummary,
   created: CheckoutOrderResult,
   params: {
     items: CartItem[];
@@ -70,8 +78,10 @@ function buildOrder(
     paymentMethod: PaymentMethodType;
     prescriptionFiles: PrescriptionFile[];
     savings: number;
+    appliedPromo: AppliedPromo | null;
     shippingAddress: Address | null;
   },
+  totals: CheckoutTotals,
 ): Order {
   const deliveryOption = DELIVERY_OPTIONS.find((o) => o.speed === params.deliverySpeed);
   return {
@@ -96,12 +106,14 @@ function buildOrder(
     deliverySpeed: params.deliverySpeed,
     deliveryNote: params.deliveryNote,
     prescriptionFiles: params.prescriptionFiles,
-    subtotal: summary.subtotal,
+    appliedPromo: params.appliedPromo,
+    subtotal: totals.subtotal,
     savings: params.savings,
-    deliveryCharge: summary.shippingCharge,
-    discount: summary.discount,
-    tax: summary.tax,
-    grandTotal: created.grandTotal,
+    deliveryCharge: totals.deliveryCharge,
+    discount: totals.discount,
+    tax: totals.tax,
+    platformFee: totals.platformFee,
+    grandTotal: totals.grandTotal,
     paymentMethod: params.paymentMethod,
     payment: { method: params.paymentMethod, status: "pending" },
     status: "placed",
@@ -132,26 +144,35 @@ export function useCheckoutSession() {
   const selectedAddress = addresses?.find((a) => a.id === session.addressId) ?? null;
   const hasPrescriptionItems = items.some((i) => i.product.requiresPrescription);
 
-  // Local math (STATIC mode / fallback while the live summary settles).
-  const localSubtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
-  const savings = items.reduce(
-    (sum, i) => sum + (i.product.mrp - i.product.price) * i.quantity,
-    0,
-  );
-  const localFreeDelivery = isFreeDeliveryEligible(session.appliedPromo, localSubtotal);
-  const localDeliveryCharge = localFreeDelivery
-    ? 0
-    : DELIVERY_OPTIONS.find((o) => o.speed === session.deliverySpeed)?.charge ?? 0;
-  const localDiscount = session.appliedPromo?.discountAmount ?? 0;
-  const localTax = Math.round((localSubtotal - localDiscount) * 0.08 * 100) / 100;
-  const localGrandTotal =
-    Math.round((localSubtotal - localDiscount + localDeliveryCharge + localTax) * 100) / 100;
+  // All totals derive from the shared computeCheckoutTotals source so the Order
+  // Summary, Review & Pay step, payment screen, placed order and invoice can
+  // never disagree about an amount:
+  //   Grand Total = Item Price + Delivery Charge - Offer Discount + GST/Tax + Platform Fee
+  // The selected delivery speed drives the delivery charge and the applied
+  // offer is always deducted from the total, in both LIVE_API and STATIC mode.
+  const totals = computeCheckoutTotals({
+    items,
+    appliedPromo: session.appliedPromo,
+    deliverySpeed: session.deliverySpeed,
+  });
+  const {
+    subtotal,
+    savings,
+    deliveryCharge,
+    discount,
+    tax,
+    platformFee,
+    grandTotal,
+  } = totals;
 
-  // Live summary query – keyed by the selected address AND the cart contents
-  // so it re-runs whenever the address or the items in the cart change.
+  // Live summary query – keyed by the selected address, the cart contents AND
+  // the delivery speed, so it re-runs whenever the address, the items, or the
+  // speed change (the ERP backend prices by configured flat rates, keyed by
+  // address; the key still ensures a fresh fetch on speed change).
   const cartSignature = items
     .map((item) => `${item.product.id}:${item.quantity}`)
     .join("|");
+  const promoSignature = session.appliedPromo?.code ?? "none";
   const summaryEnabled =
     LIVE && isAuthenticated && session.addressId !== null && items.length > 0;
   const {
@@ -159,20 +180,19 @@ export function useCheckoutSession() {
     isLoading: isSummaryLoading,
     error: summaryError,
   } = useQuery({
-    queryKey: [CHECKOUT_SUMMARY_QUERY_KEY, session.addressId, cartSignature],
+    queryKey: [
+      CHECKOUT_SUMMARY_QUERY_KEY,
+      session.addressId,
+      cartSignature,
+      promoSignature,
+      session.deliverySpeed,
+    ],
     queryFn: () =>
       checkoutService.getCheckoutSummary(session.addressId ?? undefined, undefined),
     enabled: summaryEnabled,
   });
 
   const summary = LIVE ? liveSummary ?? null : null;
-
-  // Authoritative totals: ERP summary when available, local fallback otherwise.
-  const subtotal = summary?.subtotal ?? localSubtotal;
-  const deliveryCharge = summary?.shippingCharge ?? localDeliveryCharge;
-  const discount = summary?.discount ?? localDiscount;
-  const tax = summary?.tax ?? localTax;
-  const grandTotal = summary?.grandTotal ?? localGrandTotal;
 
   const canPlaceOrder =
     items.length > 0 &&
@@ -227,24 +247,30 @@ export function useCheckoutSession() {
         deliverySpeed: session.deliverySpeed,
         deliveryNote: session.deliveryNote,
         paymentMethod: session.paymentMethod,
+        appliedPromo: session.appliedPromo,
       });
-      const order = buildOrder(validated, created, {
-        items,
-        addressId: session.addressId,
-        deliverySpeed: session.deliverySpeed,
-        deliveryNote: session.deliveryNote,
-        paymentMethod: session.paymentMethod,
-        prescriptionFiles: session.prescriptionFiles,
-        savings,
-        shippingAddress: validated.shippingAddress ?? selectedAddress,
-      });
+      const order = buildOrder(
+        created,
+        {
+          items,
+          addressId: session.addressId,
+          deliverySpeed: session.deliverySpeed,
+          deliveryNote: session.deliveryNote,
+          paymentMethod: session.paymentMethod,
+          prescriptionFiles: session.prescriptionFiles,
+          savings,
+          appliedPromo: session.appliedPromo,
+          shippingAddress: validated.shippingAddress ?? selectedAddress,
+        },
+        totals,
+      );
       addOrder(order);
       return order;
     } finally {
       isPlacingRef.current = false;
       setIsPendingOrder(false);
     }
-  }, [canPlaceOrder, session, items, addresses, selectedAddress, savings, addOrder]);
+  }, [canPlaceOrder, session, items, addresses, selectedAddress, savings, totals, addOrder]);
 
   /** Accepts an order on the customer side (COD): confirm + persist + clear. */
   const finalizeCodOrder = useCallback(
@@ -289,6 +315,7 @@ export function useCheckoutSession() {
     deliveryCharge,
     discount,
     tax,
+    platformFee,
     grandTotal,
     canPlaceOrder,
     isPendingOrder,
@@ -324,16 +351,4 @@ export function useValidatePromo() {
   );
 
   return { validate };
-}
-
-export function useOrderHistory() {
-  const orders = useCheckoutStore((s) => s.orders);
-  return {
-    data: [...orders].sort(
-      (a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime(),
-    ),
-    isLoading: false,
-    isError: false,
-    refetch: () => Promise.resolve(),
-  };
 }

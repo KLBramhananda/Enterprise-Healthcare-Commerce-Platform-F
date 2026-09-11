@@ -1,20 +1,18 @@
 /**
  * OrderTrackingTimeline
  *
- * Enterprise fulfillment timeline for a single order. Derives the canonical
- * five-stage journey (Placed → Preparing → Packed → Shipped → Out for
- * Delivery → Delivered) from the order status.
+ * Renders the fulfilment timeline for a single order. Events are supplied by
+ * the caller (usually the ERP tracking service) so the component stays a pure
+ * presenter over the canonical Timeline primitive.
  */
 
 import Timeline from "@/components/ui/Timeline";
-import { buildOrderTrackingEvents } from "@/utils/orderTracking";
-import type { Order } from "@/types/checkout";
+import type { OrderTrackingEvent } from "@/types/checkout";
 
 export interface OrderTrackingTimelineProps {
-  order: Order;
+  events: OrderTrackingEvent[];
 }
 
-export default function OrderTrackingTimeline({ order }: OrderTrackingTimelineProps) {
-  const events = buildOrderTrackingEvents(order);
+export default function OrderTrackingTimeline({ events }: OrderTrackingTimelineProps) {
   return <Timeline events={events} />;
 }

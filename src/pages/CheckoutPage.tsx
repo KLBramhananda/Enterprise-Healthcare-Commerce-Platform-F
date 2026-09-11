@@ -28,6 +28,8 @@ import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useCheckoutSession } from "@/hooks/checkout/useCheckout";
 import { useAddresses } from "@/hooks/checkout/useAddress";
+import { queryClient } from "@/lib/queryClient";
+import { invalidateOrderCaches } from "@/utils/orderCache";
 import { isPaymentInstrumentValid } from "@/utils/payment";
 import { formatCurrency } from "@/utils/formatters";
 import {
@@ -70,6 +72,7 @@ export default function CheckoutPage() {
     deliveryCharge,
     discount,
     tax,
+    platformFee,
     grandTotal,
     canPlaceOrder,
     isPendingOrder,
@@ -233,12 +236,20 @@ export default function CheckoutPage() {
         addToast("Please complete all required details before paying.", "error");
         return;
       }
+      // The order now exists in ERP history while the cart still holds the
+      // items (cleared after the payment step). Refetch the affected queries
+      // immediately so Orders, Dashboard, the checkout summary and the cart
+      // badge reflect the new order without waiting for a manual refresh.
+      void invalidateOrderCaches(queryClient, order.id);
       if (order.paymentMethod === "cod") {
         const finalized = await finalizeCodOrder(order);
         if (!finalized) {
           addToast("We couldn't place your order. Please try again.", "error");
           return;
         }
+        // COD finalize clears the cart and marks payment pending — invalidate
+        // again so the confirmed order, history and cart caches are fresh.
+        void invalidateOrderCaches(queryClient, finalized.id);
         addToast(`Order ${finalized.id} placed successfully!`, "success");
         navigate(`/orders/${finalized.id}/confirmation`);
       } else {
@@ -463,6 +474,7 @@ export default function CheckoutPage() {
                       deliveryCharge={deliveryCharge}
                       discount={discount}
                       tax={tax}
+                      platformFee={platformFee}
                       grandTotal={grandTotal}
                       onEdit={(target) => goToStep(target)}
                       agreementChecked={agreementChecked}
@@ -497,6 +509,7 @@ export default function CheckoutPage() {
                 deliveryCharge={deliveryCharge}
                 discount={discount}
                 tax={tax}
+                platformFee={platformFee}
                 grandTotal={grandTotal}
                 appliedPromo={session.appliedPromo}
               />

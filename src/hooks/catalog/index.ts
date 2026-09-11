@@ -12,6 +12,8 @@ export {
 export {
   useSearchSuggestions,
   useSearchState,
+  useFilterSearchParams,
+  applyFilterParams,
   useSearchResults,
   usePopularSearches,
   useHealthConcerns,

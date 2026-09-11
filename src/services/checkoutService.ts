@@ -70,5 +70,6 @@ export interface ICheckoutService {
     deliverySpeed: DeliverySpeed;
     deliveryNote: string;
     paymentMethod: PaymentMethodType;
+    appliedPromo?: AppliedPromo | null;
   }): Promise<CheckoutOrderResult>;
 }

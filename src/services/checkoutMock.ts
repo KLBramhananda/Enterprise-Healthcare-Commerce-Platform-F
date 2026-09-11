@@ -21,9 +21,9 @@ import type {
 import type { Product } from "@/types/catalog";
 import {
   DELIVERY_OPTIONS,
-  isFreeDeliveryEligible,
   resolveOffer,
 } from "@/config/checkout";
+import { computeCheckoutTotals } from "@/utils/checkoutCalculations";
 import type { ICheckoutService } from "./checkoutService";
 
 let orderCounter = 0;
@@ -41,10 +41,6 @@ function generateOrderId(): string {
 function generateTrackingId(): string {
   const rand = String(Math.floor(100000000 + Math.random() * 900000000));
   return `KMTRK-${rand}`;
-}
-
-function calculateTax(subtotal: number): number {
-  return Math.round(subtotal * 0.08 * 100) / 100;
 }
 
 function getEstimatedDelivery(speed: DeliverySpeed, days: number): string {
@@ -87,24 +83,16 @@ export class MockCheckoutService implements ICheckoutService {
       quantity: item.quantity,
     }));
 
-    const subtotal = params.items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0,
-    );
-    const savings = params.items.reduce(
-      (sum, item) => sum + (item.product.mrp - item.product.price) * item.quantity,
-      0,
-    );
+    // Totals are derived from the same computeCheckoutTotals source the
+    // checkout hook uses, so the recorded Order totals always equal what the
+    // Order Summary showed during checkout.
+    const totals = computeCheckoutTotals({
+      items: params.items,
+      appliedPromo: params.appliedPromo,
+      deliverySpeed: params.deliverySpeed,
+    });
 
     const deliveryOption = DELIVERY_OPTIONS.find((o) => o.speed === params.deliverySpeed);
-    const baseDeliveryCharge = deliveryOption?.charge ?? 0;
-    const deliveryCharge = isFreeDeliveryEligible(params.appliedPromo, subtotal)
-      ? 0
-      : baseDeliveryCharge;
-
-    const discount = params.appliedPromo?.discountAmount ?? 0;
-    const tax = calculateTax(subtotal - discount);
-    const grandTotal = Math.round((subtotal - discount + deliveryCharge + tax) * 100) / 100;
 
     const order: Order = {
       id: generateOrderId(),
@@ -115,12 +103,14 @@ export class MockCheckoutService implements ICheckoutService {
       deliverySpeed: params.deliverySpeed,
       deliveryNote: params.deliveryNote,
       prescriptionFiles: [],
-      subtotal,
-      savings,
-      deliveryCharge,
-      discount,
-      tax,
-      grandTotal,
+      appliedPromo: params.appliedPromo,
+      subtotal: totals.subtotal,
+      savings: totals.savings,
+      deliveryCharge: totals.deliveryCharge,
+      discount: totals.discount,
+      tax: totals.tax,
+      platformFee: totals.platformFee,
+      grandTotal: totals.grandTotal,
       paymentMethod: params.paymentMethod,
       payment: { method: params.paymentMethod, status: "pending" },
       status: "placed",
@@ -183,9 +173,11 @@ export class MockCheckoutService implements ICheckoutService {
       })),
       subtotal: order.subtotal,
       discount: order.discount,
+      promoCode: order.appliedPromo?.code,
       deliveryCharge: order.deliveryCharge,
       tax: order.tax,
       taxRate,
+      platformFee: order.platformFee,
       grandTotal: order.grandTotal,
       paymentMethod: order.payment?.method ?? order.paymentMethod,
       transactionId: order.payment?.transactionId,

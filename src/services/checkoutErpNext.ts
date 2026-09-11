@@ -7,13 +7,20 @@
  *   - POST checkout.validate
  *   - POST checkout.create_order
  *
- * The ERP backend is the single source of truth for every checkout total:
- * the summary/validate endpoints return the authoritative subtotal, discount,
- * tax, shipping charge and grand total for the user's live cart + addresses,
- * and create_order persists a Draft Sales Order (replaying an identical draft
- * so retries never produce duplicates). Delivery options remain UI config; the
- * backend has no promo-code endpoint, so the demo coupon rule is re-used only
- * to drive the coupon UI — order totals are never derived from it.
+ * The ERP backend is the single source of truth for order placement: the
+ * summary/validate endpoints return the authoritative line items for the
+ * user's live cart + addresses, and create_order persists a Draft Sales Order
+ * (replaying an identical draft so retries never produce duplicates).
+ *
+ * Display totals (the Order Summary, Price Details, payment screen and
+ * invoice) are derived from the shared computeCheckoutTotals source so every
+ * surface agrees:
+ *   Grand Total = Item Price + Delivery Charge - Offer Discount + GST/Tax + Platform Fee
+ * with GST/Tax kept at 0 and Platform fee defined in `config/checkout`. The
+ * selected delivery speed drives the delivery charge and the applied offer is
+ * always deducted. Delivery options remain UI config; the backend has no
+ * promo-code endpoint, so the demo offer rule drives the coupon UI and the
+ * corresponding storefront totals.
  *
  * There is no payment/orders/invoice backend yet, so post-order reads
  * (confirmPayment / getOrder / getOrders / getInvoice) answer from a bounded
@@ -25,6 +32,7 @@ import { apiClient } from "@/api/client";
 import { ApiError, fromAxiosError } from "@/api/errors";
 import { API_ROUTES } from "@/config/api";
 import { DELIVERY_OPTIONS, resolveOffer } from "@/config/checkout";
+import { computeCheckoutTotals } from "@/utils/checkoutCalculations";
 import type { CartItem } from "@/store/cartStore";
 import type { Product } from "@/types/catalog";
 import type {
@@ -128,6 +136,7 @@ function toCheckoutSummary(dto: ErpCheckoutSummaryDTO): CheckoutSummary {
     discount: Number(dto.discount) || 0,
     tax: Number(dto.tax) || 0,
     shippingCharge: Number(dto.shipping_charge) || 0,
+    platformFee: 0,
     grandTotal: Number(dto.grand_total) || 0,
     shippingAddress: dto.shipping_address ? toAddress(dto.shipping_address) : null,
     billingAddress: dto.billing_address ? toAddress(dto.billing_address) : null,
@@ -249,12 +258,23 @@ export class ErpNextCheckoutService implements ICheckoutService {
     deliverySpeed: DeliverySpeed;
     deliveryNote: string;
     paymentMethod: PaymentMethodType;
+    appliedPromo?: AppliedPromo | null;
   }): Promise<CheckoutOrderResult> {
     try {
+      // Only the address is accepted by the ERP backend (checkout.create_order
+      // → shipping_address_name / billing_address_name). The applied promo is
+      // NOT sent: the backend applies its own configured flat discount. The
+      // storefront derives the displayed Order Summary, Price Details, payment
+      // screen and invoice totals from the shared checkout calculations, which
+      // use the selected delivery option charge, the applied offer discount,
+      // GST/Tax (0) and the platform fee.
+      const payload: Record<string, unknown> = {
+        shipping_address_name: input.addressId,
+      };
       const dto = await unpackCheckout<ErpCheckoutOrderDTO>(
         apiClient.post<{ message: ErpCheckoutMessage<ErpCheckoutOrderDTO> }>(
           API_ROUTES.CHECKOUT.CREATE_ORDER,
-          { shipping_address_name: input.addressId },
+          payload,
           { timeout: CHECKOUT_TIMEOUT },
         ),
       );
@@ -293,6 +313,7 @@ export class ErpNextCheckoutService implements ICheckoutService {
       deliverySpeed: params.deliverySpeed,
       deliveryNote: params.deliveryNote,
       paymentMethod: params.paymentMethod,
+      appliedPromo: params.appliedPromo,
     });
     const order = this._createdOrders.get(created.salesOrder);
     if (!order) throw new Error("Your order could not be created. Please try again.");
@@ -353,9 +374,11 @@ export class ErpNextCheckoutService implements ICheckoutService {
       })),
       subtotal: order.subtotal,
       discount: order.discount,
+      promoCode: order.appliedPromo?.code,
       deliveryCharge: order.deliveryCharge,
       tax: order.tax,
       taxRate,
+      platformFee: order.platformFee,
       grandTotal: order.grandTotal,
       paymentMethod: order.payment?.method ?? order.paymentMethod,
       transactionId: order.payment?.transactionId,
@@ -374,13 +397,26 @@ export class ErpNextCheckoutService implements ICheckoutService {
       deliverySpeed: DeliverySpeed;
       deliveryNote: string;
       paymentMethod: PaymentMethodType;
+      appliedPromo?: AppliedPromo | null;
     },
   ): Order {
     const deliveryOption = DELIVERY_OPTIONS.find((o) => o.speed === input.deliverySpeed);
-    const items: OrderItem[] = summary.items.map((line) => ({
+    const cartItems: CartItem[] = summary.items.map((line) => ({
       product: toFallbackProduct(line),
       quantity: line.quantity,
+      addedAt: new Date().toISOString(),
     }));
+    const items: OrderItem[] = cartItems.map((item) => ({
+      product: item.product,
+      quantity: item.quantity,
+    }));
+    // Derive the recorded totals from the shared checkout calculations so the
+    // cached order matches the Order Summary exactly.
+    const totals = computeCheckoutTotals({
+      items: cartItems,
+      appliedPromo: input.appliedPromo ?? null,
+      deliverySpeed: input.deliverySpeed,
+    });
     return {
       id: dto.sales_order,
       invoiceId: "",
@@ -392,12 +428,14 @@ export class ErpNextCheckoutService implements ICheckoutService {
       deliverySpeed: input.deliverySpeed,
       deliveryNote: input.deliveryNote,
       prescriptionFiles: [],
-      subtotal: summary.subtotal,
+      appliedPromo: input.appliedPromo ?? null,
+      subtotal: totals.subtotal,
       savings: 0,
-      deliveryCharge: summary.shippingCharge,
-      discount: summary.discount,
-      tax: summary.tax,
-      grandTotal: Number(dto.grand_total) || summary.grandTotal,
+      deliveryCharge: totals.deliveryCharge,
+      discount: totals.discount,
+      tax: totals.tax,
+      platformFee: totals.platformFee,
+      grandTotal: totals.grandTotal,
       paymentMethod: input.paymentMethod,
       payment: { method: input.paymentMethod, status: "pending" },
       status: "placed",

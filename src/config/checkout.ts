@@ -48,6 +48,17 @@ export const DELIVERY_SPEED_LABELS: Record<DeliverySpeed, string> = {
   same_day: "Same Day Delivery",
 };
 
+/**
+ * Platform fee applied to every order as a separate line in the Order Summary,
+ * Price Details, Payment Summary and invoice.
+ *
+ * Formula used consistently everywhere:
+ *   Grand Total = Item Price + Delivery Charge - Offer Discount + GST/Tax + Platform Fee
+ * with GST/Tax kept at 0 for now. The platform fee is kept at the existing
+ * amount for now and can be changed later without touching the formula.
+ */
+export const PLATFORM_FEE = 0;
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethodType, string> = {
   cod: "Cash on Delivery",
   upi: "UPI",

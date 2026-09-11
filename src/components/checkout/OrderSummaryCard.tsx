@@ -17,6 +17,7 @@ interface OrderSummaryCardProps {
   deliveryCharge: number;
   discount: number;
   tax: number;
+  platformFee: number;
   grandTotal: number;
   appliedPromo: AppliedPromo | null;
 }
@@ -28,6 +29,7 @@ export default function OrderSummaryCard({
   deliveryCharge,
   discount,
   tax,
+  platformFee,
   grandTotal,
   appliedPromo,
 }: OrderSummaryCardProps) {
@@ -65,14 +67,6 @@ export default function OrderSummaryCard({
             <span className="font-medium text-success-600">-{formatCurrency(savings)}</span>
           </div>
         )}
-        {discount > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-surface-500">
-              {appliedPromo ? `Promo (${appliedPromo.code})` : "Discount"}
-            </span>
-            <span className="font-medium text-success-600">-{formatCurrency(discount)}</span>
-          </div>
-        )}
         <div className="flex justify-between text-sm">
           <span className="text-surface-500">Delivery</span>
           <span className="font-medium text-surface-900">
@@ -83,10 +77,24 @@ export default function OrderSummaryCard({
             )}
           </span>
         </div>
+        {discount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-surface-500">
+              {appliedPromo ? `Offer (${appliedPromo.code})` : "Discount"}
+            </span>
+            <span className="font-medium text-success-600">-{formatCurrency(discount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-sm">
-          <span className="text-surface-500">Tax (8%)</span>
+          <span className="text-surface-500">Tax</span>
           <span className="font-medium text-surface-900">{formatCurrency(tax)}</span>
         </div>
+        {platformFee > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-surface-500">Platform Fee</span>
+            <span className="font-medium text-surface-900">{formatCurrency(platformFee)}</span>
+          </div>
+        )}
       </div>
 
       <div className="mt-3 flex items-center justify-between rounded-lg bg-brand-50/70 px-3 py-2.5">
