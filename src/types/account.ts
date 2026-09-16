@@ -85,3 +85,25 @@ export interface AccountCompletionStatus {
   hasPrescriptions: boolean;
   percentage: number;
 }
+
+/* ── Security ── */
+
+export interface UserSession {
+  id: string;
+  device: string;
+  platform: string;
+  location: string;
+  lastActiveAt: string;
+  isCurrent: boolean;
+}
+
+export interface SecuritySettings {
+  twoFactorEnabled: boolean;
+  activeSessions: UserSession[];
+  lastPasswordChangedAt?: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}

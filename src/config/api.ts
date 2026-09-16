@@ -46,6 +46,7 @@ export const API_ROUTES = {
     VERIFY_OTP: "keemeds_commerce.api.auth.verify_otp",
     RESET_PASSWORD: "keemeds_commerce.api.auth.reset_password",
     REFRESH_TOKEN: "keemeds_commerce.api.auth.refresh_token",
+    CSRF_TOKEN: "keemeds_commerce.api.auth.csrf_token",
   },
 
   /* ── Catalog ── */
@@ -59,6 +60,12 @@ export const API_ROUTES = {
     SEARCH_SUGGESTIONS: "keemeds_commerce.api.catalog.search_suggestions",
     POPULAR_SEARCHES: "keemeds_commerce.api.catalog.popular_searches",
     BRAND_FACETS: "keemeds_commerce.api.catalog.brand_facets",
+  },
+
+  /* ── Products (ERPNext live product API) ── */
+  PRODUCTS: {
+    LIST: "keemeds_commerce.api.products.list_products",
+    GET: "keemeds_commerce.api.products.get_product",
   },
 
   /* ── Brands / Collections ── */
@@ -84,53 +91,59 @@ export const API_ROUTES = {
     CONTENT: "keemeds_commerce.api.homepage.content",
   },
 
-  /* ── Cart ── */
+  /* ── Cart (keemeds_commerce.api.cart — implemented backend) ── */
   CART: {
-    GET: "keemeds_commerce.api.cart.get",
-    ADD: "keemeds_commerce.api.cart.add",
-    UPDATE: "keemeds_commerce.api.cart.update",
-    REMOVE: "keemeds_commerce.api.cart.remove",
-    CLEAR: "keemeds_commerce.api.cart.clear",
+    GET: "keemeds_commerce.api.cart.get_cart",
+    ADD: "keemeds_commerce.api.cart.add_item",
+    UPDATE: "keemeds_commerce.api.cart.update_item",
+    REMOVE: "keemeds_commerce.api.cart.remove_item",
+    CLEAR: "keemeds_commerce.api.cart.clear_cart",
   },
 
-  /* ── Wishlist ── */
+  /* ── Wishlist (keemeds_commerce.api.wishlist — implemented backend) ── */
   WISHLIST: {
-    GET: "keemeds_commerce.api.wishlist.get",
-    ADD: "keemeds_commerce.api.wishlist.add",
-    REMOVE: "keemeds_commerce.api.wishlist.remove",
-    CHECK: (productId: string) => `keemeds_commerce.api.wishlist.check?product_id=${encodeURIComponent(productId)}`,
+    GET: "keemeds_commerce.api.wishlist.get_wishlist",
+    ADD: "keemeds_commerce.api.wishlist.add_item",
+    REMOVE: "keemeds_commerce.api.wishlist.remove_item",
   },
 
-  /* ── Checkout ── */
+  /* ── Checkout (keemeds_commerce.api.checkout — implemented backend) ── */
   CHECKOUT: {
-    CREATE: "keemeds_commerce.api.checkout.create",
-    GET_SESSION: (orderId: string) => `keemeds_commerce.api.checkout.session?order_id=${encodeURIComponent(orderId)}`,
-    APPLY_PROMO: "keemeds_commerce.api.checkout.apply_promo",
-    REMOVE_PROMO: "keemeds_commerce.api.checkout.remove_promo",
+    SUMMARY: "keemeds_commerce.api.checkout.summary",
+    VALIDATE: "keemeds_commerce.api.checkout.validate",
+    CREATE_ORDER: "keemeds_commerce.api.checkout.create_order",
   },
 
-  /* ── Payment ── */
+  /* ── Payment (keemeds_commerce.api.payment — implemented backend) ── */
   PAYMENT: {
-    INITIATE: "keemeds_commerce.api.payment.initiate",
-    STATUS: (orderId: string) => `keemeds_commerce.api.payment.status?order_id=${encodeURIComponent(orderId)}`,
-    METHODS: "keemeds_commerce.api.payment.methods",
+    CREATE: "keemeds_commerce.api.payment.create_payment",
+    VERIFY: "keemeds_commerce.api.payment.verify_payment",
+    COMPLETE: "keemeds_commerce.api.payment.complete_payment",
+    RETRY: "keemeds_commerce.api.payment.retry_payment",
+    FAIL: "keemeds_commerce.api.payment.fail_payment",
+    STATUS: (orderId: string) => `keemeds_commerce.api.payment.status?sales_order=${encodeURIComponent(orderId)}`,
+    STATUS_BY_SESSION: (session: string) => `keemeds_commerce.api.payment.status?session=${encodeURIComponent(session)}`,
+    HISTORY: (orderId: string) => `keemeds_commerce.api.payment.history?sales_order=${encodeURIComponent(orderId)}`,
+    WEBHOOK: "keemeds_commerce.api.payment.webhook",
   },
 
-  /* ── Orders ── */
+  /* ── Orders (keemeds_commerce.api.orders — production Order APIs) ── */
   ORDERS: {
     LIST: "keemeds_commerce.api.orders.list",
     DETAIL: (orderId: string) => `keemeds_commerce.api.orders.detail?order_id=${encodeURIComponent(orderId)}`,
     INVOICE: (orderId: string) => `keemeds_commerce.api.orders.invoice?order_id=${encodeURIComponent(orderId)}`,
     TRACKING: (orderId: string) => `keemeds_commerce.api.orders.tracking?order_id=${encodeURIComponent(orderId)}`,
+    CANCEL: "keemeds_commerce.api.orders.cancel",
   },
 
-  /* ── Addresses ── */
+  /* ── Addresses (customer address API — implemented in customer.py) ── */
   ADDRESSES: {
-    LIST: "keemeds_commerce.api.addresses.list",
-    CREATE: "keemeds_commerce.api.addresses.create",
-    UPDATE: "keemeds_commerce.api.addresses.update",
-    DELETE: "keemeds_commerce.api.addresses.delete",
-    DEFAULT: "keemeds_commerce.api.addresses.default",
+    LIST: "keemeds_commerce.api.customer.list_addresses",
+    GET: "keemeds_commerce.api.customer.get_address",
+    CREATE: "keemeds_commerce.api.customer.create_address",
+    UPDATE: "keemeds_commerce.api.customer.update_address",
+    DELETE: "keemeds_commerce.api.customer.delete_address",
+    SET_DEFAULT: "keemeds_commerce.api.customer.set_default_shipping",
   },
 
   /* ── Account ── */

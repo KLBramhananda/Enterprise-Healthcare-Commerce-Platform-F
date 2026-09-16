@@ -15,8 +15,8 @@
  */
 
 import { Suspense, lazy } from "react";
-import { Routes, Route } from "react-router-dom";
-import { CommerceLayout, AuthLayout } from "@/layouts";
+import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { CommerceLayout, AuthLayout, AccountLayout } from "@/layouts";
 import { ScrollToTop } from "@/components/layout";
 import { ProtectedRoute, GuestRoute } from "./guards";
 
@@ -52,7 +52,8 @@ const ReferralPage = lazy(() => import("@/pages/engagement/ReferralPage"));
 const MembershipPage = lazy(() => import("@/pages/engagement/MembershipPage"));
 const AccountDashboardPage = lazy(() => import("@/pages/account/AccountDashboardPage"));
 const OrderDetailPage = lazy(() => import("@/pages/account/OrderDetailPage"));
-const AccountSettingsPage = lazy(() => import("@/pages/account/AccountSettingsPage"));
+const AccountProfilePage = lazy(() => import("@/pages/account/AccountProfilePage"));
+const AccountSecurityPage = lazy(() => import("@/pages/account/AccountSecurityPage"));
 const HelpCenterPage = lazy(() => import("@/pages/support/HelpCenterPage"));
 const FAQPage = lazy(() => import("@/pages/support/FAQPage"));
 const ContactPage = lazy(() => import("@/pages/support/ContactPage"));
@@ -69,6 +70,12 @@ function RouteFallback() {
       <span className="text-sm font-medium text-surface-500">Loading...</span>
     </div>
   );
+}
+
+/** Redirects a legacy /orders/:orderId deep link into the account center. */
+function RedirectToAccountOrder() {
+  const { orderId } = useParams<{ orderId: string }>();
+  return <Navigate to={`/account/orders/${orderId}`} replace />;
 }
 
 export default function AppRouter() {
@@ -92,24 +99,45 @@ export default function AppRouter() {
           <Route element={<CommerceLayout />}>
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/checkout/payment/:orderId" element={<PaymentProcessingPage />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
-            <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/orders/:orderId" element={<OrderDetailPage />} />
             <Route path="/orders/:orderId/confirmation" element={<OrderConfirmationPage />} />
-            <Route path="/addresses" element={<AddressesPage />} />
-            <Route path="/prescriptions" element={<PrescriptionsPage />} />
-            <Route path="/profile" element={<AccountDashboardPage />} />
-            <Route path="/settings" element={<AccountSettingsPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/offers" element={<OffersPage />} />
-            <Route path="/coupons" element={<CouponsPage />} />
-            <Route path="/rewards" element={<LoyaltyPage />} />
-            <Route path="/referral" element={<ReferralPage />} />
-            <Route path="/membership" element={<MembershipPage />} />
             <Route path="/help/tickets" element={<TicketListPage />} />
             <Route path="/help/tickets/new" element={<CreateTicketPage />} />
             <Route path="/help/tickets/:ticketId" element={<TicketDetailPage />} />
             <Route path="/support" element={<SupportDashboardPage />} />
+
+            {/* ─── Customer account center ─── */}
+            <Route element={<AccountLayout />}>
+              <Route path="/account" element={<Navigate to="/account/dashboard" replace />} />
+              <Route path="/account/dashboard" element={<AccountDashboardPage />} />
+              <Route path="/account/profile" element={<AccountProfilePage />} />
+              <Route path="/account/orders" element={<OrdersPage />} />
+              <Route path="/account/orders/:orderId" element={<OrderDetailPage />} />
+              <Route path="/account/addresses" element={<AddressesPage />} />
+              <Route path="/account/prescriptions" element={<PrescriptionsPage />} />
+              <Route path="/account/wishlist" element={<WishlistPage />} />
+              <Route path="/account/offers" element={<OffersPage />} />
+              <Route path="/account/coupons" element={<CouponsPage />} />
+              <Route path="/account/membership" element={<MembershipPage />} />
+              <Route path="/account/security" element={<AccountSecurityPage />} />
+              <Route path="/account/loyalty" element={<LoyaltyPage />} />
+              <Route path="/account/referral" element={<ReferralPage />} />
+              <Route path="/account/notifications" element={<NotificationsPage />} />
+            </Route>
+
+            {/* ─── Legacy account routes (redirect to /account/*) ─── */}
+            <Route path="/profile" element={<Navigate to="/account/dashboard" replace />} />
+            <Route path="/settings" element={<Navigate to="/account/profile" replace />} />
+            <Route path="/orders" element={<Navigate to="/account/orders" replace />} />
+            <Route path="/orders/:orderId" element={<RedirectToAccountOrder />} />
+            <Route path="/addresses" element={<Navigate to="/account/addresses" replace />} />
+            <Route path="/prescriptions" element={<Navigate to="/account/prescriptions" replace />} />
+            <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
+            <Route path="/offers" element={<Navigate to="/account/offers" replace />} />
+            <Route path="/coupons" element={<Navigate to="/account/coupons" replace />} />
+            <Route path="/rewards" element={<Navigate to="/account/loyalty" replace />} />
+            <Route path="/referral" element={<Navigate to="/account/referral" replace />} />
+            <Route path="/membership" element={<Navigate to="/account/membership" replace />} />
+            <Route path="/notifications" element={<Navigate to="/account/notifications" replace />} />
           </Route>
         </Route>
 

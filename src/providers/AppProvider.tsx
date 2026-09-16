@@ -5,24 +5,15 @@
  */
 
 import { useEffect, type ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { QUERY_STALE_TIME, QUERY_RETRY_COUNT } from "@/config/constants";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { ToastProvider, useToast } from "./ToastProvider";
 import { initNotifications } from "@/utils/notifications";
+import { ShoppingSyncProvider } from "./ShoppingSyncProvider";
 
 interface AppProviderProps {
   children: ReactNode;
 }
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: QUERY_RETRY_COUNT,
-      staleTime: QUERY_STALE_TIME,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 function NotificationsInit() {
   const { addToast } = useToast();
@@ -35,10 +26,12 @@ function NotificationsInit() {
 export default function AppProvider({ children }: AppProviderProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <NotificationsInit />
-        {children}
-      </ToastProvider>
+      <ShoppingSyncProvider>
+        <ToastProvider>
+          <NotificationsInit />
+          {children}
+        </ToastProvider>
+      </ShoppingSyncProvider>
     </QueryClientProvider>
   );
 }

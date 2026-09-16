@@ -25,7 +25,7 @@ export {
  * Each message rotates/repeats continuously from right to left.
  */
 export const ANNOUNCEMENTS = [
-  "🚚 Free delivery on orders above $50",
+  "🚚 Free delivery on orders above ₹50",
   "🎉 Use code HEALTH20 for 20% OFF your first order",
   "💊 Genuine Medicines from Trusted Pharmacies",
   "🧪 NABL Certified Lab Tests",

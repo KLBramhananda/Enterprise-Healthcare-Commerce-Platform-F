@@ -6,7 +6,12 @@
  * with ErpNextAccountService for backend integration.
  */
 
-import type { AccountPreferences, AccountCompletionStatus } from "@/types/account";
+import type {
+  AccountPreferences,
+  AccountCompletionStatus,
+  SecuritySettings,
+  ChangePasswordPayload,
+} from "@/types/account";
 import type { User } from "@/types/auth";
 
 export interface IAccountService {
@@ -14,4 +19,6 @@ export interface IAccountService {
   updatePreferences(prefs: Partial<AccountPreferences>): Promise<AccountPreferences>;
   updateProfile(data: { fullName?: string; phone?: string }): Promise<User>;
   getAccountCompletion(): Promise<AccountCompletionStatus>;
+  getSecuritySettings(): Promise<SecuritySettings>;
+  changePassword(data: ChangePasswordPayload): Promise<{ message: string }>;
 }

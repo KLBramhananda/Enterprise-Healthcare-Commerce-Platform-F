@@ -43,6 +43,13 @@ export function useCatalogBrands(categorySlug?: string) {
   });
 }
 
+export function useCatalogManufacturers(categorySlug?: string) {
+  return useQuery({
+    queryKey: ["catalog", "manufacturers", categorySlug ?? null],
+    queryFn: () => catalogService.getManufacturerFacets(categorySlug),
+  });
+}
+
 export function useProductDetails(id: string | undefined) {
   return useQuery({
     queryKey: ["catalog", "product", id],

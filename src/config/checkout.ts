@@ -48,6 +48,17 @@ export const DELIVERY_SPEED_LABELS: Record<DeliverySpeed, string> = {
   same_day: "Same Day Delivery",
 };
 
+/**
+ * Platform fee applied to every order as a separate line in the Order Summary,
+ * Price Details, Payment Summary and invoice.
+ *
+ * Formula used consistently everywhere:
+ *   Grand Total = Item Price + Delivery Charge - Offer Discount + GST/Tax + Platform Fee
+ * with GST/Tax kept at 0 for now. The platform fee is kept at the existing
+ * amount for now and can be changed later without touching the formula.
+ */
+export const PLATFORM_FEE = 0;
+
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethodType, string> = {
   cod: "Cash on Delivery",
   upi: "UPI",
@@ -184,8 +195,8 @@ export const CHECKOUT_OFFERS: CheckoutOffer[] = [
   },
   {
     code: "HEALTH50",
-    title: "Free delivery above $499",
-    detail: "Free delivery on orders above $499.",
+    title: "Free delivery above ₹499",
+    detail: "Free delivery on orders above ₹499.",
     discountType: "free_delivery",
     minOrder: 499,
     badge: "FREE SHIPPING",
@@ -200,12 +211,12 @@ export const CHECKOUT_OFFERS: CheckoutOffer[] = [
   },
   {
     code: "WELCOME100",
-    title: "Flat $100 off above $999",
-    detail: "Flat $100 off on orders above $999.",
+    title: "Flat ₹100 off above ₹999",
+    detail: "Flat ₹100 off on orders above ₹999.",
     discountType: "flat",
     flatAmount: 100,
     minOrder: 999,
-    badge: "$100 OFF",
+    badge: "₹100 OFF",
   },
 ];
 
@@ -217,4 +228,38 @@ export function isFreeDeliveryEligible(
   if (!promo || promo.discountType !== "free_delivery") return false;
   const min = promo.minOrder ?? 0;
   return subtotal >= min;
+}
+
+/**
+ * Resolve a promo code against the demo coupon catalog using the same rule the
+ * mock service used to apply. Pure and shared so UI, mock and ERP services
+ * agree on what a code is "worth". The ERP backend applies its own configured
+ * flat discount to the order totals; this helper only drives the coupon UI.
+ */
+export function resolveOffer(code: string, subtotal: number): AppliedPromo | null {
+  const offer = CHECKOUT_OFFERS.find((o) => o.code.toUpperCase() === code.toUpperCase());
+  if (!offer) return null;
+  if (offer.minOrder !== undefined && subtotal < offer.minOrder) return null;
+
+  let discountPercent = offer.discountPercent ?? 0;
+  let discountAmount: number;
+
+  if (offer.discountType === "flat") {
+    discountPercent = 0;
+    discountAmount = Math.min(offer.flatAmount ?? 0, subtotal);
+  } else if (offer.discountType === "free_delivery") {
+    discountPercent = 0;
+    discountAmount = 0;
+  } else {
+    discountAmount =
+      Math.round(subtotal * (discountPercent / 100) * 100) / 100;
+  }
+
+  return {
+    code: offer.code.toUpperCase(),
+    discountPercent,
+    discountAmount,
+    minOrder: offer.minOrder,
+    discountType: offer.discountType,
+  };
 }

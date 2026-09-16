@@ -23,11 +23,12 @@ import {
   Gift,
   Heart,
   HelpCircle,
+  LayoutDashboard,
   LogOut,
   MapPin,
   Package,
   Percent,
-  Settings,
+  Shield,
   Sparkles,
   Tag,
   User,
@@ -94,23 +95,24 @@ export default function ProfileMenu({ isOpen, onClose, anchorRef }: ProfileMenuP
                   </p>
                   <p className="mt-0.5 text-xs text-surface-500">{user?.email}</p>
                 </div>
-                <MenuItem icon={<User size={15} />} label="My Profile" onClick={() => navigateAndClose("/profile")} />
-                <MenuItem icon={<Package size={15} />} label="My Orders" onClick={() => navigateAndClose("/orders")} />
-                <MenuItem icon={<ClipboardList size={15} />} label="Prescriptions" onClick={() => navigateAndClose("/prescriptions")} />
-                <MenuItem icon={<Heart size={15} />} label="Wishlist" onClick={() => navigateAndClose("/wishlist")} />
-                <MenuItem icon={<MapPin size={15} />} label="My Addresses" onClick={() => navigateAndClose("/addresses")} />
+                <MenuItem icon={<LayoutDashboard size={15} />} label="Dashboard" onClick={() => navigateAndClose("/account/dashboard")} />
+                <MenuItem icon={<User size={15} />} label="My Profile" onClick={() => navigateAndClose("/account/profile")} />
+                <MenuItem icon={<Package size={15} />} label="My Orders" onClick={() => navigateAndClose("/account/orders")} />
+                <MenuItem icon={<ClipboardList size={15} />} label="Prescriptions" onClick={() => navigateAndClose("/account/prescriptions")} />
+                <MenuItem icon={<Heart size={15} />} label="Wishlist" onClick={() => navigateAndClose("/account/wishlist")} />
+                <MenuItem icon={<MapPin size={15} />} label="My Addresses" onClick={() => navigateAndClose("/account/addresses")} />
                 <div className="my-1 border-t border-surface-100" />
                 <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
                   Engagement
                 </p>
-                <MenuItem icon={<Tag size={15} />} label="Offers & Deals" onClick={() => navigateAndClose("/offers")} />
-                <MenuItem icon={<Percent size={15} />} label="My Coupons" onClick={() => navigateAndClose("/coupons")} />
-                <MenuItem icon={<Award size={15} />} label="Loyalty Points" onClick={() => navigateAndClose("/rewards")} />
-                <MenuItem icon={<Gift size={15} />} label="Refer & Earn" onClick={() => navigateAndClose("/referral")} />
-                <MenuItem icon={<Sparkles size={15} />} label="Membership" onClick={() => navigateAndClose("/membership")} />
+                <MenuItem icon={<Tag size={15} />} label="Offers & Deals" onClick={() => navigateAndClose("/account/offers")} />
+                <MenuItem icon={<Percent size={15} />} label="My Coupons" onClick={() => navigateAndClose("/account/coupons")} />
+                <MenuItem icon={<Award size={15} />} label="Loyalty Points" onClick={() => navigateAndClose("/account/loyalty")} />
+                <MenuItem icon={<Gift size={15} />} label="Refer & Earn" onClick={() => navigateAndClose("/account/referral")} />
+                <MenuItem icon={<Sparkles size={15} />} label="Membership" onClick={() => navigateAndClose("/account/membership")} />
                 <div className="my-1 border-t border-surface-100" />
-                <MenuItem icon={<Bell size={15} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
-                <MenuItem icon={<Settings size={15} />} label="Settings" onClick={() => navigateAndClose("/settings")} />
+                <MenuItem icon={<Bell size={15} />} label="Notifications" onClick={() => navigateAndClose("/account/notifications")} />
+                <MenuItem icon={<Shield size={15} />} label="Security" onClick={() => navigateAndClose("/account/security")} />
                 <div className="my-1 border-t border-surface-100" />
                 <p className="px-4 pt-2 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
                   Support
@@ -186,27 +188,28 @@ export default function ProfileMenu({ isOpen, onClose, anchorRef }: ProfileMenuP
                 <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
                   Account
                 </p>
-                <DrawerItem icon={<User size={16} />} label="My Profile" onClick={() => navigateAndClose("/profile")} />
-                <DrawerItem icon={<Package size={16} />} label="My Orders" onClick={() => navigateAndClose("/orders")} />
-                <DrawerItem icon={<ClipboardList size={16} />} label="Prescriptions" onClick={() => navigateAndClose("/prescriptions")} />
-                <DrawerItem icon={<Heart size={16} />} label="Wishlist" onClick={() => navigateAndClose("/wishlist")} />
-                <DrawerItem icon={<MapPin size={16} />} label="My Addresses" onClick={() => navigateAndClose("/addresses")} />
+                <DrawerItem icon={<LayoutDashboard size={16} />} label="Dashboard" onClick={() => navigateAndClose("/account/dashboard")} />
+                <DrawerItem icon={<User size={16} />} label="My Profile" onClick={() => navigateAndClose("/account/profile")} />
+                <DrawerItem icon={<Package size={16} />} label="My Orders" onClick={() => navigateAndClose("/account/orders")} />
+                <DrawerItem icon={<ClipboardList size={16} />} label="Prescriptions" onClick={() => navigateAndClose("/account/prescriptions")} />
+                <DrawerItem icon={<Heart size={16} />} label="Wishlist" onClick={() => navigateAndClose("/account/wishlist")} />
+                <DrawerItem icon={<MapPin size={16} />} label="My Addresses" onClick={() => navigateAndClose("/account/addresses")} />
               </div>
 
               <div className="mt-4 space-y-1 border-t border-surface-100 pt-4">
                 <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-surface-400">
                   Engagement
                 </p>
-                <DrawerItem icon={<Tag size={16} />} label="Offers & Deals" onClick={() => navigateAndClose("/offers")} />
-                <DrawerItem icon={<Percent size={16} />} label="My Coupons" onClick={() => navigateAndClose("/coupons")} />
-                <DrawerItem icon={<Award size={16} />} label="Loyalty Points" onClick={() => navigateAndClose("/rewards")} />
-                <DrawerItem icon={<Gift size={16} />} label="Refer & Earn" onClick={() => navigateAndClose("/referral")} />
-                <DrawerItem icon={<Sparkles size={16} />} label="Membership" onClick={() => navigateAndClose("/membership")} />
+                <DrawerItem icon={<Tag size={16} />} label="Offers & Deals" onClick={() => navigateAndClose("/account/offers")} />
+                <DrawerItem icon={<Percent size={16} />} label="My Coupons" onClick={() => navigateAndClose("/account/coupons")} />
+                <DrawerItem icon={<Award size={16} />} label="Loyalty Points" onClick={() => navigateAndClose("/account/loyalty")} />
+                <DrawerItem icon={<Gift size={16} />} label="Refer & Earn" onClick={() => navigateAndClose("/account/referral")} />
+                <DrawerItem icon={<Sparkles size={16} />} label="Membership" onClick={() => navigateAndClose("/account/membership")} />
               </div>
 
               <div className="mt-4 space-y-1 border-t border-surface-100 pt-4">
-                <DrawerItem icon={<Bell size={16} />} label="Notifications" onClick={() => navigateAndClose("/notifications")} />
-                <DrawerItem icon={<Settings size={16} />} label="Settings" onClick={() => navigateAndClose("/settings")} />
+                <DrawerItem icon={<Bell size={16} />} label="Notifications" onClick={() => navigateAndClose("/account/notifications")} />
+                <DrawerItem icon={<Shield size={16} />} label="Security" onClick={() => navigateAndClose("/account/security")} />
               </div>
 
               <div className="mt-4 space-y-1 border-t border-surface-100 pt-4">

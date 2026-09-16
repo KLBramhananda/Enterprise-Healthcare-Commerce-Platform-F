@@ -9,12 +9,12 @@ import {
   XCircle,
   Tag,
 } from "lucide-react";
-import { Container, Badge, Button, Input, Tabs, EmptyState } from "@/components/ui";
+import { Badge, Button, Input, Tabs, EmptyState } from "@/components/ui";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks";
 import { useCoupons, useSaveCoupon, useValidateCoupon } from "@/hooks";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { formatCurrency, formatDate, CURRENCY_SYMBOL } from "@/utils/formatters";
 import type { CouponStatus, Coupon } from "@/types/engagement";
 
 const TAB_DEFINITIONS: { id: CouponStatus; label: string }[] = [
@@ -43,7 +43,7 @@ function formatCouponValue(type: Coupon["type"], value: number): string {
 }
 
 function formatCouponSubtitle(type: Coupon["type"]): string {
-  return type === "percentage" ? "% off" : "$ off";
+  return type === "percentage" ? "% off" : `${CURRENCY_SYMBOL} off`;
 }
 
 function isExpiringSoon(expiresOn: string): boolean {
@@ -244,16 +244,17 @@ export default function CouponsPage() {
     (activeTab === "expired" && loadingExpired);
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "My Coupons" },
           ]}
         />
 
-        <header className="mt-4 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
             My Coupons
           </h1>
@@ -349,7 +350,6 @@ export default function CouponsPage() {
             )}
           </Tabs>
         </div>
-      </Container>
     </div>
   );
 }

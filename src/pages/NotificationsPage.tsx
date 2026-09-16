@@ -11,7 +11,7 @@ import {
   Mail,
   AlertCircle,
 } from "lucide-react";
-import { Container, Button, EmptyState } from "@/components/ui";
+import { Button, EmptyState } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import {
@@ -98,9 +98,15 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
-        <Breadcrumb items={[{ label: "Home", path: "/" }, { label: "Notifications" }]} />
+    <div className="min-w-0 flex-1">
+        <Breadcrumb
+          className="py-2"
+          items={[
+            { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
+            { label: "Notifications" },
+          ]}
+        />
 
         <div className="mt-6 flex flex-col gap-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -281,7 +287,6 @@ export default function NotificationsPage() {
             </div>
           )}
         </div>
-      </Container>
     </div>
   );
 }

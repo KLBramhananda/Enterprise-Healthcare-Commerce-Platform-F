@@ -11,6 +11,7 @@
 
 import type { AddToastFn } from "@/providers/ToastProvider";
 import type { Product } from "@/types/catalog";
+import { getErrorMessage } from "@/api/client";
 import { cartDrawerEvents } from "./cartDrawerEvents";
 
 let _addToast: AddToastFn | null = null;
@@ -72,4 +73,15 @@ export function notifyMovedToCart(product: Product): void {
     deduplicateKey: `cart-move-${product.id}`,
     action: viewCartAction(),
   });
+}
+
+/** Show an error-style toast (e.g. a rejected cart/wishlist mutation). */
+export function notifyError(message: string): void {
+  if (!_addToast) return;
+  _addToast(message, "error");
+}
+
+/** Extract a readable message from a thrown action error and toast it. */
+export function notifyActionError(error: unknown): void {
+  notifyError(getErrorMessage(error, "Something went wrong. Please try again."));
 }

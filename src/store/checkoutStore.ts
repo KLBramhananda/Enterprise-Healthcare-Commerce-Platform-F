@@ -13,6 +13,7 @@ import type {
   DeliverySpeed,
   PaymentMethodType,
   PaymentInstrument,
+  PaymentAttempt,
   PrescriptionFile,
   AppliedPromo,
   Order,
@@ -31,6 +32,7 @@ interface CheckoutState {
   setAppliedPromo: (promo: AppliedPromo | null) => void;
   setPaymentMethod: (method: PaymentMethodType) => void;
   setPaymentInstrument: (instrument: PaymentInstrument | null) => void;
+  setPaymentAttempt: (attempt: PaymentAttempt | null) => void;
   addOrder: (order: Order) => void;
   resetSession: () => void;
 }
@@ -44,6 +46,7 @@ const INITIAL_SESSION: CheckoutSession = {
   appliedPromo: null,
   paymentMethod: null,
   paymentInstrument: null,
+  paymentAttempt: null,
 };
 
 export const useCheckoutStore = create<CheckoutState>()(
@@ -88,6 +91,9 @@ export const useCheckoutStore = create<CheckoutState>()(
 
       setPaymentInstrument: (paymentInstrument) =>
         set((state) => ({ session: { ...state.session, paymentInstrument } })),
+
+      setPaymentAttempt: (paymentAttempt) =>
+        set((state) => ({ session: { ...state.session, paymentAttempt } })),
 
       addOrder: (order) =>
         set((state) => ({

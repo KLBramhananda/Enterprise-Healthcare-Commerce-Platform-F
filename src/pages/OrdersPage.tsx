@@ -1,14 +1,14 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Package, ShoppingBag, Search, RefreshCw, ArrowRight, AlertCircle } from "lucide-react";
-import { Container, Badge, Button, EmptyState, Tabs } from "@/components/ui";
+import { Badge, Button, EmptyState, Skeleton, SkeletonText, Tabs } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
-import { useOrderHistory } from "@/hooks/checkout/useCheckout";
-import { useCart } from "@/hooks/shopping";
+import { useOrders, useReorderOrder } from "@/hooks/orders";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { notifyActionError } from "@/utils/notifications";
 import { ORDER_STATUS_LABELS } from "@/utils/orderTracking";
-import type { OrderStatus, Order, Product } from "@/types";
+import type { OrderStatus, Order } from "@/types";
 
 const STATUS_VARIANTS: Record<OrderStatus, "success" | "warning" | "info" | "danger"> = {
   placed: "info",
@@ -39,19 +39,50 @@ function getItemSummary(items: Order["items"]): string {
   return `${items[0].product.name}, ${items[1].product.name} and ${items.length - 2} more`;
 }
 
-function handleReorder(order: Order, addItem: (product: Product, quantity?: number) => void) {
-  order.items.forEach((item) => {
-    addItem(item.product, item.quantity);
-  });
+function OrderListSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-11 w-full" />
+      {Array.from({ length: 4 }, (_, i) => (
+        <div key={i} className="rounded-xl border border-surface-200 bg-surface-0 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+              <SkeletonText lines={2} className="mt-3" />
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-8 w-28" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function OrdersPage() {
   usePageTitle("My Orders");
-  const { data: orders, isLoading, isError, refetch } = useOrderHistory();
-  const { addItem } = useCart();
+  const { data: orders, isLoading, isError, refetch } = useOrders();
+  const reorder = useReorderOrder();
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+
+  const handleReorder = async (order: Order) => {
+    setReorderingId(order.id);
+    try {
+      await reorder.mutateAsync(order.id);
+    } catch (error) {
+      notifyActionError(error);
+    } finally {
+      setReorderingId(null);
+    }
+  };
 
   const statusCounts = useMemo(() => {
     if (!orders) return {} as Record<string, number>;
@@ -85,16 +116,17 @@ export default function OrdersPage() {
   }, [orders, activeTab, searchQuery]);
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "My Orders" },
           ]}
         />
 
-        <header className="mt-4 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
             My Orders
           </h1>
@@ -102,11 +134,7 @@ export default function OrdersPage() {
 
         <div className="mt-6">
           {isLoading ? (
-            <EmptyState
-              title="Loading orders..."
-              description="Please wait while we fetch your order history."
-              action={<RefreshCw size={16} className="animate-spin" />}
-            />
+            <OrderListSkeleton />
           ) : isError || !orders ? (
             <div className="flex flex-col items-center justify-center rounded-xl border border-danger-200 bg-danger-50 p-12 text-center">
               <AlertCircle size={40} className="text-danger-400" />
@@ -198,14 +226,16 @@ export default function OrdersPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleReorder(order, addItem)}
+                                disabled={reorderingId === order.id}
+                                loading={reorderingId === order.id}
+                                onClick={() => handleReorder(order)}
                               >
                                 <RefreshCw size={14} className="mr-1" />
-                                Reorder
+                                {reorderingId === order.id ? "Adding..." : "Reorder"}
                               </Button>
 
                               <Link
-                                to={`/orders/${order.id}`}
+                                to={`/account/orders/${order.id}`}
                                 className="inline-flex items-center justify-center rounded-md border border-surface-300 bg-surface-0 px-2.5 py-1 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-50"
                               >
                                 View Details
@@ -222,7 +252,6 @@ export default function OrdersPage() {
             </div>
           )}
         </div>
-      </Container>
     </div>
   );
 }

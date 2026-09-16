@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Copy, Share2, Send, Gift, Users, CheckCircle, Mail, Clock, Sparkles } from "lucide-react";
-import { Container, Card, CardBody, Badge, Button, Input } from "@/components/ui";
+import { Card, CardBody, Badge, Button, Input } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useReferralInfo, useSendReferral } from "@/hooks/engagement";
@@ -63,16 +63,17 @@ export default function ReferralPage() {
   };
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "Refer & Earn" },
           ]}
         />
 
-        <header className="mt-6 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
             Refer & Earn
           </h1>
@@ -277,7 +278,6 @@ export default function ReferralPage() {
             </CardBody>
           </Card>
         </div>
-      </Container>
     </div>
   );
 }

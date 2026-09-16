@@ -186,7 +186,7 @@ export default function NotificationMenu({
   // completes after the component's close cycle.
   const viewAll = () => {
     onClose();
-    setTimeout(() => navigate("/notifications"), 0);
+    setTimeout(() => navigate("/account/notifications"), 0);
   };
 
   const handleMarkRead = (id: string) => {

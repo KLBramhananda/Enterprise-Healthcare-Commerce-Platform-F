@@ -15,6 +15,7 @@ import type {
   Collection,
   CollectionSlug,
   DiscoveryQuery,
+  ManufacturerFacet,
   PaginatedResult,
   Product,
   ProductDetails,
@@ -37,6 +38,9 @@ export interface ICatalogService {
 
   /** Brand facet counts, optionally scoped to one category. */
   getBrandFacets(categorySlug?: string): Promise<BrandFacet[]>;
+
+  /** Manufacturer facet counts, optionally scoped to one category. */
+  getManufacturerFacets(categorySlug?: string): Promise<ManufacturerFacet[]>;
 
   /**
    * Filtered, sorted, paginated products for a catalog query.

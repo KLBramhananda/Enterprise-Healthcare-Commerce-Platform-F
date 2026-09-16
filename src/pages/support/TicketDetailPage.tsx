@@ -90,7 +90,7 @@ export default function TicketDetailPage() {
                   {ticket.orderId && (
                     <div className="flex justify-between">
                       <span>Related order</span>
-                      <Link to={`/orders/${ticket.orderId}`} className="font-medium text-brand-600 hover:underline">{ticket.orderId}</Link>
+                      <Link to={`/account/orders/${ticket.orderId}`} className="font-medium text-brand-600 hover:underline">{ticket.orderId}</Link>
                     </div>
                   )}
                 </div>

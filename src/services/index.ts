@@ -12,12 +12,23 @@ export type { IHomepageService } from "./homepageService";
 export { MockHomepageService } from "./homepageMock";
 export type { ICatalogService } from "./catalogService";
 export { MockCatalogService } from "./catalogMock";
+export { ErpNextCatalogService } from "./catalogErpNext";
+export { toErpNextItemGroup, toErpNextCategorySlug } from "./erpNextCategoryMap";
 export type { IAddressService } from "./addressService";
 export { MockAddressService } from "./addressMock";
 export type { ICheckoutService } from "./checkoutService";
 export { MockCheckoutService } from "./checkoutMock";
+export { ErpNextCheckoutService } from "./checkoutErpNext";
+export type { IOrderService } from "./orderService";
+export { MockOrderService } from "./orderMock";
+export { ErpNextOrderService } from "./orderErpNext";
 export type { IPaymentService } from "./paymentService";
-export { MockPaymentService } from "./paymentMock";
+export { PaymentService } from "./paymentService";
+export type { IPaymentGatewayProvider } from "./paymentGateway";
+export {
+  SandboxPaymentProvider,
+  GatewayUnavailableProvider,
+} from "./paymentProviders";
 export type { INotificationService } from "./notificationService";
 export { MockNotificationService } from "./notificationMock";
 export type { IAccountService } from "./accountService";

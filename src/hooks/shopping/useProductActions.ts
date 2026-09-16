@@ -16,6 +16,7 @@ import {
   notifyAddedToCart,
   notifyAddedToWishlist,
   notifyRemovedFromWishlist,
+  notifyActionError,
 } from "@/utils/notifications";
 import type { Product } from "@/types/catalog";
 
@@ -28,25 +29,33 @@ export function useProductActions<T extends Product>(products: T[]) {
   } = useWishlist();
 
   const handleAddToCart = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const product = products.find((p) => p.id === id);
       if (!product) return;
-      addCartItem(product);
-      notifyAddedToCart(product);
+      try {
+        await addCartItem(product);
+        notifyAddedToCart(product);
+      } catch (error) {
+        notifyActionError(error);
+      }
     },
     [products, addCartItem],
   );
 
   const handleToggleWishlist = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const product = products.find((p) => p.id === id);
       if (!product) return;
-      if (isInWishlist(id)) {
-        removeWishlistItem(id);
-        notifyRemovedFromWishlist(product);
-      } else {
-        addWishlistItem(product);
-        notifyAddedToWishlist(product);
+      try {
+        if (isInWishlist(id)) {
+          await removeWishlistItem(id);
+          notifyRemovedFromWishlist(product);
+        } else {
+          await addWishlistItem(product);
+          notifyAddedToWishlist(product);
+        }
+      } catch (error) {
+        notifyActionError(error);
       }
     },
     [products, isInWishlist, removeWishlistItem, addWishlistItem],

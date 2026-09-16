@@ -41,7 +41,9 @@ export default function PromoCodeInput() {
             {appliedPromo.code}
           </span>
           <span className="text-sm text-success-700">
-            — {appliedPromo.discountPercent}% off ({formatCurrency(appliedPromo.discountAmount)} saved)
+            {appliedPromo.discountType === "free_delivery"
+              ? "— applied (delivery is free)"
+              : `— ${formatCurrency(appliedPromo.discountAmount)} off the order total`}
           </span>
         </div>
         <button

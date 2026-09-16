@@ -37,22 +37,6 @@ export interface HomepageCategory {
   color: "brand" | "blue" | "green" | "purple" | "amber" | "pink" | "orange" | "cyan";
 }
 
-/* ── Medicines ── */
-
-export interface Medicine {
-  id: string;
-  name: string;
-  brandName: string;
-  form: string;
-  packSize: string;
-  price: number;
-  originalPrice?: number;
-  discountPercent?: number;
-  rating: number;
-  reviewCount: number;
-  requiresPrescription: boolean;
-}
-
 /* ── Brands ── */
 
 export interface Brand {
@@ -124,7 +108,6 @@ export interface Testimonial {
 export interface HomepageContent {
   heroSlides: HeroSlide[];
   categories: HomepageCategory[];
-  featuredMedicines: Medicine[];
   topBrands: Brand[];
   healthConcerns: HealthConcern[];
   labTests: LabTest[];

@@ -13,6 +13,7 @@ import {
   Loader2,
   Lock,
   RefreshCw,
+  X,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui";
@@ -40,6 +41,8 @@ interface PaymentProcessingScreenProps {
   isRetrying: boolean;
   onRetry: () => void;
   onChangeMethod: () => void;
+  /** Abort the in-flight attempt and return to checkout (no charge). */
+  onCancel?: () => void;
 }
 
 export default function PaymentProcessingScreen({
@@ -54,6 +57,7 @@ export default function PaymentProcessingScreen({
   isRetrying,
   onRetry,
   onChangeMethod,
+  onCancel,
 }: PaymentProcessingScreenProps) {
   const progress = stages.length > 0 ? Math.round((completedStageIds.length / stages.length) * 100) : 0;
   const failure = outcome?.status === "failed" ? (outcome as PaymentFailureResult) : null;
@@ -147,6 +151,20 @@ export default function PaymentProcessingScreen({
                   <Loader2 size={12} className="animate-spin" aria-hidden="true" />
                   Please do not close or refresh this page.
                 </p>
+
+                {onCancel && (
+                  <div className="mt-3 text-center">
+                    <button
+                      type="button"
+                      onClick={onCancel}
+                      disabled={isRetrying}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 px-3 py-1.5 text-xs font-medium text-surface-600 transition-colors hover:bg-surface-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <X size={12} />
+                      Cancel Payment
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
 

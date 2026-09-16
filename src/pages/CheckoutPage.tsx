@@ -13,6 +13,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
+  AlertCircle,
   ClipboardCheck,
   CreditCard,
   FileText,
@@ -27,6 +28,8 @@ import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useCheckoutSession } from "@/hooks/checkout/useCheckout";
 import { useAddresses } from "@/hooks/checkout/useAddress";
+import { queryClient } from "@/lib/queryClient";
+import { invalidateOrderCaches } from "@/utils/orderCache";
 import { isPaymentInstrumentValid } from "@/utils/payment";
 import { formatCurrency } from "@/utils/formatters";
 import {
@@ -69,6 +72,7 @@ export default function CheckoutPage() {
     deliveryCharge,
     discount,
     tax,
+    platformFee,
     grandTotal,
     canPlaceOrder,
     isPendingOrder,
@@ -80,6 +84,8 @@ export default function CheckoutPage() {
     setPrescriptionUploadLater,
     createOrder,
     finalizeCodOrder,
+    isSummaryLoading,
+    summaryError,
   } = useCheckoutSession();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -230,12 +236,20 @@ export default function CheckoutPage() {
         addToast("Please complete all required details before paying.", "error");
         return;
       }
+      // The order now exists in ERP history while the cart still holds the
+      // items (cleared after the payment step). Refetch the affected queries
+      // immediately so Orders, Dashboard, the checkout summary and the cart
+      // badge reflect the new order without waiting for a manual refresh.
+      void invalidateOrderCaches(queryClient, order.id);
       if (order.paymentMethod === "cod") {
         const finalized = await finalizeCodOrder(order);
         if (!finalized) {
           addToast("We couldn't place your order. Please try again.", "error");
           return;
         }
+        // COD finalize clears the cart and marks payment pending — invalidate
+        // again so the confirmed order, history and cart caches are fresh.
+        void invalidateOrderCaches(queryClient, finalized.id);
         addToast(`Order ${finalized.id} placed successfully!`, "success");
         navigate(`/orders/${finalized.id}/confirmation`);
       } else {
@@ -284,9 +298,11 @@ export default function CheckoutPage() {
   const actionLabel = isReviewStep
     ? isPendingOrder
       ? "Processing..."
-      : isCod
-        ? "Place Order"
-        : `Pay ${formatCurrency(grandTotal)}`
+      : isSummaryLoading
+        ? "Syncing totals..."
+        : isCod
+          ? "Place Order"
+          : `Pay ${formatCurrency(grandTotal)}`
     : currentStepId === "coupon"
       ? "Apply & Continue"
       : "Continue";
@@ -365,6 +381,13 @@ export default function CheckoutPage() {
         <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_380px]">
           {/* ── Main Content ── */}
           <div className="space-y-6">
+            {summaryError && (
+              <div className="flex items-start gap-3 rounded-xl border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <p>We couldn't sync your order totals from the pharmacy. Please try again or refresh.</p>
+              </div>
+            )}
+
             <section className="rounded-xl border border-surface-200 bg-surface-0 p-5 sm:p-6">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -451,6 +474,7 @@ export default function CheckoutPage() {
                       deliveryCharge={deliveryCharge}
                       discount={discount}
                       tax={tax}
+                      platformFee={platformFee}
                       grandTotal={grandTotal}
                       onEdit={(target) => goToStep(target)}
                       agreementChecked={agreementChecked}
@@ -485,6 +509,7 @@ export default function CheckoutPage() {
                 deliveryCharge={deliveryCharge}
                 discount={discount}
                 tax={tax}
+                platformFee={platformFee}
                 grandTotal={grandTotal}
                 appliedPromo={session.appliedPromo}
               />

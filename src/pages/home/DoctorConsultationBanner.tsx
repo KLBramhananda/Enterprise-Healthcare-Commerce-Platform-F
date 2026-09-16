@@ -8,6 +8,7 @@
 import { Link } from "react-router-dom";
 import { CircleCheckBig, Stethoscope, Video, MessageSquare, PhoneCall } from "lucide-react";
 import { Container } from "@/components/ui";
+import { formatCurrency } from "@/utils/formatters";
 
 const highlights = [
   { icon: Video, label: "Video consultations" },
@@ -62,7 +63,9 @@ export default function DoctorConsultationBanner() {
               >
                 Book Consultation
               </Link>
-              <p className="text-xs text-surface-400">Starting at just $5</p>
+              <p className="text-xs text-surface-400">
+                Starting at just {formatCurrency(5, { maximumFractionDigits: 0 })}
+              </p>
             </div>
           </div>
         </div>

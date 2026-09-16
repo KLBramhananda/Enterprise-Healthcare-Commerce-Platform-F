@@ -69,6 +69,9 @@ export const API_BASE_URL = readString("VITE_API_BASE_URL", "/api/method");
 /** Underlying request timeout in milliseconds. */
 export const API_TIMEOUT = readNumber("VITE_API_TIMEOUT", 30000);
 
+/** Payment orchestration timeout in milliseconds (charge attempt + redirect). */
+export const PAYMENT_TIMEOUT_MS = readNumber("VITE_PAYMENT_TIMEOUT_MS", 60000);
+
 /** Dev-server proxy target for `/api` requests (Vite config only). */
 export const PROXY_TARGET = readString("VITE_PROXY_TARGET", "http://localhost:8000");
 
@@ -145,6 +148,50 @@ export const USE_ERP_API = readBoolean("VITE_USE_ERP_API", false);
  * Set to false only when ERPNext services are implemented and USE_ERP_API is true.
  */
 export const USE_MOCK_API = readBoolean("VITE_USE_MOCK_API", true);
+
+/* ── Data Source Strategy ── */
+
+/** Supported data source modes. */
+export type DataSource = "STATIC" | "LIVE_API";
+
+/**
+ * Centralized data source configuration.
+ * Switch between STATIC (mock) and LIVE_API (ERPNext) by changing
+ * the VITE_DATA_SOURCE environment variable.
+ *
+ * - "STATIC"   → all catalog data served from in-memory mock (default)
+ * - "LIVE_API"  → product listing/detail from ERPNext; discovery features from mock
+ *
+ * This replaces the legacy USE_MOCK_API / USE_ERP_API boolean flags for catalog
+ * routing. The factory reads this value to select the active ICatalogService
+ * implementation.
+ */
+export const DATA_SOURCE: DataSource = ((): DataSource => {
+  const raw = readString("VITE_DATA_SOURCE", "STATIC").toUpperCase();
+  return raw === "LIVE_API" ? "LIVE_API" : "STATIC";
+})();
+
+/* ── Payment Gateway Provider ── */
+
+/** Supported payment gateway providers (selected independently of the data source). */
+export type PaymentProvider = "SANDBOX" | "RAZORPAY" | "DISABLED";
+
+/**
+ * Payment gateway provider stand-in, decoupled from VITE_DATA_SOURCE so the
+ * app can run against the real ERPNext backend (LIVE_API) while developers
+ * choose which gateway to exercise:
+ *
+ *   - "SANDBOX"  → SandboxPaymentProvider (frontend simulator, demo rules)
+ *   - "RAZORPAY" → RazorpayProvider (placeholder until the SDK is wired)
+ *   - "DISABLED" → GatewayUnavailableProvider (online payments fail closed,
+ *                  COD unaffected)
+ *
+ * Defaults to "SANDBOX" when the environment variable is not provided.
+ */
+export const PAYMENT_PROVIDER: PaymentProvider = ((): PaymentProvider => {
+  const raw = readString("VITE_PAYMENT_PROVIDER", "SANDBOX").toUpperCase();
+  return raw === "RAZORPAY" ? "RAZORPAY" : raw === "DISABLED" ? "DISABLED" : "SANDBOX";
+})();
 
 /**
  * Enables structured console logging for every API request (method, URL,

@@ -29,7 +29,7 @@ const footerLinks = {
     { label: "Wellness", path: "/category/wellness" },
     { label: "Lab Tests", path: "/category/lab-tests" },
     { label: "Health Devices", path: "/category/health-devices" },
-    { label: "Offers & Coupons", path: "/offers" },
+    { label: "Offers & Coupons", path: "/account/offers" },
   ],
   company: [
     { label: "About Us", path: "/about" },
@@ -38,16 +38,17 @@ const footerLinks = {
     { label: "Press", path: "/press" },
   ],
   services: [
-    { label: "Upload Prescription", path: "/prescriptions" },
+    { label: "Upload Prescription", path: "/account/prescriptions" },
     { label: "Doctor Consultation", path: "/consultations" },
     { label: "Book a Lab Test", path: "/category/lab-tests" },
-    { label: "Refer a Friend", path: "/referral" },
+    { label: "Refer a Friend", path: "/account/referral" },
   ],
   account: [
-    { label: "My Orders", path: "/orders" },
-    { label: "My Profile", path: "/profile" },
-    { label: "Addresses", path: "/addresses" },
-    { label: "Wishlist", path: "/wishlist" },
+    { label: "My Orders", path: "/account/orders" },
+    { label: "My Profile", path: "/account/profile" },
+    { label: "Addresses", path: "/account/addresses" },
+    { label: "Wishlist", path: "/account/wishlist" },
+    { label: "Security", path: "/account/security" },
   ],
   support: [
     { label: "Help Center", path: "/help" },

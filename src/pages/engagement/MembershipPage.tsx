@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   TrendingUp,
 } from "lucide-react";
-import { Container, Card, CardBody, Badge, Button, LinearProgress } from "@/components/ui";
+import { Card, CardBody, Badge, Button, LinearProgress } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useMembershipStatus } from "@/hooks/engagement/useMembership";
@@ -51,30 +51,28 @@ export default function MembershipPage() {
 
   if (statusLoading) {
     return (
-      <div className="bg-surface-50 pb-12">
-        <Container>
-          <div className="flex items-center justify-center py-24">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
-          </div>
-        </Container>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-center py-24">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
+        </div>
       </div>
     );
   }
 
   if (!status) {
     return (
-      <div className="bg-surface-50 pb-12">
-        <Container>
-          <Breadcrumb
-            items={[
-              { label: "Home", path: "/" },
-              { label: "Membership" },
-            ]}
-          />
-          <div className="mt-12 text-center text-surface-500">
-            <p>Membership information is currently unavailable.</p>
-          </div>
-        </Container>
+      <div className="min-w-0 flex-1">
+        <Breadcrumb
+          className="py-2"
+          items={[
+            { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
+            { label: "Membership" },
+          ]}
+        />
+        <div className="mt-12 text-center text-surface-500">
+          <p>Membership information is currently unavailable.</p>
+        </div>
       </div>
     );
   }
@@ -88,16 +86,17 @@ export default function MembershipPage() {
     : 100;
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "Membership" },
           ]}
         />
 
-        <header className="mt-4 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
             Membership
           </h1>
@@ -337,7 +336,6 @@ export default function MembershipPage() {
             </Card>
           </div>
         )}
-      </Container>
     </div>
   );
 }

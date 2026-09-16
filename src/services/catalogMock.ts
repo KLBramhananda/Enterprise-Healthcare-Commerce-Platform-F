@@ -34,6 +34,7 @@ import type {
   CollectionSlug,
   DiscoveryQuery,
   HealthConcern,
+  ManufacturerFacet,
   PaginatedResult,
   PopularSearch,
   PriceRangeId,
@@ -821,6 +822,15 @@ function matchesFilters(product: Product, filters: CatalogFilters): boolean {
     return false;
   }
 
+  if (
+    filters.manufacturers.length > 0 &&
+    !filters.manufacturers.some(
+      (m) => m.toLowerCase() === product.manufacturer.toLowerCase(),
+    )
+  ) {
+    return false;
+  }
+
   if (filters.priceRanges.length > 0) {
     const inRange = filters.priceRanges.some((id) => {
       const range = PRICE_RANGES[id];
@@ -876,6 +886,20 @@ export class MockCatalogService implements ICatalogService {
     for (const product of products) {
       if (categorySlug && product.categorySlug !== categorySlug) continue;
       counts.set(product.brandName, (counts.get(product.brandName) ?? 0) + 1);
+    }
+    return Array.from(counts, ([name, count]) => ({ name, count })).sort(
+      (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+    );
+  }
+
+  async getManufacturerFacets(categorySlug?: string): Promise<ManufacturerFacet[]> {
+    await delay(150);
+
+    const counts = new Map<string, number>();
+    for (const product of products) {
+      if (categorySlug && product.categorySlug !== categorySlug) continue;
+      const manufacturer = product.manufacturer || product.brandName;
+      counts.set(manufacturer, (counts.get(manufacturer) ?? 0) + 1);
     }
     return Array.from(counts, ([name, count]) => ({ name, count })).sort(
       (a, b) => b.count - a.count || a.name.localeCompare(b.name),

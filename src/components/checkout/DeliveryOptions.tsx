@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui";
 import { useDeliveryOptions } from "@/hooks/checkout/useCheckout";
 import { formatCurrency } from "@/utils/formatters";
 import { cn } from "@/utils/cn";
-import type { DeliverySpeed } from "@/types/checkout";
+import type { DeliveryOption, DeliverySpeed } from "@/types/checkout";
 
 interface DeliveryOptionsProps {
   selectedSpeed: DeliverySpeed;
@@ -24,6 +24,28 @@ const SPEED_ICONS: Record<DeliverySpeed, typeof Truck> = {
   express: Zap,
   same_day: Clock,
 };
+
+// Every option carries its configured charge from the delivery-options data
+// (never a magic number in this component). The charge shown on the selected
+// option is the exact figure applied to the order totals — the checkout
+// summary uses the ERP shipping charge when available and falls back to the
+// selected option's configured charge otherwise, so the option list and the
+// order summary always agree.
+function optionChargeLabel(charge: number): string {
+  return charge === 0 ? formatCurrency(0, { maximumFractionDigits: 0 }) : formatCurrency(charge);
+}
+
+// ETA is derived from the option's estimated days so it stays current instead
+// of showing the static demo date strings from the config.
+function estimatedLabel(option: DeliveryOption): string {
+  if (!option.estimatedDays || option.estimatedDays <= 0) return "Today";
+  const now = new Date();
+  const to = new Date(now);
+  to.setDate(to.getDate() + option.estimatedDays);
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `${fmt(now)} - ${fmt(to)}`;
+}
 
 export default function DeliveryOptions({
   selectedSpeed,
@@ -70,15 +92,15 @@ export default function DeliveryOptions({
                     <span className="text-sm font-semibold text-surface-900">{option.label}</span>
                     <span className="text-sm font-semibold text-surface-900">
                       {option.charge === 0 ? (
-                        <span className="text-success-600">Free</span>
+                        <span className="text-success-600">{optionChargeLabel(option.charge)}</span>
                       ) : (
-                        formatCurrency(option.charge)
+                        optionChargeLabel(option.charge)
                       )}
                     </span>
                   </div>
                   <p className="mt-0.5 text-xs text-surface-500">{option.description}</p>
                   <p className="mt-0.5 text-xs font-medium text-brand-600">
-                    Est. {option.estimatedDate}
+                    Est. {estimatedLabel(option)}
                   </p>
                 </div>
               </label>

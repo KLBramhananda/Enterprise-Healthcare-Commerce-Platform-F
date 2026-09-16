@@ -15,13 +15,15 @@ import type {
   PaymentMethodType,
   OrderPaymentInfo,
   Invoice,
+  CheckoutSummary,
+  CheckoutOrderResult,
 } from "@/types/checkout";
 import type { Product } from "@/types/catalog";
 import {
-  CHECKOUT_OFFERS,
   DELIVERY_OPTIONS,
-  isFreeDeliveryEligible,
+  resolveOffer,
 } from "@/config/checkout";
+import { computeCheckoutTotals } from "@/utils/checkoutCalculations";
 import type { ICheckoutService } from "./checkoutService";
 
 let orderCounter = 0;
@@ -41,10 +43,6 @@ function generateTrackingId(): string {
   return `KMTRK-${rand}`;
 }
 
-function calculateTax(subtotal: number): number {
-  return Math.round(subtotal * 0.08 * 100) / 100;
-}
-
 function getEstimatedDelivery(speed: DeliverySpeed, days: number): string {
   const now = new Date();
   if (speed === "same_day") return now.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -61,31 +59,7 @@ export class MockCheckoutService implements ICheckoutService {
 
   async validatePromoCode(code: string, subtotal: number): Promise<AppliedPromo | null> {
     await delay(250);
-    const offer = CHECKOUT_OFFERS.find((o) => o.code.toUpperCase() === code.toUpperCase());
-    if (!offer) return null;
-    if (offer.minOrder !== undefined && subtotal < offer.minOrder) return null;
-
-    let discountPercent = offer.discountPercent ?? 0;
-    let discountAmount: number;
-
-    if (offer.discountType === "flat") {
-      discountPercent = 0;
-      discountAmount = Math.min(offer.flatAmount ?? 0, subtotal);
-    } else if (offer.discountType === "free_delivery") {
-      discountPercent = 0;
-      discountAmount = 0;
-    } else {
-      discountAmount =
-        Math.round(subtotal * (discountPercent / 100) * 100) / 100;
-    }
-
-    return {
-      code: offer.code.toUpperCase(),
-      discountPercent,
-      discountAmount,
-      minOrder: offer.minOrder,
-      discountType: offer.discountType,
-    };
+    return resolveOffer(code, subtotal);
   }
 
   async getPrescriptionRequiredProducts(items: CartItem[]): Promise<Product[]> {
@@ -109,24 +83,16 @@ export class MockCheckoutService implements ICheckoutService {
       quantity: item.quantity,
     }));
 
-    const subtotal = params.items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0,
-    );
-    const savings = params.items.reduce(
-      (sum, item) => sum + (item.product.mrp - item.product.price) * item.quantity,
-      0,
-    );
+    // Totals are derived from the same computeCheckoutTotals source the
+    // checkout hook uses, so the recorded Order totals always equal what the
+    // Order Summary showed during checkout.
+    const totals = computeCheckoutTotals({
+      items: params.items,
+      appliedPromo: params.appliedPromo,
+      deliverySpeed: params.deliverySpeed,
+    });
 
     const deliveryOption = DELIVERY_OPTIONS.find((o) => o.speed === params.deliverySpeed);
-    const baseDeliveryCharge = deliveryOption?.charge ?? 0;
-    const deliveryCharge = isFreeDeliveryEligible(params.appliedPromo, subtotal)
-      ? 0
-      : baseDeliveryCharge;
-
-    const discount = params.appliedPromo?.discountAmount ?? 0;
-    const tax = calculateTax(subtotal - discount);
-    const grandTotal = Math.round((subtotal - discount + deliveryCharge + tax) * 100) / 100;
 
     const order: Order = {
       id: generateOrderId(),
@@ -137,12 +103,14 @@ export class MockCheckoutService implements ICheckoutService {
       deliverySpeed: params.deliverySpeed,
       deliveryNote: params.deliveryNote,
       prescriptionFiles: [],
-      subtotal,
-      savings,
-      deliveryCharge,
-      discount,
-      tax,
-      grandTotal,
+      appliedPromo: params.appliedPromo,
+      subtotal: totals.subtotal,
+      savings: totals.savings,
+      deliveryCharge: totals.deliveryCharge,
+      discount: totals.discount,
+      tax: totals.tax,
+      platformFee: totals.platformFee,
+      grandTotal: totals.grandTotal,
       paymentMethod: params.paymentMethod,
       payment: { method: params.paymentMethod, status: "pending" },
       status: "placed",
@@ -205,12 +173,40 @@ export class MockCheckoutService implements ICheckoutService {
       })),
       subtotal: order.subtotal,
       discount: order.discount,
+      promoCode: order.appliedPromo?.code,
       deliveryCharge: order.deliveryCharge,
       tax: order.tax,
       taxRate,
+      platformFee: order.platformFee,
       grandTotal: order.grandTotal,
       paymentMethod: order.payment?.method ?? order.paymentMethod,
       transactionId: order.payment?.transactionId,
     };
+  }
+
+  /**
+   * The ERP-backed summary/validate/create-order flow only runs under
+   * LIVE_API. STATIC keeps the local wizard (placeOrder + local totals), so
+   * these methods are intentionally unsupported here.
+   */
+  private unsupported(): never {
+    throw new Error(
+      "ERP checkout endpoints are only available in LIVE_API mode (STATIC uses the local checkout wizard).",
+    );
+  }
+
+  async getCheckoutSummary(): Promise<CheckoutSummary> {
+    await delay(50);
+    return this.unsupported();
+  }
+
+  async validateCheckout(): Promise<CheckoutSummary> {
+    await delay(50);
+    return this.unsupported();
+  }
+
+  async createCheckoutOrder(): Promise<CheckoutOrderResult> {
+    await delay(50);
+    return this.unsupported();
   }
 }

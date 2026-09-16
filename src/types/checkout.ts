@@ -125,13 +125,20 @@ export type PaymentFailureReason =
   | "insufficient_funds"
   | "invalid_details"
   | "network_error"
-  | "timeout";
+  | "timeout"
+  | "gateway_unavailable";
 
 export interface PaymentProcessingInput {
   orderId: string;
   method: PaymentMethodType;
   instrument: PaymentInstrument;
   amount: number;
+  /**
+   * Client-supplied idempotency token (one per order) so a page refresh or a
+   * duplicate trigger re-runs the SAME gateway intent instead of charging
+   * twice. Persisted in the checkout session and reused across retries.
+   */
+  idempotencyKey?: string;
 }
 
 export interface PaymentSuccessResult {
@@ -153,6 +160,20 @@ export type PaymentResult = PaymentSuccessResult | PaymentFailureResult;
 
 export type OrderPaymentStatus = "pending" | "paid";
 
+/**
+ * A single persisted payment attempt for an order. `id` doubles as the
+ * idempotency key passed to the payment service, so refreshing/running the
+ * payment again maps to one gateway intent (replay protection). Cleared once
+ * the order is finalized (success or confirmed COD).
+ */
+export interface PaymentAttempt {
+  id: string;
+  orderId: string;
+  method: PaymentMethodType;
+  amount: number;
+  createdAt: string;
+}
+
 export interface OrderPaymentInfo {
   method: PaymentMethodType;
   status: OrderPaymentStatus;
@@ -172,6 +193,7 @@ export interface CheckoutSession {
   appliedPromo: AppliedPromo | null;
   paymentMethod: PaymentMethodType | null;
   paymentInstrument: PaymentInstrument | null;
+  paymentAttempt: PaymentAttempt | null;
 }
 
 /* ── Order ── */
@@ -200,17 +222,39 @@ export interface Order {
   deliverySpeed: DeliverySpeed;
   deliveryNote: string;
   prescriptionFiles: PrescriptionFile[];
+  /**
+   * The offer applied at checkout, persisted on the order so it stays visible
+   * on the confirmation screen, order detail and invoice after the checkout
+   * session resets. `discount` is the resulting discount amount applied to the
+   * grand total.
+   */
+  appliedPromo?: AppliedPromo | null;
   subtotal: number;
   savings: number;
   deliveryCharge: number;
   discount: number;
   tax: number;
+  platformFee: number;
   grandTotal: number;
   paymentMethod: PaymentMethodType;
   payment: OrderPaymentInfo;
   status: OrderStatus;
   placedAt: string;
   estimatedDelivery: string;
+}
+
+/**
+ * A single fulfilment milestone in an order's tracking timeline. Structurally
+ * compatible with the UI Timeline event so services can return these directly.
+ */
+export interface OrderTrackingEvent {
+  type: string;
+  label: string;
+  timestamp: string;
+  description?: string;
+  isCurrent?: boolean;
+  isCompleted?: boolean;
+  isCancelled?: boolean;
 }
 
 /* ── Invoice ── */
@@ -236,12 +280,30 @@ export interface Invoice {
   items: InvoiceLineItem[];
   subtotal: number;
   discount: number;
+  /** Applied coupon code for the discount row (mirrors the order's promo). */
+  promoCode?: string;
   deliveryCharge: number;
   tax: number;
   taxRate: number;
+  platformFee: number;
   grandTotal: number;
   paymentMethod: PaymentMethodType;
   transactionId?: string;
+  /** Human-readable invoice number (e.g. "INV-0001"). */
+  invoiceNumber?: string;
+  /** Shipping address for the order (falls back to billingAddress). */
+  shippingAddress?: Address;
+  /** Authoritative ERP payment state ("Paid" | "Pending" …). */
+  paymentStatus?: string;
+  /** The order's placed/creation date. */
+  orderDate?: string;
+  customer?: {
+    name: string;
+    email?: string;
+    phone?: string;
+  };
+  /** Gateway payment/reconciliation reference for the order. */
+  paymentReference?: string;
 }
 
 /* ── Order Summary ── */
@@ -252,7 +314,53 @@ export interface OrderSummary {
   deliveryCharge: number;
   discount: number;
   tax: number;
+  platformFee: number;
   grandTotal: number;
+}
+
+/* ── Live Checkout Summary (ERP checkout.summary / checkout.validate) ── */
+
+/**
+ * A single authoritative purchase line returned by the ERP checkout summary.
+ * Consumers enrich each row into a full `Product` (via the cart mirror) before
+ * rendering; the row alone is enough to build a fallback product.
+ */
+export interface CheckoutLineItem {
+  itemCode: string;
+  name: string;
+  brand: string;
+  image: string;
+  quantity: number;
+  sellingPrice: number;
+  subtotal: number;
+  stockStatus: "in_stock" | "out_of_stock";
+}
+
+/**
+ * Validated order preview served by the ERP checkout endpoints. Prices are the
+ * authoritative backend figures; `platformFee` is not provided by the backend
+ * and defaults to 0 on the storefront (see `config/checkout`).
+ */
+export interface CheckoutSummary {
+  currency: string;
+  items: CheckoutLineItem[];
+  subtotal: number;
+  discount: number;
+  tax: number;
+  shippingCharge: number;
+  platformFee: number;
+  grandTotal: number;
+  shippingAddress: Address | null;
+  billingAddress: Address | null;
+}
+
+/** Draft Sales Order created by the ERP `checkout.create_order` endpoint. */
+export interface CheckoutOrderResult {
+  salesOrder: string;
+  status: string;
+  docstatus: number;
+  grandTotal: number;
+  currency: string;
 }
 
 /* ── Validation ── */
