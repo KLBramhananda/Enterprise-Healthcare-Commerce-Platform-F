@@ -271,7 +271,7 @@ export default function PaymentProcessingPage() {
               >
                 Try Confirming Again
               </Button>
-              <Button variant="secondary" onClick={() => navigate("/orders")}>
+              <Button variant="secondary" onClick={() => navigate("/account/orders")}>
                 Go to My Orders
               </Button>
             </div>

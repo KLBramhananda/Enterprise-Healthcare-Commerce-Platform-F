@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingCart, ArrowUpDown, Share2 } from "lucide-react";
-import { Button, Container, EmptyState, ProductCard } from "@/components/ui";
+import { Button, EmptyState, ProductCard } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { useWishlist, useCart } from "@/hooks/shopping";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
@@ -90,45 +90,46 @@ export default function WishlistPage() {
 
   if (items.length === 0) {
     return (
-      <div className="bg-surface-50 pb-12">
-        <Container>
-          <Breadcrumb
-            items={[
-              { label: "Home", path: "/" },
-              { label: "My Wishlist" },
-            ]}
+      <div className="min-w-0 flex-1">
+        <Breadcrumb
+          className="py-2"
+          items={[
+            { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
+            { label: "My Wishlist" },
+          ]}
+        />
+        <div className="py-16">
+          <EmptyState
+            title="Your wishlist is empty"
+            description="Save items you love for later. Browse our catalog to find products you like."
+            action={
+              <Link
+                to="/categories"
+                className="inline-flex items-center justify-center rounded-md bg-brand-600 px-6 py-2.5 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+              >
+                <Heart size={16} className="mr-2" aria-hidden="true" />
+                Browse Products
+              </Link>
+            }
           />
-          <Container className="py-16">
-            <EmptyState
-              title="Your wishlist is empty"
-              description="Save items you love for later. Browse our catalog to find products you like."
-              action={
-                <Link
-                  to="/categories"
-                  className="inline-flex items-center justify-center rounded-md bg-brand-600 px-6 py-2.5 text-base font-semibold text-white transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-                >
-                  <Heart size={16} className="mr-2" aria-hidden="true" />
-                  Browse Products
-                </Link>
-              }
-            />
-          </Container>
-        </Container>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "My Wishlist" },
           ]}
         />
 
-        <header className="mt-4 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
               My Wishlist
@@ -200,7 +201,6 @@ export default function WishlistPage() {
             );
           })}
         </div>
-      </Container>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import {
+  ActiveFilters,
   Button,
   Container,
   EmptyState,
@@ -56,6 +57,13 @@ export default function SearchResultsPage() {
 
   const results = searchQuery.data;
   const filtersActive = hasActiveFilters(filters);
+  const activeFilterCount =
+    filters.priceRanges.length +
+    (filters.minDiscountPercent > 0 ? 1 : 0) +
+    (filters.prescription !== "any" ? 1 : 0) +
+    (filters.inStockOnly ? 1 : 0) +
+    filters.brands.length +
+    filters.manufacturers.length;
   const hasQuery = q.trim().length > 0;
   const { handleAddToCart, handleToggleWishlist, isInWishlist } = useProductActions(
     results?.items ?? [],
@@ -126,8 +134,10 @@ export default function SearchResultsPage() {
             >
               <SlidersHorizontal size={15} aria-hidden="true" />
               Filters
-              {filtersActive && (
-                <span className="h-2 w-2 rounded-full bg-brand-600" aria-label="Filters active" />
+              {activeFilterCount > 0 && (
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold text-white">
+                  {activeFilterCount}
+                </span>
               )}
             </button>
 
@@ -165,6 +175,15 @@ export default function SearchResultsPage() {
                 <ViewToggle value={view} onChange={setView} />
               </div>
             </div>
+
+            {/* Active filter chips */}
+            {filtersActive && (
+              <ActiveFilters
+                filters={filters}
+                onChange={handleFilterChange}
+                className="mt-3"
+              />
+            )}
 
             {/* Content */}
             {!hasQuery ? (

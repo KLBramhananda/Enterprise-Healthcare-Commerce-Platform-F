@@ -60,7 +60,7 @@ export default function PrescriptionUploadCta() {
 
             <div className="mt-7 flex flex-wrap items-center gap-4">
               <Link
-                to="/prescriptions"
+                to="/account/prescriptions"
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-600 px-6 py-2.5 text-base font-semibold text-white transition-colors duration-fast hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
               >
                 <UploadCloud size={18} aria-hidden="true" />

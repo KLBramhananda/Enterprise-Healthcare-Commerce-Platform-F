@@ -5,9 +5,15 @@
  * Provides profile updates, preferences management, and account completion.
  */
 
-import type { AccountPreferences, AccountCompletionStatus } from "@/types/account";
+import type {
+  AccountPreferences,
+  AccountCompletionStatus,
+  SecuritySettings,
+  ChangePasswordPayload,
+} from "@/types/account";
 import type { User } from "@/types/auth";
 import type { IAccountService } from "./accountService";
+import { ServiceError } from "./authService";
 
 const mockUser: User = {
   id: "usr-001",
@@ -23,6 +29,32 @@ let mockPreferences: AccountPreferences = {
   smsNotifications: true,
   promotionalEmails: false,
   language: "en",
+};
+
+/** Used only by the STATIC mock to simulate password verification. */
+let mockCurrentPassword = "password123";
+
+let mockSecurity: SecuritySettings = {
+  twoFactorEnabled: false,
+  lastPasswordChangedAt: undefined,
+  activeSessions: [
+    {
+      id: "ses-current",
+      device: "Chrome on macOS",
+      platform: "Desktop — Safari",
+      location: "Bengaluru, IN",
+      lastActiveAt: new Date().toISOString(),
+      isCurrent: true,
+    },
+    {
+      id: "ses-android",
+      device: "Pixel 8",
+      platform: "Mobile — Android",
+      location: "Mumbai, IN",
+      lastActiveAt: "2025-06-02T08:15:00.000Z",
+      isCurrent: false,
+    },
+  ],
 };
 
 function delay(ms = 200): Promise<void> {
@@ -60,5 +92,29 @@ export class MockAccountService implements IAccountService {
       hasPrescriptions,
       percentage: Math.round((completed / 3) * 100),
     };
+  }
+
+  async getSecuritySettings(): Promise<SecuritySettings> {
+    await delay(150);
+    return {
+      ...mockSecurity,
+      activeSessions: mockSecurity.activeSessions.map((s) => ({ ...s })),
+    };
+  }
+
+  async changePassword(data: ChangePasswordPayload): Promise<{ message: string }> {
+    await delay(250);
+
+    if (data.currentPassword !== mockCurrentPassword) {
+      throw new ServiceError(
+        "Your current password is incorrect.",
+        "INVALID_CREDENTIALS",
+        401,
+      );
+    }
+
+    mockCurrentPassword = data.newPassword;
+    mockSecurity = { ...mockSecurity, lastPasswordChangedAt: new Date().toISOString() };
+    return { message: "Password updated successfully." };
   }
 }

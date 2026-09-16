@@ -27,6 +27,7 @@ export type { CatalogView } from "./ViewToggle";
 export { default as CheckboxOption } from "./CheckboxOption";
 export { default as FilterPanel } from "./FilterPanel";
 export { default as FilterModal } from "./FilterModal";
+export { default as ActiveFilters } from "./ActiveFilters";
 export { default as PasswordInput } from "./PasswordInput";
 export { default as ImageGallery } from "./ImageGallery";
 export { default as ProductGallery } from "./ProductGallery";

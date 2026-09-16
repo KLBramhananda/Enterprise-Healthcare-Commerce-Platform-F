@@ -638,7 +638,7 @@ function PrescriptionNotice({ details }: { details: ProductDetails }) {
 }
 
 function navigateToPrescriptions() {
-  window.location.assign("/prescriptions");
+  window.location.assign("/account/prescriptions");
 }
 
 /* ── Expandable information sections ── */

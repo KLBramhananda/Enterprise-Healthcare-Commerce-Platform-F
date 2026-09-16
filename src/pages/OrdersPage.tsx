@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Package, ShoppingBag, Search, RefreshCw, ArrowRight, AlertCircle } from "lucide-react";
-import { Container, Badge, Button, EmptyState, Skeleton, SkeletonText, Tabs } from "@/components/ui";
+import { Badge, Button, EmptyState, Skeleton, SkeletonText, Tabs } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useOrders, useReorderOrder } from "@/hooks/orders";
@@ -116,16 +116,17 @@ export default function OrdersPage() {
   }, [orders, activeTab, searchQuery]);
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "My Orders" },
           ]}
         />
 
-        <header className="mt-4 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
             My Orders
           </h1>
@@ -234,7 +235,7 @@ export default function OrdersPage() {
                               </Button>
 
                               <Link
-                                to={`/orders/${order.id}`}
+                                to={`/account/orders/${order.id}`}
                                 className="inline-flex items-center justify-center rounded-md border border-surface-300 bg-surface-0 px-2.5 py-1 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-50"
                               >
                                 View Details
@@ -251,7 +252,6 @@ export default function OrdersPage() {
             </div>
           )}
         </div>
-      </Container>
     </div>
   );
 }

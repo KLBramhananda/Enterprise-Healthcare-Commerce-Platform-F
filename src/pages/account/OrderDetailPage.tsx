@@ -19,7 +19,7 @@ import {
   UserCircle,
   Receipt,
 } from "lucide-react";
-import { Container, Badge, Button, Modal, Select, Skeleton, Textarea } from "@/components/ui";
+import { Badge, Button, Modal, Select, Skeleton, Textarea } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import {
@@ -66,8 +66,7 @@ const RETURN_REASONS = [
 
 function DetailSkeleton() {
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             {Array.from({ length: 3 }, (_, i) => (
@@ -93,7 +92,6 @@ function DetailSkeleton() {
             ))}
           </div>
         </div>
-      </Container>
     </div>
   );
 }
@@ -151,12 +149,13 @@ export default function OrderDetailPage() {
 
   if (isError || !order) {
     return (
-      <div className="bg-surface-50 pb-12">
-        <Container>
+      <div className="min-w-0 flex-1">
           <Breadcrumb
+            className="py-2"
             items={[
               { label: "Home", path: "/" },
-              { label: "Orders", path: "/orders" },
+              { label: "My Account", path: "/account/dashboard" },
+              { label: "My Orders", path: "/account/orders" },
               { label: "Order Detail" },
             ]}
           />
@@ -173,14 +172,13 @@ export default function OrderDetailPage() {
               </Button>
             )}
             <Link
-              to="/orders"
+              to="/account/orders"
               className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-700"
             >
               <ArrowLeft size={16} />
               Back to Orders
             </Link>
           </div>
-        </Container>
       </div>
     );
   }
@@ -220,19 +218,20 @@ export default function OrderDetailPage() {
   };
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
-            { label: "Orders", path: "/orders" },
+            { label: "My Account", path: "/account/dashboard" },
+            { label: "My Orders", path: "/account/orders" },
             { label: "Order Detail" },
           ]}
         />
 
         <div className="mt-4">
           <Link
-            to="/orders"
+            to="/account/orders"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-surface-500 transition-colors hover:text-brand-600"
           >
             <ArrowLeft size={16} />
@@ -510,7 +509,6 @@ export default function OrderDetailPage() {
             </div>
           </div>
         </div>
-      </Container>
 
       <Modal
         isOpen={cancelModalOpen}

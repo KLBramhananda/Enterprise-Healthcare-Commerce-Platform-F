@@ -9,7 +9,7 @@ import {
   CheckCircle,
   File,
 } from "lucide-react";
-import { Container, Badge, Button, EmptyState, Modal } from "@/components/ui";
+import { Badge, Button, EmptyState, Modal } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { usePrescriptionUpload } from "@/hooks/checkout/usePrescriptionUpload";
@@ -81,16 +81,17 @@ export default function PrescriptionsPage() {
   }, []);
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "My Prescriptions" },
           ]}
         />
 
-        <header className="mt-4 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
             My Prescriptions
           </h1>
@@ -298,7 +299,6 @@ export default function PrescriptionsPage() {
             </div>
           )}
         </Modal>
-      </Container>
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
   AlertTriangle,
   Info,
 } from "lucide-react";
-import { Container, Card, CardBody, Badge, Button, Modal, Input, LinearProgress } from "@/components/ui";
+import { Card, CardBody, Badge, Button, Modal, Input, LinearProgress } from "@/components/ui";
 import { Breadcrumb } from "@/components/layout";
 import { usePageTitle } from "@/hooks/layout/usePageTitle";
 import { useLoyaltyAccount, useLoyaltyHistory, useLoyaltyTiers, useRedeemPoints } from "@/hooks/engagement/useLoyalty";
@@ -116,16 +116,17 @@ export default function LoyaltyPage() {
   const redeemValue = (parseInt(redeemAmount, 10) || 0) * 0.01;
 
   return (
-    <div className="bg-surface-50 pb-12">
-      <Container>
+    <div className="min-w-0 flex-1">
         <Breadcrumb
+          className="py-2"
           items={[
             { label: "Home", path: "/" },
+            { label: "My Account", path: "/account/dashboard" },
             { label: "Loyalty Points" },
           ]}
         />
 
-        <header className="mt-4 border-b border-surface-200 pb-5">
+        <header className="mt-2 border-b border-surface-200 pb-5">
           <h1 className="text-xl font-bold tracking-tight text-surface-900 sm:text-2xl">
             Loyalty Points
           </h1>
@@ -406,7 +407,6 @@ export default function LoyaltyPage() {
             </div>
           )}
         </Modal>
-      </Container>
     </div>
   );
 }

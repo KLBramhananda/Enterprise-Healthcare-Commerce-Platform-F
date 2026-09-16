@@ -48,7 +48,7 @@ const homepageContent: HomepageContent = {
         "Order medicines, wellness products, and health devices with guaranteed authenticity, licensed pharmacists, and fast delivery.",
       highlight: "doorstep",
       primaryCta: { label: "Shop Medicines", path: "/category/medicines" },
-      secondaryCta: { label: "Upload Prescription", path: "/prescriptions" },
+      secondaryCta: { label: "Upload Prescription", path: "/account/prescriptions" },
       theme: "brand",
     },
     {
@@ -79,7 +79,7 @@ const homepageContent: HomepageContent = {
       description:
         "Stock up on vitamins, supplements, and daily essentials with exclusive launch offers across all categories.",
       highlight: "bestsellers",
-      primaryCta: { label: "Explore Offers", path: "/offers" },
+      primaryCta: { label: "Explore Offers", path: "/account/offers" },
       secondaryCta: { label: "Shop Wellness", path: "/category/wellness" },
       theme: "amber",
     },

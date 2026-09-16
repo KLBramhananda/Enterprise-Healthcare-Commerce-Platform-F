@@ -131,7 +131,7 @@ export default function MiniCartDrawer({ isOpen, onClose }: MiniCartDrawerProps)
               </Button>
             </Link>
             <Link
-              to="/wishlist"
+              to="/account/wishlist"
               onClick={onClose}
               className="block text-center text-sm font-medium text-brand-600 hover:underline"
             >

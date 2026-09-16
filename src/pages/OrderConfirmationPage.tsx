@@ -105,7 +105,7 @@ export default function OrderConfirmationPage() {
         <Breadcrumb
           items={[
             { label: "Home", path: "/" },
-            { label: "Orders", path: "/orders" },
+            { label: "My Orders", path: "/account/orders" },
             { label: "Order Confirmation" },
           ]}
         />
@@ -349,7 +349,7 @@ export default function OrderConfirmationPage() {
 
                 <div className="space-y-3">
                   <InvoiceDownloadButton orderId={order.id} fullWidth />
-                  <Link to={`/orders/${order.id}`}>
+                  <Link to={`/account/orders/${order.id}`}>
                     <Button variant="secondary" fullWidth>
                       <Package size={16} className="mr-2" />
                       View Order

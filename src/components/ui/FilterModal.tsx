@@ -1,23 +1,18 @@
 /**
  * FilterModal
  *
- * Centered modal filter experience (Tata 1mg style) that replaces the
- * always-visible desktop filter sidebar on the search results page.
+ * Enterprise-grade filter dialog that wraps FilterPanel in a full-featured
+ * modal overlay (focus trap, Escape, backdrop, body-scroll lock).
  *
- * The modal edits a local draft copy of the filter state so the live results
- * never refetch mid-selection. "Apply Filters" pushes the draft into the URL
- * search params through the parent's onChange, which automatically re-triggers
- * React Query via useSearchState — then closes the modal. Because the URL stays
- * the source of truth, query parameters and browser back/forward navigation
- * keep working exactly as before.
- *
- * The page behind the dialog is dimmed, blurred, and scroll-locked by the
- * shared Modal primitive.
+ * The dialog edits a local draft copy of CatalogFilters so results never
+ * refetch mid-selection. "Apply Filters" pushes the draft into URL search
+ * params through the parent's onChange. The URL stays the source of truth
+ * so query parameters and browser back/forward keep working.
  */
 
-import { Component, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, RotateCcw } from "lucide-react";
+import { AlertCircle, ArrowRight, RotateCcw } from "lucide-react";
 import type {
   BrandFacet,
   CatalogFilters,
@@ -29,6 +24,8 @@ import Button from "./Button";
 import FilterPanel from "./FilterPanel";
 import Modal from "./Modal";
 
+/* ── Props ── */
+
 interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,6 +35,21 @@ interface FilterModalProps {
   manufacturers: ManufacturerFacet[];
   categoryFacets?: CategoryFacet[];
 }
+
+/* ── Active filter count ── */
+
+function countActive(f: CatalogFilters): number {
+  return (
+    f.priceRanges.length +
+    (f.minDiscountPercent > 0 ? 1 : 0) +
+    (f.prescription !== "any" ? 1 : 0) +
+    (f.inStockOnly ? 1 : 0) +
+    f.brands.length +
+    f.manufacturers.length
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════════════════ */
 
 export default function FilterModal({
   isOpen,
@@ -51,27 +63,21 @@ export default function FilterModal({
   const [draft, setDraft] = useState<CatalogFilters>(filters);
   const wasOpenRef = useRef(isOpen);
 
-  // Seed the draft from the committed filters only on open and while the popup
-  // is closed. While it is open the draft is left completely alone, so the
-  // popup can never flash blank or have in-dialog selections clobbered by a
-  // committed `filters` change (e.g. browser back/forward while the dialog is
-  // open).
+  // Seed the draft from the committed filters on open and while closed.
   useEffect(() => {
     const justOpened = isOpen && !wasOpenRef.current;
     wasOpenRef.current = isOpen;
-    if (justOpened || !isOpen) {
-      setDraft(filters);
-    }
+    if (justOpened || !isOpen) setDraft(filters);
   }, [isOpen, filters]);
+
+  const activeCount = useMemo(() => countActive(draft), [draft]);
 
   const handleApply = () => {
     onChange(draft);
     onClose();
   };
 
-  const handleClearAll = () => {
-    setDraft(emptyCatalogFilters());
-  };
+  const handleClearAll = () => setDraft(emptyCatalogFilters());
 
   return (
     <Modal
@@ -80,44 +86,49 @@ export default function FilterModal({
       title="Filters"
       size="lg"
       backdropBlur
+      className="max-h-[90vh] sm:max-h-[85vh]"
       footer={
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleClearAll}
             disabled={!hasActiveFilters(draft)}
-            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-2 text-sm font-medium text-brand-600 transition-colors duration-fast hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium text-surface-600 transition-colors hover:bg-surface-100 hover:text-surface-900 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <RotateCcw size={14} aria-hidden="true" />
-            Clear All
+            <RotateCcw size={14} />
+            Clear all
           </button>
           <Button type="button" className="flex-1" onClick={handleApply}>
-            Apply Filters
+            {activeCount > 0
+              ? `Apply ${activeCount} Filter${activeCount > 1 ? "s" : ""}`
+              : "Apply Filters"}
           </Button>
         </div>
       }
     >
+      {/* ── Category facets ── */}
       {categoryFacets.length > 0 && (
-        <div className="mb-6">
-          <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-surface-500">
+        <div className="mb-5">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-surface-400">
             Categories
           </p>
-          <div className="space-y-0.5">
+          <div className="flex flex-wrap gap-1.5">
             {categoryFacets.map((cat) => (
               <Link
                 key={cat.slug}
                 to={`/category/${cat.slug}`}
                 onClick={onClose}
-                className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-surface-600 transition-colors duration-fast hover:bg-surface-100 hover:text-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                className="inline-flex items-center gap-1 rounded-lg border border-surface-200 bg-surface-50 px-3 py-1.5 text-sm text-surface-600 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700"
               >
                 <span>{cat.title}</span>
-                <span className="text-xs text-surface-400">{cat.count}</span>
+                <ArrowRight size={12} className="text-surface-400" />
               </Link>
             ))}
           </div>
         </div>
       )}
 
+      {/* ── Filter panel ── */}
       <FilterPanelErrorBoundary onReset={() => setDraft(filters)}>
         <FilterPanel
           filters={draft}
@@ -131,13 +142,11 @@ export default function FilterModal({
   );
 }
 
-/* ── Sub-component ── */
+/* ════════════════════════════════════════════════════════════════════════════
+   Error boundary — contains facet-render crashes inside the dialog body
+   instead of letting them blank the entire page.
+   ════════════════════════════════════════════════════════════════════════════ */
 
-/**
- * Safety net around the filter panel. Any unexpected facet-rendering error is
- * contained here so the dialog shows a small, recoverable message instead of
- * unmounting the whole app into a blank white screen.
- */
 class FilterPanelErrorBoundary extends Component<
   { children: ReactNode; onReset: () => void },
   { hasError: boolean }
@@ -149,21 +158,19 @@ class FilterPanelErrorBoundary extends Component<
   }
 
   override componentDidCatch(): void {
-    // Errors here only affect the filter popup body; resetting the draft lets
-    // the user restore a healthy panel without leaving the page.
     this.props.onReset();
   }
 
   override render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-          <AlertCircle size={28} className="text-surface-400" />
-          <p className="mt-3 text-sm font-medium text-surface-900">
+        <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+          <AlertCircle size={28} className="text-surface-300" />
+          <p className="mt-3 text-sm font-medium text-surface-700">
             Some filter options could not be loaded.
           </p>
-          <p className="mt-1 text-xs text-surface-500">
-            Try clearing the current selection and opening the filter again.
+          <p className="mt-1 text-xs text-surface-400">
+            Clear your selection and reopen the filters to try again.
           </p>
         </div>
       );
